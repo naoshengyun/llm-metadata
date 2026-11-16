@@ -1,0 +1,61 @@
+name: naoshengyun-cny-candidate
+run-name: CNY candidate ${{ inputs.expected_sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Reviewed business-branch commit SHA
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: naoshengyun-cny-candidate
+  cancel-in-progress: false
+jobs:
+  test-and-candidate:
+    if: github.repository == 'naoshengyun/llm-metadata' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/naoshengyun'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+    steps:
+      - name: Reject changed source confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+      - name: Checkout fixed source without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Price-source regression tests
+        run: npm run test:cny
+      - name: Offline immutable candidate build
+        run: npm run cny:official:build
+      - name: Bind source and candidate file hashes
+        env:
+          CI_ARTIFACT_DIR: ${{ runner.temp }}/cny-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+        run: node scripts/ci-candidate-evidence.mjs
+      - name: Upload candidate evidence only
+        id: candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cny-candidate-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Artifact receipt
+        env:
+          ARTIFACT_ID: ${{ steps.candidate.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.candidate.outputs.artifact-digest }}
+        run: |
+          printf 'Artifact ID: %s\nArtifact digest: %s\n' "$ARTIFACT_ID" "$ARTIFACT_DIGEST"
