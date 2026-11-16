@@ -1,0 +1,91 @@
+import { readFileSync, writeFileSync, mkdirSync, realpathSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, basename } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { generateCny, type CnyInput } from './generate.js';
+import { buildArtifact, semanticDiff, type FixedArtifact } from './artifact.js';
+
+// Explicit snapshot input; never fetches prices or applies configuration.
+const [inputPath, outputPath, previousPath] = process.argv.slice(2);
+if (!inputPath || !outputPath)
+  throw new Error(
+    'Usage: npm run cny:generate -- input.json output-directory [previous-artifact.json]',
+  );
+const sourceDirectory = execFileSync(
+  'git',
+  ['-C', dirname(fileURLToPath(import.meta.url)), 'rev-parse', '--show-toplevel'],
+  { encoding: 'utf8' },
+).trim();
+let ancestor = resolve(outputPath);
+const remaining: string[] = [];
+while (!existsSync(ancestor)) {
+  remaining.unshift(basename(ancestor));
+  ancestor = dirname(ancestor);
+}
+const output = join(realpathSync(ancestor), ...remaining);
+const upstreamDist = join(realpathSync(sourceDirectory), 'dist');
+if (output === upstreamDist || output.startsWith(upstreamDist + '/'))
+  throw new Error('CNY artifacts must be outside upstream dist');
+const dirtySource = execFileSync(
+  'git',
+  ['-C', sourceDirectory, 'status', '--porcelain', '--untracked-files=all', '--', 'src'],
+  { encoding: 'utf8' },
+).trim();
+if (dirtySource) throw new Error('Commit the source snapshot before building a fixed CNY artifact');
+const input = JSON.parse(readFileSync(inputPath, 'utf8')) as CnyInput;
+const result = generateCny(input);
+const artifact = buildArtifact({
+  sourceSha: execFileSync('git', ['-C', sourceDirectory, 'rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  }).trim(),
+  data: input.upstream,
+  quotes: input.records,
+  selection: input.selection,
+  models: result.models,
+  plugins: result.plugins,
+  tools: result.tools,
+  exclusions: result.exclusions,
+});
+mkdirSync(output, { recursive: true });
+for (const [name, value] of Object.entries({
+  artifact,
+  status: {
+    artifactId: artifact.id,
+    build: 'built',
+    publication: 'not-published',
+    application: 'not-applied',
+  },
+  catalog: result.catalog,
+  diagnostics: result.diagnostics,
+  ratio_config: {
+    data: {
+      billing_mode: Object.fromEntries(
+        Object.entries(result.models).map(([key, value]) => [key, value.billing_mode]),
+      ),
+      billing_expr: Object.fromEntries(
+        Object.entries(result.models).map(([key, value]) => [key, value.billing_expr]),
+      ),
+    },
+  },
+  plugin_prices: result.plugins,
+  tool_prices: { 'tool_price_setting.prices': result.tools },
+  ...(previousPath
+    ? {
+        semantic_diff: semanticDiff(
+          JSON.parse(readFileSync(previousPath, 'utf8')) as FixedArtifact,
+          artifact,
+        ),
+      }
+    : {}),
+}))
+  writeFileSync(join(output, `${name}.json`), JSON.stringify(value, null, 2) + '\n');
+console.log(
+  JSON.stringify({
+    artifactId: artifact.id,
+    complete: artifact.manifest.complete,
+    publication: 'not-published',
+    application: 'not-applied',
+    output,
+  }),
+);

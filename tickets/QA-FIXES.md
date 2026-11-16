@@ -1,0 +1,15 @@
+# Independent QA findings — repair candidate, 2026-11-16
+
+Independent report: `../calm-cohen/qa-evidence/918b374/REVIEW.md` relative to worktrees root (absolute `/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/918b374/REVIEW.md`). Reviewed baseline head: `918b37470aa2d50762393b8b949e0f52cf536700`; review base `d9f6cf3d1b643ac186f1be82dfcab754505a9343`. All five findings also reproduced against the implementation branch's later `eb9c0ab9550ae0db2397c4f42e8785578f8fe84d` before these repairs. The earlier passing local tests did not cover these counterexamples. This file records implementation fixes, not independent approval.
+
+| Finding | Repair | Regression / applicable D AC |
+|---|---|---|
+| S1 P1 | Before reading/moving/writing candidate workflow paths, lstat every source/destination/ancestor component and reject symlinks or escape. Validate all move pairs before moving any files; report destination is checked too. | Public sync CLI + real local histories: source directory, quarantine directory, `.github` ancestor, source YAML, destination YAML and report-file symlinks; external sentinel remains unchanged and no candidate-ready/publication. T5 AC17/19D. |
+| F1 P1 | Fixed per-image price with any additional Token/tier/schedule fields is explicitly unsupported by the CNY adapter; no partial fixed-only expression is emitted. No new native expression semantics. | Public G rejects per_image+output_image and per_image+schedule into explicit exclusions. T1/T2 AC05D/08D/18/27D/30D. |
+| F2 P2 | Recursive cost inspection validates threshold presence, safe positive integer and uniqueness in every tiers array, including schedule windows; each window has its own threshold set. | Public G rejects duplicate nested window thresholds with field-level path; no overwrite. T1/T2 AC08D/18. |
+| F3 P2 | Only nonempty plugin selections contribute names to native PATCH requests. | A asserts models:['m'], plugins:{unselected:[]} writes exactly m, and receipt covers precisely that selected model. T7 AC11/16D. |
+| F4 P2 | Inactive check template uses npm run test:cny, which compiles the exact .cache path imported by the tests. | Run template install/check commands in a fresh clone without .cache; this is local template validation, not hosted Actions execution. T5 AC20D. |
+
+TDD evidence: each behavioral counterexample was added and observed failing before its implementation fix (S1/F1/F2/F3). Logs `/tmp/cny-S1-red.log`, `/tmp/cny-F1-red.log`, `/tmp/cny-F2-red.log`, `/tmp/cny-F3-red.log`; individual green logs use matching names. F4 was independently reproduced by QA in a clean archive; the repaired commands will be checked in a clean clone. Combined local suite now 41/41, `/tmp/cny-qa-fixes-local.log`.
+
+Version-specific final source/fixture identities and fresh native/parser/clean-clone verification logs will be supplied with the fixed review head. No remote push, hosting change, Actions activation, deployment, supplier call or production modification is part of these repairs. Existing tool PUT no-CAS limitation remains. Real quotation maintenance and O/R remain separate.

@@ -1,0 +1,250 @@
+{
+  "reportedCount": 141,
+  "providedCount": 136,
+  "unexplainedDifference": 5,
+  "platforms": [
+    {
+      "platform": "anthropic",
+      "protocol": "anthropic",
+      "models": [
+        "claude-fable-5-2",
+        "claude-haiku-5-5",
+        "claude-sonnet-5-5",
+        "claude-opus-5-5",
+        "claude-fable-5-1",
+        "claude-fable-5",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-opus-4-8",
+        "claude-opus-4-7",
+        "claude-opus-4-6",
+        "claude-sonnet-4-6",
+        "claude-sonnet-4-5-20250929",
+        "claude-sonnet-4-5",
+        "claude-opus-4-5-20251101",
+        "claude-haiku-4-5",
+        "claude-haiku-4-5-20251001"
+      ]
+    },
+    {
+      "platform": "openai",
+      "protocol": "openai",
+      "models": [
+        "gpt-6.1-terra",
+        "gpt-6.1-sol",
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+        "gpt-image-2.5-sunburst",
+        "gpt-image-2.5-flare",
+        "gpt-image-2.5-sunburst-1k",
+        "gpt-image-2.5-sunburst-2k",
+        "gpt-image-2.5-sunburst-4k",
+        "gpt-image-2.5-flare-1k",
+        "gpt-image-2.5-flare-2k",
+        "gpt-image-2.5-flare-4k",
+        "gpt-image-2",
+        "gpt-image-2-1k",
+        "gpt-image-2-2k",
+        "gpt-image-2-4k",
+        "gpt-image-2.6-flare",
+        "gpt-image-2.6-sunburst",
+        "gpt-image-2.6-flare-1k",
+        "gpt-image-2.6-flare-2k",
+        "gpt-image-2.6-flare-4k",
+        "gpt-image-2.6-sunburst-1k",
+        "gpt-image-2.6-sunburst-2k",
+        "gpt-image-2.6-sunburst-4k",
+        "codex-auto-review"
+      ]
+    },
+    {
+      "platform": "gemini",
+      "protocol": "gemini",
+      "models": [
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite-image",
+        "gemini-3-pro-image",
+        "gemini-3.1-flash-image",
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash-image",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "gemini-3.1-flash-image-1k",
+        "gemini-3.1-flash-image-2k",
+        "gemini-3.1-flash-image-4k",
+        "gemini-3-pro-image-1k",
+        "gemini-3-pro-image-2k",
+        "gemini-3-pro-image-4k"
+      ]
+    },
+    {
+      "platform": "gemini-openai",
+      "protocol": "openai_compatible",
+      "models": [
+        "gemini-3.7-flash"
+      ]
+    },
+    {
+      "platform": "gemini-banana",
+      "protocol": "gemini",
+      "models": [
+        "nano-banana-fast",
+        "nano-banana-pro",
+        "nano-banana-2"
+      ]
+    },
+    {
+      "platform": "deepseek",
+      "protocol": "openai_compatible",
+      "models": [
+        "deepseek-v4.1-flash",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash"
+      ]
+    },
+    {
+      "platform": "deepseek-anthropic",
+      "protocol": "anthropic_compatible",
+      "models": [
+        "deepseek-v4.1-flash",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash"
+      ]
+    },
+    {
+      "platform": "moonshot",
+      "protocol": "openai_compatible",
+      "models": [
+        "kimi-k3.1-pro-highspeed",
+        "kimi-k3.1-pro",
+        "kimi-k3",
+        "kimi-k2.7-code",
+        "kimi-k2.7-code-highspeed"
+      ]
+    },
+    {
+      "platform": "zhipu",
+      "protocol": "openai_compatible",
+      "models": [
+        "glm-5.3",
+        "glm-5.3-flash",
+        "glm-5.2",
+        "glm-5.1"
+      ]
+    },
+    {
+      "platform": "zhipu-anthropic",
+      "protocol": "anthropic_compatible",
+      "models": [
+        "glm-5.3",
+        "glm-5.3-flash",
+        "glm-5.2",
+        "glm-5.1"
+      ]
+    },
+    {
+      "platform": "dashscope",
+      "protocol": "openai_compatible",
+      "models": [
+        "qwen3.8-flash",
+        "qwen3.8-max",
+        "qwen3.7-max",
+        "qwen3.7-plus",
+        "qwen3.7-flash"
+      ]
+    },
+    {
+      "platform": "dashscope-anthropic",
+      "protocol": "anthropic_compatible",
+      "models": [
+        "qwen3.8-max",
+        "qwen3.7-max"
+      ]
+    },
+    {
+      "platform": "qianfan",
+      "protocol": "openai_compatible",
+      "models": [
+        "ernie-5.1",
+        "ernie-5.0",
+        "ernie-5.0-thinking-preview",
+        "ernie-5.0-thinking-latest"
+      ]
+    },
+    {
+      "platform": "volcengine",
+      "protocol": "openai_compatible",
+      "models": [
+        "doubao-seed-2.0-pro",
+        "doubao-seed-2.0-lite",
+        "doubao-seed-2.0-mini",
+        "doubao-seed-2.0-code",
+        "doubao-seed-1.8",
+        "doubao-seedream-5.0-lite",
+        "doubao-seed-2-1-pro-260628",
+        "doubao-seed-2-1-turbo-260628",
+        "doubao-seed-2-0-pro-260215",
+        "doubao-seed-2-0-code-preview-260215",
+        "doubao-seed-2-0-lite-260428",
+        "doubao-seed-2-0-mini-260428",
+        "doubao-seed-1-8-251228",
+        "doubao-seed-1.6",
+        "doubao-seed-1.6-thinking",
+        "doubao-seed-1.6-flash",
+        "doubao-seed-1.6-lite",
+        "doubao-seed-code",
+        "doubao-1.5-thinking-pro",
+        "doubao-1.5-pro-32k"
+      ]
+    },
+    {
+      "platform": "hunyuan",
+      "protocol": "openai_compatible",
+      "models": [
+        "hunyuan-2.0-thinking-20251109",
+        "hunyuan-2.0-instruct-20251111",
+        "hunyuan-t1-latest",
+        "hunyuan-a13b",
+        "hunyuan-turbos-latest",
+        "hunyuan-lite"
+      ]
+    },
+    {
+      "platform": "minimax",
+      "protocol": "openai_compatible",
+      "models": [
+        "MiniMax-M2.7",
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.5",
+        "MiniMax-M2.5-highspeed",
+        "MiniMax-M3"
+      ]
+    },
+    {
+      "platform": "minimax-anthropic",
+      "protocol": "anthropic_compatible",
+      "models": []
+    },
+    {
+      "platform": "seedance-video",
+      "protocol": "video",
+      "models": [
+        "seedance-2.0",
+        "seedance-2.0-fast",
+        "seedance-2.0-mini",
+        "seedance-2.5"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "upstream": {
+    "providers": {}
+  },
+  "records": [
+    {
+      "id": "fixture-us-standard",
+      "provider": "fixture-us",
+      "model": "fixture-model",
+      "priceList": "standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://example.org/synthetic-price-fixture",
+        "checkedAt": "2026-11-16"
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 15
+      }
+    }
+  ],
+  "selection": {
+    "fixture-model": "fixture-us-standard"
+  }
+}
