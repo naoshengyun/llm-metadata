@@ -28,13 +28,33 @@ test('G: image modalities, explicit cache TTL prices and context thresholds are 
  assert.equal(r.catalog[0].cnyCost.tiers[0].tier.size,200000);
 });
 test('G: public generator routes selected task and tool prices into independent native partitions',()=>{
- const r=run([quote({}, {kind:'task',required:[],task:{plugin:'doubao',model:'doubao-seedance-1-5-pro-251215',tiers:[{name:'base',charges:[{usageKey:'tokens',amount:2,unit:'per_million_tokens',currency:'USD'}]}]},tools:[{key:'web_search',amount:1,unit:'per_thousand_calls',currency:'USD'}],origin:'foreign',currency:'USD'})]);
+ const r=run([quote({}, {kind:'task',model:'doubao-seedance-1-5-pro-251215',required:[],task:{plugin:'doubao',model:'doubao-seedance-1-5-pro-251215',tiers:[{name:'base',charges:[{usageKey:'tokens',amount:2,unit:'per_million_tokens',currency:'USD'}]}]},tools:[{key:'web_search',amount:1,unit:'per_thousand_calls',currency:'USD'}],origin:'foreign',currency:'USD'})],{'doubao-seedance-1-5-pro-251215':'domestic-standard'});
  assert.deepEqual(r.models,{});
- assert.equal(r.plugins.same.doubao,'tier("base", u("tokens") * 14 / 1000000)');
+ assert.equal(r.plugins['doubao-seedance-1-5-pro-251215'].doubao,'tier("base", u("tokens") * 14 / 1000000)');
  assert.equal(r.tools.web_search,7);
 });
 test('G: malformed thresholds and absent task schemas block the selected new price',()=>{
  for(const record of [quote({input:20,output:100,tiers:[{tier:{size:-1},input:30}]}),quote({}, {kind:'task',required:[]})]) {
  const r=run([record]);assert.equal(r.diagnostics[0].status,'incomplete');assert.deepEqual(r.models,{});assert.deepEqual(r.plugins,{});
  }
+});
+test('G/S: unselected records retain capability diagnostics and explicit exclusion identity',()=>{
+ const r=run([quote({input:20,output:100}),quote({input:1,output:2,per_image:.2},{id:'mixed-shape'})]);
+ assert.equal(r.catalog[1].diagnostic.status,'unsupported-shape');
+ assert.ok(r.exclusions.some(x=>x.id==='mixed-shape'));
+});
+test('G: snapshot override replaces entire cost before building, retains upstream model metadata',()=>{
+ const r=run([quote({input:20,output:100})],undefined,{providers:{domestic:{id:'domestic',models:{same:{id:'same',name:'upstream title',cost:{input:1,output:2,cache_read:99}}}}}});
+ assert.equal(r.catalog[0].snapshotModel.name,'upstream title');
+ assert.deepEqual(r.catalog[0].snapshotModel.cost,{input:20,output:100,currency:'CNY'});
+});
+test('G: incomplete tool blocks every partition from that official record',()=>{
+ const r=run([quote({input:20,output:100},{tools:[{key:'web_search',amount:1,unit:'per_thousand_calls',currency:'CNY'},{key:'file_search',unit:'per_thousand_calls',currency:'CNY'}]})]);
+ assert.equal(r.diagnostics[0].status,'incomplete');assert.deepEqual(r.models,{});assert.deepEqual(r.tools,{});
+});
+test('G: pinned upstream deletions and invalid native plugin names cannot publish',()=>{
+ const deleted=run([quote({input:20,output:100},{upstreamKey:{provider:'domestic',model:'removed'}})]);
+ assert.equal(deleted.diagnostics[0].status,'incomplete');assert.deepEqual(deleted.models,{});
+ const r=run([quote({}, {kind:'task',model:'doubao-seedance-1-5-pro-251215',required:[],task:{plugin:'doubao',model:'doubao-seedance-1-5-pro-251215',tiers:[{name:'base',charges:[{usageKey:'tokens',amount:2,unit:'per_million_tokens',currency:'CNY'}]}]}})]);
+ assert.deepEqual(r.plugins,{});assert.ok(r.exclusions.some(x=>x.status==='unsupported-shape'));
 });

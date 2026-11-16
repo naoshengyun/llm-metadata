@@ -23,7 +23,7 @@ const artifact = buildArtifact({
   models: result.models,
   plugins: result.plugins,
   tools: result.tools,
-  exclusions: result.diagnostics.filter((d) => d.status !== 'ready'),
+  exclusions: result.exclusions,
 });
 mkdirSync(output, { recursive: true });
 for (const [name, value] of Object.entries({
