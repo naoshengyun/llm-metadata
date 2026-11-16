@@ -1,5 +1,6 @@
-# INACTIVE TEMPLATE. Do not move into workflows until hosting policy is approved.
-# Repo-wide Actions must remain disabled while immutable main mirrors untrusted workflows.
+# HISTORICAL INACTIVE TEMPLATE. Do not activate this mutable-tag/PR-trigger copy.
+# Controlled CI lives in .github/workflows/naoshengyun-ci.yml and requires
+# the independently reviewed activation gates in docs/ci/CNY-CI-ACTIVATION.md.
 name: naoshengyun-check
 on:
   workflow_dispatch:
