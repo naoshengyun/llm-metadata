@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 15
     env:
       EXPECTED_SHA: ${{ inputs.expected_sha }}
-      CI_ARTIFACT_DIR: ${{ runner.temp }}/cny-candidate-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Reject changed source confirmation
         shell: bash
@@ -43,13 +42,15 @@ jobs:
       - name: Offline immutable candidate build
         run: npm run cny:official:build
       - name: Bind source and candidate file hashes
+        env:
+          CI_ARTIFACT_DIR: ${{ runner.temp }}/cny-candidate-${{ github.run_id }}-${{ github.run_attempt }}
         run: node scripts/ci-candidate-evidence.mjs
       - name: Upload candidate evidence only
         id: candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cny-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.CI_ARTIFACT_DIR }}/
+          path: ${{ runner.temp }}/cny-candidate-${{ github.run_id }}-${{ github.run_attempt }}/
           if-no-files-found: error
           retention-days: 14
       - name: Artifact receipt
