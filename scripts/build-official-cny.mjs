@@ -2,9 +2,9 @@
 import { generateCny } from '../.cache/cny-build/cny/generate.js';
 import { buildArtifact, semanticDiff, verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
 
-import { readFileSync, writeFileSync, mkdirSync, lstatSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, lstatSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export function buildOfficialSnapshot({ sourceSha, catalog, reference, selection }) {
@@ -22,6 +22,7 @@ export function buildOfficialSnapshot({ sourceSha, catalog, reference, selection
     assessments.set(key, row);
   }
   const diagnosticById = new Map(generated.diagnostics.map((d) => [d.id, d]));
+  const quoteById = new Map(catalog.records.map((quote) => [quote.id, quote]));
   const coverage = [];
   for (const platform of reference.platforms) {
     for (const model of platform.models) {
@@ -39,6 +40,11 @@ export function buildOfficialSnapshot({ sourceSha, catalog, reference, selection
       };
       if (row.status === 'ready') {
         const ids = Array.isArray(row.quoteIds) ? row.quoteIds : [];
+        if (ids.some((id) => quoteById.has(id) && quoteById.get(id).model !== model)) {
+          row.status = 'incomplete';
+          row.reason =
+            'Official quote identity does not match the exact supplied model identifier; no inferred alias mapping is allowed.';
+        }
         const rejected = ids
           .map((id) => diagnosticById.get(id))
           .find((d) => !d || d.status !== 'ready');
@@ -96,6 +102,37 @@ export function buildOfficialSnapshot({ sourceSha, catalog, reference, selection
   };
 }
 
+export function persistOfficialSnapshot({ root, sourceSha, files }) {
+  if (!/^[a-f0-9]{40}$/.test(sourceSha)) throw new Error('Full source SHA required');
+  root = realpathSync(root);
+  const output = join(root, '.cache', 'official-cny', sourceSha);
+  if (
+    Object.keys(files).some(
+      (name) => basename(name) !== name || name.includes('\\') || !/\.(json|md)$/.test(name),
+    )
+  )
+    throw new Error('Snapshot filenames must be plain JSON or Markdown names');
+  for (const name of Object.keys(files)) {
+    let current = root;
+    for (const component of ['.cache', 'official-cny', sourceSha, name]) {
+      current = join(current, component);
+      try {
+        if (lstatSync(current).isSymbolicLink())
+          throw new Error('Symlink in candidate output path');
+      } catch (error) {
+        if (error.code === 'ENOENT') break;
+        throw error;
+      }
+    }
+  }
+  mkdirSync(dirname(output), { recursive: true });
+  // Exclusive directory creation: an existing snapshot and diff baseline stay untouched.
+  mkdirSync(output);
+  for (const [name, value] of Object.entries(files))
+    writeFileSync(join(output, name), value, { flag: 'wx' });
+  return output;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = execFileSync(
     'git',
@@ -141,7 +178,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       for (const [key, value] of Object.entries(result.artifact[partition]))
         changes.push({ partition, key, type: 'candidate-addition', after: value });
   }
-  const output = join(root, '.cache', 'official-cny', sourceSha);
   // Preflight each existing component, including the final file, before any write.
   const content = {
     artifact: result.artifact,
@@ -199,20 +235,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     ),
     'coverage-report.md': report,
   };
-  for (const name of Object.keys(files)) {
-    let current = root;
-    for (const component of ['.cache', 'official-cny', sourceSha, name]) {
-      current = join(current, component);
-      try {
-        if (lstatSync(current).isSymbolicLink())
-          throw new Error('Symlink in candidate output path');
-      } catch (error) {
-        if (error.code === 'ENOENT') break;
-        throw error;
-      }
-    }
-  }
-  mkdirSync(output, { recursive: true });
-  for (const [name, value] of Object.entries(files)) writeFileSync(join(output, name), value);
+  const output = persistOfficialSnapshot({ root, sourceSha, files });
   console.log(JSON.stringify({ ...result.status, sourceSha, output, coverageStatuses: summary }));
 }

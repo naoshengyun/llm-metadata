@@ -126,3 +126,68 @@ test('S: maintained first-party snapshot keeps original CNY, single USD conversi
   assert.equal(r.artifact.tools.search_std, 10);
   assert.equal(r.artifact.manifest.complete, false);
 });
+
+test('S: a ready quote for a different exact model cannot satisfy the reference row', () => {
+  const other = { ...quote, model: 'other-model' };
+  const r = buildOfficialSnapshot({
+    sourceSha: 'a'.repeat(40),
+    catalog: { ...catalog, records: [other] },
+    reference,
+    selection: { 'other-model': 'q' },
+  });
+  assert.equal(r.coverage[0].status, 'incomplete');
+  assert.equal(r.coverage[1].status, 'incomplete');
+  assert.match(r.coverage[0].reason, /identity/);
+  assert.equal(r.status.coverageComplete, false);
+});
+
+test('S: known Kimi and MiniMax tool tariffs are preserved inside the fixed candidate exclusions', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const read = async (name) =>
+    JSON.parse(await readFile(new URL('../data/cny/' + name, import.meta.url), 'utf8'));
+  const catalog = await read('official-catalog.json');
+  const r = buildOfficialSnapshot({
+    sourceSha: 'a'.repeat(40),
+    catalog,
+    reference: await read('coverage-reference.json'),
+    selection: (await read('proposed-selection.json')).selection,
+  });
+  const groups = r.artifact.exclusions.filter((x) => x.kind === 'optional-tool-fees');
+  assert.equal(groups.find((x) => x.raw.provider === 'moonshotai-cn').raw.fees.Pro, 0.015);
+  assert.equal(groups.find((x) => x.raw.provider === 'minimax-cn').raw.fees.web_search, 0.03);
+  assert.deepEqual(Object.keys(r.artifact.tools), ['search_std']);
+});
+
+test('S: a persisted candidate and its comparison baseline cannot be overwritten', async () => {
+  const { persistOfficialSnapshot } = await import('../scripts/build-official-cny.mjs');
+  const { mkdtempSync, readFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const root = mkdtempSync(join(tmpdir(), 'cny-immutable-'));
+  try {
+    const files = {
+      'artifact.json': '{"id":"first"}\n',
+      'semantic-diff.json': '{"baseline":null}\n',
+    };
+    const output = persistOfficialSnapshot({ root, sourceSha: 'a'.repeat(40), files });
+    assert.throws(
+      () =>
+        persistOfficialSnapshot({
+          root,
+          sourceSha: 'a'.repeat(40),
+          files: {
+            'artifact.json': '{"id":"changed"}\n',
+            'semantic-diff.json': '{"baseline":"other"}\n',
+          },
+        }),
+      /exist|immutable/i,
+    );
+    assert.equal(readFileSync(join(output, 'artifact.json'), 'utf8'), files['artifact.json']);
+    assert.equal(
+      readFileSync(join(output, 'semantic-diff.json'), 'utf8'),
+      files['semantic-diff.json'],
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

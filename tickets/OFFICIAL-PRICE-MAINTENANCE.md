@@ -4,12 +4,12 @@ Scope: follow-up authorized after independent acceptance of generator commit `92
 
 ## Inputs and proposal
 
-- `data/cny/official-catalog.json`: original USD/CNY amounts with URLs, checked date, units, TTL/context/condition details. 63 complete generator-compatible records; 115 alternative/incomplete/unsupported source entries retain known raw prices and reasons. Two optional tool-fee groups remain separately declared and excluded from the proposed tool config.
-- `data/cny/proposed-selection.json`: review-only selection of 54 official records: 44 model prices, 9 existing native task-plugin variants, 1 native tool price. Selection contains exact official IDs and tariff identities, not private endpoint/channel/alias/account/group mappings. Explicit-cache alternatives, Batch, protocol duplicates and historical Hunyuan tariff are retained without default proposal.
+- `data/cny/official-catalog.json`: original USD/CNY amounts with URLs, checked date, units, TTL/context/condition details. 62 complete generator-compatible records; 116 alternative/incomplete/unsupported source entries retain known raw prices and reasons. Four optional tool-fee groups remain separately declared and excluded from the proposed tool config.
+- `data/cny/proposed-selection.json`: review-only selection of 53 official records: 43 model prices, 9 existing native task-plugin variants, 1 native tool price. Selection contains exact official IDs and tariff identities, not private endpoint/channel/alias/account/group mappings. Explicit-cache alternatives, Batch, protocol duplicates and historical Hunyuan tariff are retained without default proposal.
 - `data/cny/coverage-reference.json`: unchanged 18 platforms / 136 provided triples, including duplicate model names across protocols, source order and the zero-model platform. Reported141/provided136/difference5 remain reference metadata; no fabricated rows.
 - Research: `price-research-west.md`, `price-research-domestic-a.md`, `price-research-domestic-b.md`, `price-research-tools.md` in this directory. Primary live official documentation only; no Exa or paid supplier calls. Model-name suffixes are not inferred as aliases without official proof.
 
-All 136 reference rows receive an assessment: 49 ready price-data entries, 52 exact-ID/original-price sources unverified, 8 incomplete, 27 unsupported. These are price-source contract states, not actual availability, consumption, billing or sale acceptance. Historical Hunyuan-a13b's published legacy tariff can be represented but is deliberately not proposed for application; its platform retirement notice is retained. Exact canonical native task models can be quoted even when a supplied private short name remains unmapped.
+All 136 reference rows receive an assessment: 48 ready price-data entries, 52 exact-ID/original-price sources unverified, 9 incomplete, 27 unsupported. These are price-source contract states, not actual availability, consumption, billing or sale acceptance. Historical Hunyuan-a13b's published legacy tariff can be represented but is deliberately not proposed for application; its platform retirement notice is retained. Exact canonical native task models can be quoted even when a supplied private short name remains unmapped.
 
 ## Important tariff boundaries
 
@@ -22,7 +22,7 @@ All 136 reference rows receive an assessment: 49 ready price-data entries, 52 ex
 
 ## Reproduce the fixed candidate
 
-`npm run test:cny` compiles to `.cache/cny-build` and tests the accepted generator plus the new snapshot seam. Current local result:45/45. New snapshot tests check all original triples, invalid ready declarations, original CNY/one USD conversion, direct Images output meter, and explicit optional fee exclusions. Synthetic snapshot behaviors were developed one red→green slice at a time; additional maintained-price assertions use independently verified official literal examples.
+`npm run test:cny` compiles to `.cache/cny-build` and tests the accepted generator plus the new snapshot seam. Current local result:48/48. New snapshot tests check all original triples, invalid ready declarations, original CNY/one USD conversion, direct Images output meter, and explicit optional fee exclusions. Synthetic snapshot behaviors were developed one red→green slice at a time; additional maintained-price assertions use independently verified official literal examples.
 
 After committing the source/data snapshot, run:
 
@@ -30,7 +30,7 @@ After committing the source/data snapshot, run:
 npm run cny:official:build
 ```
 
-The maintenance command refuses uncommitted source/scripts/data inputs, fixes source SHA, hashes the entire original catalogue and coverage reference, and writes only `.cache/official-cny/<sourceSha>/`. It produces artifact/manifest, original+CNY catalogue, all136 coverage rows, source/shape diagnostics, independent ratio/plugin/tool partitions, status and semantic-diff files. An optional previous immutable artifact path makes a real candidate-to-candidate semantic diff. Without one, changes are expressly first-candidate additions; no production baseline or current applied-price change is claimed. Full manifest stays incomplete while any exclusions remain.
+The maintenance command refuses uncommitted source/scripts/data inputs, fixes source SHA, hashes the entire original catalogue and coverage reference, and writes only `.cache/official-cny/<sourceSha>/`. The output directory is created exclusively: an existing candidate (including its comparison baseline) is never overwritten. It produces artifact/manifest, original+CNY catalogue, all136 coverage rows, source/shape diagnostics, independent ratio/plugin/tool partitions, status and semantic-diff files. An optional previous immutable artifact path makes a real candidate-to-candidate semantic diff. Without one, changes are expressly first-candidate additions; no production baseline or current applied-price change is claimed. Full manifest stays incomplete while any exclusions remain.
 
 For isolated I save/readback of the actual fixed candidate (no provider requests):
 
@@ -41,3 +41,9 @@ node scripts/check-native-instance.mjs .cache/official-cny/<sourceSha>/artifact.
 The existing script still runs its six original synthetic contract cases and native conflict check, then optionally imports all selected real candidate entries into the same disposable, localhost-only pinned rc50 instance. It binds candidate sourceSha to checkout, verifies each selected native result, preserves group/unselected tool fields and cleans its container in finally. This is configuration validation, not real provider billing.
 
 Independent QA must review the new source/data commit and the real first-party price facts; the earlier accepted generator head does not automatically approve this maintenance addition. Version-specific final artifact fingerprint, logs and receipt will be supplied for that review. No release, production application or remote PR is implied.
+
+
+Self-check follow-up: ready coverage must reference the exact same official model ID, preventing an unrelated valid quote from satisfying a row; no implicit alias crosswalk is invented. Kimi and MiniMax independently observed optional tool fees are also included in the hashed original sourcebook and explicit exclusions, rather than only in research prose. Current selected-price counts are unchanged.
+
+
+Final source audit downgraded ERNIE5.1 to incomplete: original CNY/1000-token rates and literal32k/128k source bands are retained, but a Baidu-specific exact numeric threshold definition was not established. Alibaba and Ark thresholds retain separate first-party numeric evidence in the domestic-b research appendix; supplier conventions are not borrowed. The proposal now contains43 models+9task variants+1tool; original reference statuses48ready/52missing-source/9incomplete/27unsupported. Output persistence has a public S-boundary regression proving artifact bytes and diff baseline survive a rejected overwrite.

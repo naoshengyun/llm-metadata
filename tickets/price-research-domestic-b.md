@@ -12,7 +12,7 @@ Sources and material interpretation:
 - Video unit is **million billable video tokens**, not a second or clip. Use official returned `usage.completion_tokens`; this includes billable minimum handling when video is supplied. Width/height/frame-rate/duration formula and per-second examples are estimates, not primary rates. Seedance2.5 4K is officially priced but not in fixed rc50 profile. Exact Seedance2.0/fast/mini IDs are in both live official model list and native schema. Short `seedance-*` coverage names lack this proof.
 - [Legacy Hunyuan prices](https://cloud.tencent.com/document/product/1729/97731), updated2026-06-26, still publish a13b0.5/2. [Official retirement](https://cloud.tencent.com/document/product/1729/131925), updated2026-05-20, specifies five requested IDs shut2026-06-22, original platform shut2026-09-30. [Current TokenHub prices](https://cloud.tencent.com/document/product/1823/130055), updated2026-11-16, have none of these coverage IDs. The a13b record is **legacy published pricing only** and must not imply live availability.
 
-Thresholds use exact decimal32000/128000/256000 (Qwen documentation explicitly defines K=1000). ModelCost tiers mean `input > size`; thus a source `(32k,128k]` transition is size32000, not32768. No mixed currency or FX reconstruction occurs. Native schema is unchanged. Every failed or unprovable price remains outside `records`.
+Verified Qwen/Ark thresholds use decimal32000/128000/256000; Baidu ERNIE5.1 numeric threshold is unresolved and has been withdrawn from ready candidates. ModelCost tiers mean `input > size`; thus a source `(32k,128k]` transition is size32000, not32768. No mixed currency or FX reconstruction occurs. Native schema is unchanged. Every failed or unprovable price remains outside `records`.
 
 ```json
 {
@@ -479,57 +479,6 @@ Thresholds use exact decimal32000/128000/256000 (Qwen documentation explicitly d
           "status": "charged",
           "note": "5-minute explicit cache creation at 125% standard input.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
-        }
-      ]
-    },
-    {
-      "id": "qianfan--ernie-5.1--mainland-online-postpaid-original",
-      "provider": "qianfan",
-      "model": "ernie-5.1",
-      "priceList": "mainland-online-postpaid-original",
-      "origin": "domestic",
-      "currency": "CNY",
-      "source": {
-        "url": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
-        "checkedAt": "2026-11-16"
-      },
-      "required": [
-        "input",
-        "output",
-        "tiers.0.input",
-        "tiers.0.output"
-      ],
-      "cost": {
-        "input": 4,
-        "output": 18,
-        "tiers": [
-          {
-            "tier": {
-              "size": 32000
-            },
-            "input": 6,
-            "output": 22
-          }
-        ]
-      },
-      "description": "Exact model parameter verified by official model list. Original source quotes CNY/1,000 tokens: 0.004/0.018 for input<=32k and 0.006/0.022 for 32k<input<=128k. Converted by denomination only, not FX. No cache row or batch price published for this model. Optional search is separately recorded.",
-      "feeDeclarations": [
-        {
-          "field": "input",
-          "status": "charged",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
-        },
-        {
-          "field": "output",
-          "status": "charged",
-          "note": "Published output price includes reasoning where supported.",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
-        },
-        {
-          "field": "separate_cache_storage",
-          "status": "not-listed",
-          "note": "No separate model cache rate published in this table.",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
         }
       ]
     },
@@ -1465,11 +1414,9 @@ Thresholds use exact decimal32000/128000/256000 (Qwen documentation explicitly d
     {
       "platform": "qianfan",
       "model": "ernie-5.1",
-      "status": "ready",
-      "reason": "Exact model ID and complete published online token fees; optional search fee retained separately.",
-      "quoteIds": [
-        "qianfan--ernie-5.1--mainland-online-postpaid-original"
-      ],
+      "status": "incomplete",
+      "reason": "Official raw rates and model identity verified, but source tier labels32k/128k have no supplier-specific numeric expansion verified. Cannot choose32000 vs32768 boundary; raw pricing retained without an executable threshold.",
+      "quoteIds": [],
       "sourceUrls": [
         "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
         "https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j"
@@ -2281,6 +2228,31 @@ Thresholds use exact decimal32000/128000/256000 (Qwen documentation explicitly d
           0.3
         ]
       }
+    },
+    {
+      "officialModel": "ernie-5.1",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
+        "checkedAt": "2026-11-16"
+      },
+      "reason": "Incomplete: Baidu price-page32k/128k tier labels lack verified numeric-token expansion. Prior executable size32000 candidate withdrawn during self-review; do not adopt it.",
+      "rawFees": {
+        "unit": "CNY/thousand_tokens",
+        "tiers": [
+          {
+            "officialCondition": "input<=32k",
+            "input": 0.004,
+            "output": 0.018
+          },
+          {
+            "officialCondition": "32k<input<=128k",
+            "input": 0.006,
+            "output": 0.022
+          }
+        ],
+        "thresholdTokens": null
+      }
     }
   ],
   "optionalToolFees": [
@@ -2311,4 +2283,12 @@ Thresholds use exact decimal32000/128000/256000 (Qwen documentation explicitly d
 }
 ```
 
-Validation: all 41 assigned coverage IDs occur exactly once; no missing or extra IDs. All 23 candidate records pass the existing compiled `generateCny` structural diagnostics, and all 9 task records pass `compileTask` against the fixed rc50 schema. This structural check does not remove the documented scope, availability, alias, or optional-tool limitations.
+Validation: all 41 assigned coverage IDs occur exactly once; no missing or extra IDs. All 22 remaining candidate records pass the existing compiled `generateCny` structural diagnostics, and all 9 task records pass `compileTask` against the fixed rc50 schema. This structural check does not remove the documented scope, availability, alias, or optional-tool limitations.
+
+
+Self-review evidence retained (2026-11-16):
+
+- **Qwen exact numeric tier units and inclusivity:** [official pricing](https://help.aliyun.com/zh/model-studio/model-pricing), section“阶梯计费规则”, explicitly defines K as1,000 and M as1,000,000 (retrieved lines34–40). Beijing Plus rows318–327 state0<Token≤256K followed by256K<Token≤1M; Flash rows632–646 state0<Token≤32K,32K<Token≤256K,256K<Token≤1M. Thus transitions are strictly above32000 and256000, matching ModelCost `>tier.size`; no minus-one adjustment applies.
+- **Ark supplier-specific decimal expansion:** [official Ark image understanding](https://docs.volcengine.com/docs/ark/image-understanding?lang=zh),“图片数量说明” (retrieved lines4860–4864), expands a32K-token context into arithmetic32000÷1312 and32000÷256. This supplies direct numeric evidence independent of Qwen. [Ark pricing](https://docs.volcengine.com/docs/ark/model-pricing?lang=zh), retrieved lines62 and68–79, defines the tier column in K tokens and lists[0,32],(32,128],(128,256] for Pro/Code. Together these support sizes32000/128000 with upper endpoints included in the preceding tier.
+- **Qwen cache and promotion scope:** [cache billing](https://help.aliyun.com/zh/model-studio/context-cache), retrieved lines469–483, says explicit cache only changes input-token billing and enumerates creation125%, hits10%, remaining input original; lines39–45 and527 limit this to5min ephemeral, minimum1024tokens, implicit/explicit mutually exclusive. There is no separately published storage/token-hour tariff and no explicit sentence“storage is free”; do not invent a sourced zero-per-hour rate. [Original pricing](https://help.aliyun.com/zh/model-studio/model-pricing), line31, distinguishes original list prices from console promotions; Plus rows explicitly label原价 with限时8折. Candidates are catalog original prices, not current net payable rates, nor proof a user can elect to reject an automatically applied promotion.
+- **ERNIE5.1 downgrade:** [Baidu pricing](https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya), retrieved lines1366–1369, uses32k/128k but does not define their numeric expansion in the reviewed page. Narrow searches for Baidu Qianfan1k/1000,32k/32000,32k/32768 and billing k/1024 returned no usable primary definition; community articles were rejected. Exact denomination0.004/0.018 and0.006/0.022 CNY/thousand tokens remains verified, but the executable tier boundary is unverified. The earlier size32000 candidate is withdrawn from this note’s ready records and its raw conditions are retained in excludedQuotes. Aggregate integration must mark it incomplete until primary numeric boundary evidence is available.

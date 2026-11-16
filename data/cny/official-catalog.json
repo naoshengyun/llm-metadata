@@ -2700,57 +2700,6 @@
       ]
     },
     {
-      "id": "qianfan--ernie-5.1--mainland-online-postpaid-original",
-      "provider": "qianfan",
-      "model": "ernie-5.1",
-      "priceList": "mainland-online-postpaid-original",
-      "origin": "domestic",
-      "currency": "CNY",
-      "source": {
-        "url": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
-        "checkedAt": "2026-11-16"
-      },
-      "required": [
-        "input",
-        "output",
-        "tiers.0.input",
-        "tiers.0.output"
-      ],
-      "cost": {
-        "input": 4,
-        "output": 18,
-        "tiers": [
-          {
-            "tier": {
-              "size": 32000
-            },
-            "input": 6,
-            "output": 22
-          }
-        ]
-      },
-      "description": "Exact model parameter verified by official model list. Original source quotes CNY/1,000 tokens: 0.004/0.018 for input<=32k and 0.006/0.022 for 32k<input<=128k. Converted by denomination only, not FX. No cache row or batch price published for this model. Optional search is separately recorded.",
-      "feeDeclarations": [
-        {
-          "field": "input",
-          "status": "charged",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
-        },
-        {
-          "field": "output",
-          "status": "charged",
-          "note": "Published output price includes reasoning where supported.",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
-        },
-        {
-          "field": "separate_cache_storage",
-          "status": "not-listed",
-          "note": "No separate model cache rate published in this table.",
-          "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya"
-        }
-      ]
-    },
-    {
       "id": "volcengine--doubao-seed-2-1-pro-260628--cn-beijing-online-regular-implicit-original",
       "provider": "volcengine",
       "model": "doubao-seed-2-1-pro-260628",
@@ -4967,11 +4916,9 @@
     {
       "platform": "qianfan",
       "model": "ernie-5.1",
-      "status": "ready",
-      "reason": "Exact model ID and complete published online token fees; optional search fee retained separately.",
-      "quoteIds": [
-        "qianfan--ernie-5.1--mainland-online-postpaid-original"
-      ],
+      "status": "incomplete",
+      "reason": "Official raw rates and model identity verified, but source tier labels32k/128k have no supplier-specific numeric expansion verified. Cannot choose32000 vs32768 boundary; raw pricing retained without an executable threshold.",
+      "quoteIds": [],
       "sourceUrls": [
         "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
         "https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j"
@@ -9709,6 +9656,31 @@
         "checkedAt": "2026-11-16"
       },
       "reason": "Native price key exists, but the inspected fixed rc50 GLM Chat encoder/meter explicitly handles only search_std. Other engine collection paths have not been established; not represented as fully supported by this candidate."
+    },
+    {
+      "officialModel": "ernie-5.1",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
+        "checkedAt": "2026-11-16"
+      },
+      "reason": "Incomplete: Baidu price-page32k/128k tier labels lack verified numeric-token expansion. Prior executable size32000 candidate withdrawn during self-review; do not adopt it.",
+      "rawFees": {
+        "unit": "CNY/thousand_tokens",
+        "tiers": [
+          {
+            "officialCondition": "input<=32k",
+            "input": 0.004,
+            "output": 0.018
+          },
+          {
+            "officialCondition": "32k<input<=128k",
+            "input": 0.006,
+            "output": 0.022
+          }
+        ],
+        "thresholdTokens": null
+      }
     }
   ],
   "researchFiles": [
@@ -9740,6 +9712,31 @@
         "searchEnhancement": 0.004
       },
       "note": "Optional native meter mapping not proven here; returned search_tokens are ordinary input tokens. Keep separate from normal no-search token price list."
+    },
+    {
+      "provider": "moonshotai-cn",
+      "source": "https://platform.kimi.com/docs/pricing/websearch",
+      "checkedAt": "2026-11-16",
+      "currency": "CNY",
+      "unit": "per_call",
+      "fees": {
+        "Basic": 0.01,
+        "Pro": 0.015,
+        "Fetch": 0.01,
+        "Formula web-search execution": 0.03
+      },
+      "note": "Basic/Pro/Fetch successful-count conditions require HTTP200 and nonempty result/content; Formula is per execution. Independent of model token charges. Native meter/key equivalence was not established; retain raw fees as not-selected, never infer web_search global-key coverage."
+    },
+    {
+      "provider": "minimax-cn",
+      "source": "https://platform.minimax.cn/docs/pricing/overview",
+      "checkedAt": "2026-11-16",
+      "currency": "CNY",
+      "unit": "per_call",
+      "fees": {
+        "web_search": 0.03
+      },
+      "note": "Separate server search call price; model input/output/cache fees remain additive. Native provider-specific meter equivalence not established for this candidate; raw tariff is retained without activating a global tool key."
     }
   ]
 }
