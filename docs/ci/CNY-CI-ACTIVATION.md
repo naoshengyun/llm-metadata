@@ -53,7 +53,7 @@ Mandatory sequence for activation or policy reconfiguration:
 }
 ```
 
-4. Re-read policy/pinning, token permissions, refs/trees/default/main lock, workflows and runs. Only then enable the independently reviewed CI ID (`420020133` for this rollout), verify it is the only approved active workflow, and dispatch `naoshengyun` with exact reviewed integrated `expected_sha`. Stop rather than substitute a new latest SHA or a historical branch.
+4. Re-read policy/pinning, token permissions, refs/trees/default/main lock, workflows and runs. Only then enable the independently reviewed CI ID (`420020133` for this rollout). **After enablement and before dispatch**, query all workflow states and runs again: require only the approved ID active, all others disabled, no active/queued or unexpected run, and unchanged reviewed refs/default/main protection/policy/token. On any mismatch restore OFF and cancel runs separately. Only after this explicit post-enable gate passes dispatch `naoshengyun` with exact reviewed integrated `expected_sha`. Stop rather than substitute a new latest SHA or a historical branch.
 5. Wait for actual completed success and inspect jobs/steps/token scopes. A dispatch receipt or skipped job is not test success. Download the artifact, compare GitHub archive digest and file checksums, validate complete semantic package and source/workflow/run identity, and recheck refs/no releases/deployments/unexpected runs.
 6. Any API failure, mismatch or incomplete evidence: restore OFF, separately cancel queued/active runs, preserve receipts and obtain renewed assessment. Disabling does not cancel runs. Do not continue on partially verified settings.
 
