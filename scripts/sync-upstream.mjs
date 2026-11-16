@@ -12,7 +12,7 @@ function git(repo, ...args) {
 const report = { status: 'failed', published: false, applied: false, hostedActions: 'not-enabled' };
 try {
   const { values } = parseArgs({ options: {
-    protect: { type: 'string', multiple: true, default: ['data/naoshengyun'] },
+    protect: { type: 'string', multiple: true, default: ['data/naoshengyun', 'data/cny', 'src/cny'] },
     repo: { type: 'string' }, upstream: { type: 'string' }, business: { type: 'string' }, output: { type: 'string' },
   } });
   for (const key of ['repo', 'upstream', 'business', 'output']) {

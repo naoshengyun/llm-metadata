@@ -58,3 +58,13 @@ test('G: pinned upstream deletions and invalid native plugin names cannot publis
  const r=run([quote({}, {kind:'task',model:'doubao-seedance-1-5-pro-251215',required:[],task:{plugin:'doubao',model:'doubao-seedance-1-5-pro-251215',tiers:[{name:'base',charges:[{usageKey:'tokens',amount:2,unit:'per_million_tokens',currency:'CNY'}]}]}})]);
  assert.deepEqual(r.plugins,{});assert.ok(r.exclusions.some(x=>x.status==='unsupported-shape'));
 });
+test('G: conflicting tool prices within a single quote are rejected, never last-win',()=>{
+ const r=run([quote({}, {kind:'tool',required:[],tools:[{key:'web_search',amount:1,unit:'per_thousand_calls',currency:'CNY'},{key:'web_search',amount:99,unit:'per_thousand_calls',currency:'CNY'}]})]);
+ assert.deepEqual(r.tools,{});assert.equal(r.diagnostics[0].status,'incomplete');
+});
+test('G: malformed nested JSON produces item diagnostics without losing other valid records',()=>{
+ for(const malformed of [{kind:'task',task:{plugin:'doubao',model:'x'}},{required:{}},{cost:{input:1,output:2,tiers:{}}},{tools:[null]}]) {
+  const r=run([quote({input:20,output:100},{id:'bad',...malformed}),quote({input:13,output:68})]);
+  assert.equal(r.catalog[0].diagnostic.status,'incomplete');assert.equal(r.models.same.billing_expr,'tier("standard", p * 13 + c * 68)');
+ }
+});

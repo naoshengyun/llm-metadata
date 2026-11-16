@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { generateCny, type CnyInput } from './generate.js';
 import { buildArtifact, semanticDiff, type FixedArtifact } from './artifact.js';
@@ -13,10 +15,23 @@ if (!inputPath || !outputPath)
 const output = resolve(outputPath);
 if (output === resolve('dist') || output.startsWith(resolve('dist') + '/'))
   throw new Error('CNY artifacts must be outside upstream dist');
+const sourceDirectory = execFileSync(
+  'git',
+  ['-C', dirname(fileURLToPath(import.meta.url)), 'rev-parse', '--show-toplevel'],
+  { encoding: 'utf8' },
+).trim();
+const dirtySource = execFileSync(
+  'git',
+  ['-C', sourceDirectory, 'status', '--porcelain', '--untracked-files=all', '--', 'src'],
+  { encoding: 'utf8' },
+).trim();
+if (dirtySource) throw new Error('Commit the source snapshot before building a fixed CNY artifact');
 const input = JSON.parse(readFileSync(inputPath, 'utf8')) as CnyInput;
 const result = generateCny(input);
 const artifact = buildArtifact({
-  sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+  sourceSha: execFileSync('git', ['-C', sourceDirectory, 'rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  }).trim(),
   data: input.upstream,
   quotes: input.records,
   selection: input.selection,
@@ -28,6 +43,12 @@ const artifact = buildArtifact({
 mkdirSync(output, { recursive: true });
 for (const [name, value] of Object.entries({
   artifact,
+  status: {
+    artifactId: artifact.id,
+    build: 'built',
+    publication: 'not-published',
+    application: 'not-applied',
+  },
   catalog: result.catalog,
   diagnostics: result.diagnostics,
   ratio_config: {
@@ -53,5 +74,11 @@ for (const [name, value] of Object.entries({
 }))
   writeFileSync(join(output, `${name}.json`), JSON.stringify(value, null, 2) + '\n');
 console.log(
-  JSON.stringify({ artifactId: artifact.id, complete: artifact.manifest.complete, output }),
+  JSON.stringify({
+    artifactId: artifact.id,
+    complete: artifact.manifest.complete,
+    publication: 'not-published',
+    application: 'not-applied',
+    output,
+  }),
 );

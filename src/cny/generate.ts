@@ -110,7 +110,8 @@ export function generateCny(input: CnyInput) {
     const original = structuredClone(record);
     const diagnostic: Diagnostic = { id: record.id, status: 'ready', fields: [] };
     if (
-      !record.source?.url?.startsWith('https://') ||
+      typeof record.source?.url !== 'string' ||
+      !record.source.url.startsWith('https://') ||
       !/^\d{4}-\d{2}-\d{2}$/.test(record.source?.checkedAt ?? '')
     ) {
       diagnostic.status = 'missing-source';
@@ -122,12 +123,29 @@ export function generateCny(input: CnyInput) {
       ];
     const fields = inspectCost(record.cost);
     if (record.upstreamKey && !upstream) fields.push('upstream model deleted/missing');
+    if (
+      record.task &&
+      (!Array.isArray(record.task.tiers) ||
+        record.task.tiers.some(
+          (t) =>
+            !t ||
+            !Array.isArray(t.charges) ||
+            t.charges.some((c) => !c || typeof c.usageKey !== 'string'),
+        ))
+    )
+      fields.push('task.tiers.charges');
+    if (
+      record.tools &&
+      (!Array.isArray(record.tools) || record.tools.some((t) => !t || typeof t.key !== 'string'))
+    )
+      fields.push('tools');
+    if (record.cost?.tiers && !Array.isArray(record.cost.tiers)) fields.push('cost.tiers');
     if (record.kind && !['model', 'task', 'tool'].includes(record.kind)) fields.push('kind');
     if (record.kind === 'task' && !record.task) fields.push('task');
     if (record.kind === 'tool' && !record.tools?.length) fields.push('tools');
     const thresholds = new Set<number>();
-    for (const tier of record.cost?.tiers ?? []) {
-      const threshold = tier.tier?.size;
+    for (const tier of Array.isArray(record.cost?.tiers) ? record.cost.tiers : []) {
+      const threshold = tier?.tier?.size;
       if (
         typeof threshold !== 'number' ||
         !Number.isSafeInteger(threshold) ||
@@ -153,7 +171,11 @@ export function generateCny(input: CnyInput) {
       ((!record.kind || record.kind === 'model') && !record.required.length)
     )
       fields.push('required');
-    for (const path of record.required ?? []) {
+    for (const path of Array.isArray(record.required) ? record.required : []) {
+      if (typeof path !== 'string') {
+        fields.push('required path');
+        continue;
+      }
       const v = path
         .split('.')
         .reduce<unknown>(
@@ -254,6 +276,14 @@ export function generateCny(input: CnyInput) {
       if (result.status !== 'ready') {
         entry.diagnostic.status = result.status;
         entry.diagnostic.fields.push(result.field + ': ' + result.reason);
+        continue;
+      }
+      if (
+        Object.hasOwn(candidate.tools, result.key) &&
+        candidate.tools[result.key] !== result.price
+      ) {
+        entry.diagnostic.status = 'incomplete';
+        entry.diagnostic.fields.push(`conflicting tool price: ${result.key}`);
         continue;
       }
       candidate.tools[result.key] = result.price;
