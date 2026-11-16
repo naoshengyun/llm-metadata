@@ -1,0 +1,98 @@
+{
+  "status": "candidate-only; requires separate price-list/target/application approval",
+  "rationale": "Exact official IDs only; synchronous Standard/global original USD or domestic original CNY/Beijing implicit-cache list where stated. Direct Images raster only. Explicit cache, Batch, duplicate protocol lists and retired Hunyuan list remain in raw catalog but are not default candidates. No real account/channel/alias/group mapping is written.",
+  "selection": {
+    "claude-fable-5-2": "us-anthropic-claude-fable-5-2-standard",
+    "claude-haiku-5-5": "us-anthropic-claude-haiku-5-5-standard",
+    "claude-sonnet-5-5": "us-anthropic-claude-sonnet-5-5-standard",
+    "claude-opus-5-5": "us-anthropic-claude-opus-5-5-standard",
+    "claude-fable-5-1": "us-anthropic-claude-fable-5-1-standard",
+    "claude-fable-5": "us-anthropic-claude-fable-5-standard",
+    "claude-opus-5": "us-anthropic-claude-opus-5-standard",
+    "claude-sonnet-5": "us-anthropic-claude-sonnet-5-standard",
+    "claude-opus-4-8": "us-anthropic-claude-opus-4-8-standard",
+    "claude-opus-4-7": "us-anthropic-claude-opus-4-7-standard",
+    "claude-opus-4-6": "us-anthropic-claude-opus-4-6-standard",
+    "claude-sonnet-4-6": "us-anthropic-claude-sonnet-4-6-standard",
+    "claude-sonnet-4-5-20250929": "us-anthropic-claude-sonnet-4-5-20250929-standard",
+    "claude-sonnet-4-5": "us-anthropic-claude-sonnet-4-5-standard",
+    "claude-opus-4-5-20251101": "us-anthropic-claude-opus-4-5-20251101-standard",
+    "claude-haiku-4-5": "us-anthropic-claude-haiku-4-5-standard",
+    "claude-haiku-4-5-20251001": "us-anthropic-claude-haiku-4-5-20251001-standard",
+    "gpt-6.1-terra": "us-openai-gpt-6.1-terra-standard",
+    "gpt-6.1-sol": "us-openai-gpt-6.1-sol-standard",
+    "gpt-6-astra": "us-openai-gpt-6-astra-standard",
+    "gpt-6-sol": "us-openai-gpt-6-sol-standard",
+    "gpt-6-luna": "us-openai-gpt-6-luna-standard",
+    "gpt-5.6-sol": "us-openai-gpt-5.6-sol-standard",
+    "gpt-5.6-terra": "us-openai-gpt-5.6-terra-standard",
+    "gpt-5.6-luna": "us-openai-gpt-5.6-luna-standard",
+    "gpt-image-2.5-sunburst": "us-openai-gpt-image-2.5-sunburst-direct-images-standard",
+    "gpt-image-2.5-flare": "us-openai-gpt-image-2.5-flare-direct-images-standard",
+    "gpt-image-2": "us-openai-gpt-image-2-direct-images-standard",
+    "kimi-k3.1-pro": "cn-moonshot-kimi-k3.1-pro-standard",
+    "kimi-k3.1-pro-highspeed": "cn-moonshot-kimi-k3.1-pro-highspeed-standard",
+    "kimi-k3": "cn-moonshot-kimi-k3-standard",
+    "kimi-k2.7-code": "cn-moonshot-kimi-k2.7-code-standard",
+    "kimi-k2.7-code-highspeed": "cn-moonshot-kimi-k2.7-code-highspeed-standard",
+    "glm-5.3": "cn-zhipu-glm-5.3-standard",
+    "glm-5.3-flash": "cn-zhipu-glm-5.3-flash-standard",
+    "glm-5.2": "cn-zhipu-glm-5.2-standard",
+    "qwen3.7-max": "dashscope--qwen3.7-max--cn-beijing-online-original-implicit",
+    "qwen3.7-plus": "dashscope--qwen3.7-plus--cn-beijing-online-original-implicit",
+    "qwen3.7-flash": "dashscope--qwen3.7-flash--cn-beijing-online-original-implicit",
+    "ernie-5.1": "qianfan--ernie-5.1--mainland-online-postpaid-original",
+    "doubao-seed-2-1-pro-260628": "volcengine--doubao-seed-2-1-pro-260628--cn-beijing-online-regular-implicit-original",
+    "doubao-seed-2-1-turbo-260628": "volcengine--doubao-seed-2-1-turbo-260628--cn-beijing-online-regular-implicit-original",
+    "doubao-seed-2-0-pro-260215": "volcengine--doubao-seed-2-0-pro-260215--cn-beijing-online-regular-implicit-original",
+    "doubao-seed-2-0-code-preview-260215": "volcengine--doubao-seed-2-0-code-preview-260215--cn-beijing-online-regular-implicit-original",
+    "doubao-seedance-1-0-pro-250528": "volcengine--doubao-seedance-1-0-pro-250528--cn-beijing-task-online-original",
+    "doubao-seedance-2-0-260128": "volcengine--doubao-seedance-2-0-260128--cn-beijing-task-online-original",
+    "doubao-seedance-2-0-fast-260128": "volcengine--doubao-seedance-2-0-fast-260128--cn-beijing-task-online-original",
+    "doubao-seedance-2-0-mini-260615": "volcengine--doubao-seedance-2-0-mini-260615--cn-beijing-task-online-original",
+    "doubao-seedream-5-0-flash-260915": "volcengine--doubao-seedream-5-0-flash-260915--cn-beijing-task-online-original",
+    "doubao-seedream-5-0-lite-260128": "volcengine--doubao-seedream-5-0-lite-260128--cn-beijing-task-online-original",
+    "doubao-seedream-5-0-260128": "volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original",
+    "doubao-seedream-4-5-251128": "volcengine--doubao-seedream-4-5-251128--cn-beijing-task-online-original",
+    "doubao-seedream-4-0-250828": "volcengine--doubao-seedream-4-0-250828--cn-beijing-task-online-original",
+    "search_std": "cn-zhipu-search-std-standard"
+  },
+  "notProposed": [
+    {
+      "id": "cn-moonshot-kimi-k3.1-pro-batch",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "cn-moonshot-kimi-k3-batch",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "cn-moonshot-kimi-k2.7-code-batch",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "dashscope--qwen3.7-max--cn-beijing-online-original-explicit",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-implicit",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-explicit",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "dashscope--qwen3.7-plus--cn-beijing-online-original-explicit",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "dashscope--qwen3.7-flash--cn-beijing-online-original-explicit",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    },
+    {
+      "id": "hunyuan--hunyuan-a13b--mainland-legacy-hunyuan-online-postpaid-published",
+      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
+    }
+  ]
+}

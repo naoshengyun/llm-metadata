@@ -1,5 +1,6 @@
 /** I seam: disposable official rc50, localhost only, no provider requests. Run after npm run test:cny. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { randomBytes, publicEncrypt, constants } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -336,6 +337,58 @@ try {
   assert.equal(conflict.success, false);
   assert.equal(conflict.items[0].status, 'conflict');
   console.log(JSON.stringify({ test: 'I-expected-version-conflict', receipt: conflict }));
+  // Optional fixed real-price candidate. Still runs only in this disposable origin.
+  if (process.argv[2]) {
+    const official = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+    const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    assert.equal(
+      official.sourceSha,
+      sourceSha,
+      'candidate must bind the checked-out source commit',
+    );
+    const selection = {
+      models: Object.keys(official.models),
+      plugins: Object.fromEntries(
+        Object.entries(official.plugins).map(([model, variants]) => [model, Object.keys(variants)]),
+      ),
+      tools: Object.keys(official.tools),
+    };
+    const before = await request('/api/option/');
+    const unchangedGroup = before.find((o) => o.key === 'GroupRatio').value;
+    const unchangedTools = JSON.parse(
+      before.find((o) => o.key === 'tool_price_setting.prices').value,
+    );
+    const proposal = await previewArtifact(adapter, official, selection);
+    const receipt = await applyArtifact(adapter, official, proposal, {
+      confirmed: true,
+      actor: 'isolated-official-candidate-test',
+      target: proposal.target,
+      artifactId: official.id,
+      planId: proposal.id,
+    });
+    const expectedItems =
+      selection.models.length +
+      selection.tools.length +
+      Object.values(selection.plugins).reduce((n, keys) => n + keys.length, 0);
+    assert.equal(receipt.items.length, expectedItems);
+    assert.equal(receipt.success, true, JSON.stringify(receipt));
+    const after = await request('/api/option/');
+    assert.equal(after.find((o) => o.key === 'GroupRatio').value, unchangedGroup);
+    const actualTools = JSON.parse(after.find((o) => o.key === 'tool_price_setting.prices').value);
+    for (const [key, value] of Object.entries(unchangedTools))
+      if (!selection.tools.includes(key)) assert.equal(actualTools[key], value);
+    console.log(
+      JSON.stringify({
+        test: 'I-maintained-official-candidate',
+        sourceSha,
+        artifactId: official.id,
+        receipt,
+        suppliersCalled: 0,
+        groupAndUnselectedToolsPreserved: true,
+      }),
+    );
+  }
+
   console.log(
     JSON.stringify({
       test: 'I',
