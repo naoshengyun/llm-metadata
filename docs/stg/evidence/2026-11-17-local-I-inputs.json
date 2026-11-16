@@ -1,0 +1,270 @@
+{
+  "capturedAt": "2026-11-16T16:08:07.098Z",
+  "executionSourceSha": "fa00f2263dec29308edfad9e4fa3899f3f56ba66",
+  "executionHost": "MacBook Pro (3); localhost is not the remote Mac mini",
+  "target": {
+    "name": "cny-input-b6c04a124f63",
+    "id": "d78bb43d13ec8b974b8d9c827bc4a0f2fa9d0de1ce64b357c5e98f09ae1de16f",
+    "origin": "http://127.0.0.1:51678",
+    "network": "cny-input-net-b6c04a124f63",
+    "networkId": "9d30df7a3b025ba20ea26aaa64a3f82ed0daa02935c69d6b5c901297069f7079",
+    "internalNetwork": false,
+    "onlyNetwork": [
+      "cny-input-net-b6c04a124f63"
+    ],
+    "portBindings": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": ""
+        }
+      ]
+    },
+    "mounts": [],
+    "restartPolicy": "no",
+    "replicas": 1,
+    "storage": "tmpfs SQLite /data/new-api.db; lost on stop/removal",
+    "isBusinessStg": false,
+    "tmpfs": {
+      "/data": "rw"
+    },
+    "actualPorts": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "51678"
+        }
+      ]
+    }
+  },
+  "image": {
+    "reference": "calciumion/new-api@sha256:096feb95eed27a8e4f34d4b4908d7d216d019b79349e70ca9b74ba947986fdd9",
+    "imageId": "sha256:096feb95eed27a8e4f34d4b4908d7d216d019b79349e70ca9b74ba947986fdd9",
+    "repoDigests": [
+      "calciumion/new-api@sha256:096feb95eed27a8e4f34d4b4908d7d216d019b79349e70ca9b74ba947986fdd9"
+    ],
+    "revision": "f2aa91232ed3e5878a614762ace6736a2b74257f",
+    "version": "v1.0.0-rc.50",
+    "statusVersion": "v1.0.0-rc.50"
+  },
+  "identity": {
+    "username": "cnyinput",
+    "id": 1,
+    "role": 100,
+    "credentialInRepository": false
+  },
+  "artifact": {
+    "id": "18098469191dc513e23644a1afbe59219ca3cfae908631f3b0794af25fc3b138",
+    "sourceSha": "d5a84ca10d8599343370c1541828439a56b8dd1b",
+    "fileSha256": "f2f6540a24b7730b1d2122c5cba1c5904d5797a715dcb97c2d75d6ee624ab914",
+    "complete": false,
+    "dataHash": "4e0f8d173d474ab557ea2478b83cab79c440ca7ce7319943d787ecace51df0fe",
+    "quotesHash": "3ca6ce10b2cece6dd905769d8358ab8333b9f8a384e83ff87a8a63010a9c981b",
+    "policyHash": "9f0b4e409d6d48fd4c6955f2693010df0edf70d022143edb2509e96c8a577ec7",
+    "partitionHashes": {
+      "models": "99f0197e1176dc1c691c800a21a81a140016d817a8977c3ba7797fb9144c6252",
+      "plugins": "4c43ac34e64da942108048777e7329874328c5010e5a4bf9fb57ea650893d13a",
+      "tools": "eb506db37641c6f6419c7c17cf6d14fb0d7b0007d4b905b2df554fe61454486d"
+    }
+  },
+  "selectionProposal": {
+    "models": [
+      "kimi-k3.1-pro",
+      "claude-sonnet-4-5"
+    ],
+    "plugins": {
+      "doubao-seedance-2-0-fast-260128": [
+        "doubao"
+      ]
+    },
+    "tools": [
+      "search_std"
+    ]
+  },
+  "baseline": {
+    "options": [
+      {
+        "key": "GroupRatio",
+        "value": "{\"default\":1,\"svip\":1,\"vip\":1}"
+      },
+      {
+        "key": "QuotaPerUnit",
+        "value": "500000"
+      },
+      {
+        "key": "USDExchangeRate",
+        "value": "7.3"
+      },
+      {
+        "key": "tool_price_setting.prices",
+        "value": "{}"
+      }
+    ],
+    "selectedPricing": [],
+    "emptyVersion": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "allPricingHash": "b89dbb0d98f4226b04f61cdd9d0bb6f0f8ca9fb749c02fb85acbe30f1c2cefb6",
+    "allOptionsHash": "83f452792752b553d3b44380b4474873ab8e71158c8d795aebd898a4f73a7cbb"
+  },
+  "explicitModelBaseline": [
+    {
+      "model": "claude-sonnet-4-5",
+      "version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "configured": {}
+    },
+    {
+      "model": "doubao-seedance-2-0-fast-260128",
+      "version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "configured": {}
+    },
+    {
+      "model": "kimi-k3.1-pro",
+      "version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "configured": {}
+    }
+  ],
+  "nativeReadOnlyPreview": [
+    {
+      "model": "kimi-k3.1-pro",
+      "pricing": {
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "tier(\"standard\", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)"
+      },
+      "effective": {
+        "billing_setting.billing_expr": "tier(\"standard\", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)",
+        "billing_setting.billing_mode": "tiered_expr"
+      }
+    },
+    {
+      "model": "claude-sonnet-4-5",
+      "pricing": {
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "tier(\"standard\", p * 21 + cr * 2.1 + cc * 26.25 + cc1h * 42 + c * 105)"
+      },
+      "effective": {
+        "billing_setting.billing_expr": "tier(\"standard\", p * 21 + cr * 2.1 + cc * 26.25 + cc1h * 42 + c * 105)",
+        "billing_setting.billing_mode": "tiered_expr"
+      }
+    },
+    {
+      "model": "doubao-seedance-2-0-fast-260128",
+      "pricing": {
+        "billing_setting.plugin_billing_expr": {
+          "doubao": "u(\"video_input\") == \"video\" ? tier(\"480p-720p-video\", u(\"tokens\") * 22 / 1000000) : tier(\"480p-720p-none-default\", u(\"tokens\") * 37 / 1000000)"
+        }
+      },
+      "effective": {
+        "CacheRatio": 1,
+        "CompletionRatio": 1,
+        "CreateCacheRatio": 1.25,
+        "ImageRatio": 1,
+        "billing_setting.plugin_billing_expr": {
+          "doubao": "u(\"video_input\") == \"video\" ? tier(\"480p-720p-video\", u(\"tokens\") * 22 / 1000000) : tier(\"480p-720p-none-default\", u(\"tokens\") * 37 / 1000000)"
+        }
+      }
+    }
+  ],
+  "pluginProfile": {
+    "models": [
+      "doubao-seedance-2-0-fast-260128",
+      "doubao-seedance-2-0-mini-260615"
+    ],
+    "schema": {
+      "resolution": {
+        "enum": [
+          "480p",
+          "720p"
+        ],
+        "description": {
+          "en": "Output video resolution",
+          "zh": "输出视频分辨率"
+        },
+        "enumLabels": {
+          "480p": {
+            "en": "480p",
+            "zh": "480p"
+          },
+          "720p": {
+            "en": "720p",
+            "zh": "720p"
+          }
+        }
+      },
+      "tokens": {
+        "type": "number",
+        "unit": "token",
+        "description": {
+          "en": "Billing token unit price",
+          "zh": "计费 Token 单价"
+        }
+      },
+      "video_input": {
+        "enum": [
+          "none",
+          "video"
+        ],
+        "description": {
+          "en": "Reference video input",
+          "zh": "参考视频输入"
+        },
+        "enumLabels": {
+          "none": {
+            "en": "No reference video",
+            "zh": "无参考视频"
+          },
+          "video": {
+            "en": "With reference video",
+            "zh": "有参考视频"
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "label": "480p · 5s",
+        "facts": {
+          "resolution": "480p",
+          "tokens": 48038,
+          "video_input": "none"
+        }
+      },
+      {
+        "label": "720p · 5s",
+        "facts": {
+          "resolution": "720p",
+          "tokens": 108000,
+          "video_input": "none"
+        }
+      },
+      {
+        "label": "720p · 5s (+4s 输入视频)",
+        "facts": {
+          "resolution": "720p",
+          "tokens": 194400,
+          "video_input": "video"
+        }
+      }
+    ]
+  },
+  "channelCount": 0,
+  "checks": {
+    "artifactValid": true,
+    "pluginModelBound": true,
+    "optionsUnchanged": true,
+    "pricingUnchanged": true,
+    "preview": {
+      "status": "rejected",
+      "message": "target unit settings require USDExchangeRate=1 and QuotaPerUnit=500000"
+    },
+    "providerCalls": 0,
+    "priceWrites": 0,
+    "threeNativePreviewsAccepted": true,
+    "allOptionsUnchanged": true
+  },
+  "limitations": [
+    "Not a business stg deployment or price application",
+    "Bridge network has outbound reachability; no egress firewall claim",
+    "No supplier calls, usage normalization, wallet debit, billing, sale or O/R acceptance",
+    "Full candidate remains incomplete; four proposed entries only",
+    "Snapshot expires on container stop/removal or any target/configuration drift"
+  ]
+}
