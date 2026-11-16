@@ -1,0 +1,26 @@
+# INACTIVE TEMPLATE. Do not move into workflows until hosting policy is approved.
+# Repo-wide Actions must remain disabled while immutable main mirrors untrusted workflows.
+name: naoshengyun-check
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [naoshengyun]
+permissions:
+  contents: read
+concurrency:
+  group: naoshengyun-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
+      - run: node --test tests/*.test.mjs
+# No commit, push, Pages deployment, release, production credentials or price application.

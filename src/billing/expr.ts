@@ -133,10 +133,24 @@ function buildLeafTerms(
     terms.push(`cc * ${formatCoefficient(cacheWrite)}`);
     for (const { option, variable } of LONG_CACHE_WRITES) {
       const multiplier = options[option];
-      if (multiplier !== undefined) {
+      if (
+        multiplier !== undefined &&
+        cellAt(segments, variable === 'cc1h' ? 'cache_write_1h' : 'cache_write_12h', start) ===
+          undefined
+      ) {
         terms.push(`${variable} * ${formatCoefficient(scale(input, multiplier))}`);
       }
     }
+  }
+
+  for (const [family, variable] of [
+    ['cache_write_1h', 'cc1h'],
+    ['cache_write_12h', 'cc12h'],
+    ['input_image', 'img'],
+    ['cache_read_image', 'img_cr'],
+  ] as const) {
+    const price = cellAt(segments, family, start);
+    if (price !== undefined) terms.push(`${variable} * ${formatCoefficient(price)}`);
   }
 
   const audioIn = cellAt(segments, 'input_audio', start);
@@ -144,6 +158,9 @@ function buildLeafTerms(
 
   const output = thinking ? thinkingOutputAt(segments, start) : cellAt(segments, 'output', start);
   if (output !== undefined) terms.push(`c * ${formatCoefficient(output)}`);
+
+  const imageOut = cellAt(segments, 'output_image', start);
+  if (imageOut !== undefined) terms.push(`img_o * ${formatCoefficient(imageOut)}`);
 
   const audioOut = cellAt(segments, 'output_audio', start);
   if (audioOut !== undefined) terms.push(`ao * ${formatCoefficient(audioOut)}`);

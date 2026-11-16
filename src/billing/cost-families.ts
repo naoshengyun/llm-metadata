@@ -7,6 +7,11 @@ export const COST_FAMILIES = [
   'reasoning',
   'cache_read',
   'cache_write',
+  'cache_write_1h',
+  'cache_write_12h',
+  'input_image',
+  'output_image',
+  'cache_read_image',
   'input_audio',
   'output_audio',
 ] as const;

@@ -16,7 +16,9 @@
     "web:dev": "npm --prefix web run dev",
     "web:build": "npm --prefix web run build",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "test:cny": "tsc --outDir .cache/cny-build && node --test tests/*.test.mjs",
+    "cny:generate": "tsc --outDir .cache/cny-build && node .cache/cny-build/cny/cli.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
