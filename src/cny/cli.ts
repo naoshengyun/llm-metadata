@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, realpathSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { dirname, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { generateCny, type CnyInput } from './generate.js';
 import { buildArtifact, semanticDiff, type FixedArtifact } from './artifact.js';
@@ -12,14 +12,21 @@ if (!inputPath || !outputPath)
   throw new Error(
     'Usage: npm run cny:generate -- input.json output-directory [previous-artifact.json]',
   );
-const output = resolve(outputPath);
-if (output === resolve('dist') || output.startsWith(resolve('dist') + '/'))
-  throw new Error('CNY artifacts must be outside upstream dist');
 const sourceDirectory = execFileSync(
   'git',
   ['-C', dirname(fileURLToPath(import.meta.url)), 'rev-parse', '--show-toplevel'],
   { encoding: 'utf8' },
 ).trim();
+let ancestor = resolve(outputPath);
+const remaining: string[] = [];
+while (!existsSync(ancestor)) {
+  remaining.unshift(basename(ancestor));
+  ancestor = dirname(ancestor);
+}
+const output = join(realpathSync(ancestor), ...remaining);
+const upstreamDist = join(realpathSync(sourceDirectory), 'dist');
+if (output === upstreamDist || output.startsWith(upstreamDist + '/'))
+  throw new Error('CNY artifacts must be outside upstream dist');
 const dirtySource = execFileSync(
   'git',
   ['-C', sourceDirectory, 'status', '--porcelain', '--untracked-files=all', '--', 'src'],

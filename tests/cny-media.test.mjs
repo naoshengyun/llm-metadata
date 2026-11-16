@@ -167,3 +167,7 @@ test('task compiler refuses rates that overflow native smoke-test usage ceilings
     'incomplete',
   );
 });
+test('non-string not-applicable reasons are incomplete instead of crashing the catalogue',()=>{
+ const r=compileTask({plugin:'alibaba',model:'qwen-image-3.0',tiers:[{name:'base',charges:[{usageKey:'image_count',amount:1,unit:'per_count',currency:'CNY'}],notApplicable:{input_image_count:5}}]});
+ assert.equal(r.status,'incomplete');
+});

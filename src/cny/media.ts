@@ -159,7 +159,11 @@ export function compileTask(quote: TaskQuote): TaskResult {
       );
     }
     for (const [key, field] of Object.entries(schema)) {
-      if (field.type === 'number' && !seen.has(key) && !tier.notApplicable?.[key]?.trim())
+      if (
+        field.type === 'number' &&
+        !seen.has(key) &&
+        (typeof tier.notApplicable?.[key] !== 'string' || !tier.notApplicable[key]!.trim())
+      )
         return {
           status: 'incomplete',
           field: 'charges.' + key,
