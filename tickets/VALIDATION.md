@@ -33,3 +33,8 @@ Standards and Spec reviewed separately at initial commit 649feed06 against d9f6c
 Additional self-review fixes: conflicting duplicate tools reject entire record; malformed task tiers/charges/required paths return item diagnostic; sync defaults protect actual data/cny and src/cny paths; CLI requires committed source snapshot and reads its own repository SHA, reports built/not-published/not-applied separately.
 
 Logs are reproducible with the above scripts. Local run outputs: `/tmp/cny-tests.log`, `/tmp/cny-native.log`, `/tmp/cny-I.log`. Independent Reviewer/QA discovery succeeded but dispatch returned `AGENT_NOT_READY: Bot permissions changed before dispatch`; no independent acceptance or review completion is claimed.
+
+
+## Independent review repair round
+
+The independent report for 918b37470 did **not pass** (S1/F1/F2/F3/F4). The defects also existed at the subsequent implementation head eb9c0ab95. Repairs and counterexample traces are in QA-FIXES.md; earlier self-check closure is not independent approval. Updated candidate requires a new fixed-head independent review. Local repaired suite: 41/41. Native/parser evidence must be rerun for that new head, and the inactive template checked in a fresh clone. No hosted Actions or production completion is implied.

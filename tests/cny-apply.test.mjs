@@ -254,3 +254,11 @@ test('tool prewrite read failure still returns already-applied model receipts', 
   );
   assert.equal(m.calls.filter((c) => c.method === 'PUT').length, 0);
 });
+test('QA F3: empty plugin selections never add unselected native PATCH requests',async()=>{
+ const m=mock();
+ const plan=await previewArtifact(m.adapter,artifact,{models:['m'],plugins:{unselected:[]},tools:[]});
+ const result=await applyArtifact(m.adapter,artifact,plan,confirmation(plan));
+ assert.deepEqual(m.calls.filter(c=>c.method==='PATCH').flatMap(c=>c.body.changes.map(x=>x.model_name)),['m']);
+ assert.deepEqual(result.items,[{partition:'models',key:'m',status:'applied'}]);
+ assert.equal(result.success,true);
+});

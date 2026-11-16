@@ -1,6 +1,6 @@
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -87,4 +87,24 @@ test('refuses candidate output inside the source repository', () => {
     '--business', f.business, '--output', join(f.repo, 'nested-candidate')], { encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(JSON.parse(result.stdout).error, /outside the source repository/);
+});
+
+test('rejects linked workflow sources and destinations without moving external files', () => {
+  for (const linkedPath of ['.github/workflows', '.github/upstream-workflows', '.github', '.github/workflows/new-name.yml', '.github/upstream-workflows/new-name.yml', 'cny-sync-report.json']) {
+    const f = fixture();
+    const external = join(f.root, 'external');
+    mkdirSync(external);
+    writeFileSync(join(external, 'sentinel.yml'), 'external sentinel\n');
+    rmSync(join(f.repo, linkedPath), {recursive:true, force:true});
+    mkdirSync(dirname(join(f.repo,linkedPath)),{recursive:true});
+    symlinkSync(linkedPath.endsWith('.yml') || linkedPath.endsWith('.json') ? join(external,'sentinel.yml') : external, join(f.repo, linkedPath));
+    git(f.repo, 'add', '.');
+    git(f.repo, 'commit', '-m', 'malicious linked workflow path');
+    f.upstream=git(f.repo, 'rev-parse', 'HEAD');
+    const result=prepare(f);
+    assert.equal(result.status, 1, linkedPath);
+    assert.equal(JSON.parse(result.stdout).status, 'failed');
+    assert.equal(readFileSync(join(external,'sentinel.yml'),'utf8'), 'external sentinel\n');
+    assert.deepEqual(JSON.parse(result.stdout).published, false);
+  }
 });

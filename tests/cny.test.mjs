@@ -68,3 +68,17 @@ test('G: malformed nested JSON produces item diagnostics without losing other va
   assert.equal(r.catalog[0].diagnostic.status,'incomplete');assert.equal(r.models.same.billing_expr,'tier("standard", p * 13 + c * 68)');
  }
 });
+test('QA F1: fixed image price with extra Token or scheduled charges is explicitly unsupported',()=>{
+ for(const cost of [{per_image:.2,output_image:40},{per_image:.2,schedule:{timezone:'UTC',fallback:'base',windows:[{name:'peak',hours:['01:00-02:00'],input:5}]}}]) {
+  const r=run([quote(cost,{required:['per_image',...(cost.output_image!==undefined?['output_image']:[])]})]);
+  assert.equal(r.diagnostics[0].status,'unsupported-shape');
+  assert.deepEqual(r.models,{});
+  assert.ok(r.exclusions.some(x=>x.id==='domestic-standard'));
+ }
+});
+test('QA F2: duplicate thresholds inside a schedule window cannot silently overwrite prices',()=>{
+ const r=run([quote({input:1,output:2,schedule:{timezone:'UTC',fallback:'base',windows:[{name:'peak',hours:['01:00-02:00'],input:5,tiers:[{tier:{size:10},input:5},{tier:{size:10},input:100}]}]}})]);
+ assert.equal(r.diagnostics[0].status,'incomplete');
+ assert.ok(r.diagnostics[0].fields.some(x=>x.includes('schedule.windows.0.tiers')));
+ assert.deepEqual(r.models,{});
+});

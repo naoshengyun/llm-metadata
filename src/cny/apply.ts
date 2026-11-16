@@ -164,7 +164,14 @@ export async function applyArtifact(
   validateUnits(await adapter.request<NativeOption[]>('/api/option/'));
   const items: ApplyItemResult[] = [];
   const selected = plan.selection;
-  const names = [...new Set([...selected.models, ...Object.keys(selected.plugins)])];
+  const names = [
+    ...new Set([
+      ...selected.models,
+      ...Object.entries(selected.plugins)
+        .filter(([, keys]) => keys.length > 0)
+        .map(([name]) => name),
+    ]),
+  ];
   for (const name of names) {
     const entry = plan.pricing.entries.find((item) => item.model_name === name);
     const pricing = structuredClone(entry?.configured ?? {});

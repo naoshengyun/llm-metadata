@@ -85,6 +85,24 @@ function inspectCost(value: unknown, path = ''): string[] {
       if (typeof item !== 'number' || !Number.isFinite(item) || item < 0) errors.push(p);
     } else if (key === 'size') {
       if (typeof item !== 'number' || !Number.isSafeInteger(item) || item <= 0) errors.push(p);
+    } else if (key === 'tiers') {
+      if (!Array.isArray(item)) {
+        errors.push(p);
+        continue;
+      }
+      const thresholds = new Set<number>();
+      for (const [index, tier] of item.entries()) {
+        const threshold = tier?.tier?.size;
+        if (
+          typeof threshold !== 'number' ||
+          !Number.isSafeInteger(threshold) ||
+          threshold <= 0 ||
+          thresholds.has(threshold)
+        )
+          errors.push(`${p}.${index}.threshold`);
+        if (typeof threshold === 'number') thresholds.add(threshold);
+        errors.push(...inspectCost(tier, `${p}.${index}`));
+      }
     } else if (key === 'currency' || key === 'currency_options') errors.push(p);
     else if (['tiers', 'tier', 'context_over_200k', 'schedule', 'windows'].includes(key)) {
       if (Array.isArray(item)) item.forEach((v, i) => errors.push(...inspectCost(v, `${p}.${i}`)));
@@ -143,18 +161,6 @@ export function generateCny(input: CnyInput) {
     if (record.kind && !['model', 'task', 'tool'].includes(record.kind)) fields.push('kind');
     if (record.kind === 'task' && !record.task) fields.push('task');
     if (record.kind === 'tool' && !record.tools?.length) fields.push('tools');
-    const thresholds = new Set<number>();
-    for (const tier of Array.isArray(record.cost?.tiers) ? record.cost.tiers : []) {
-      const threshold = tier?.tier?.size;
-      if (
-        typeof threshold !== 'number' ||
-        !Number.isSafeInteger(threshold) ||
-        threshold <= 0 ||
-        thresholds.has(threshold)
-      )
-        fields.push('tiers.threshold');
-      if (threshold !== undefined) thresholds.add(threshold);
-    }
     if (inspectCost(convert(record.cost, CNY_POLICY[record.currency])).length)
       fields.push('converted price overflow');
     if (
@@ -289,6 +295,18 @@ export function generateCny(input: CnyInput) {
       candidate.tools[result.key] = result.price;
     }
     if (!quote.kind || quote.kind === 'model') {
+      if (
+        entry.cnyCost.per_image !== undefined &&
+        Object.entries(entry.cnyCost).some(
+          ([key, value]) => !['per_image', 'currency'].includes(key) && value !== undefined,
+        )
+      ) {
+        entry.diagnostic.status = 'unsupported-shape';
+        entry.diagnostic.fields.push(
+          'per_image: combined fixed-image and Token/tier/schedule charges are not supported by this adapter',
+        );
+        continue;
+      }
       const result = builder.buildPriceConfig({
         providers: {
           selected: {

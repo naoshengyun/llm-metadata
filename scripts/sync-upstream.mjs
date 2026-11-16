@@ -1,12 +1,30 @@
 #!/usr/bin/env node
 // Local-only candidate preparation: never fetch, push, update source refs or publish.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve, sep } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 
 function git(repo, ...args) {
   return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+// Git-controlled paths must remain inside the candidate even when an ancestor
+// or an existing destination is a symlink. Check every component with lstat.
+function assertCandidatePath(candidate, target) {
+  const path = relative(candidate, target);
+  if (path === '..' || path.startsWith(`..${sep}`) || resolve(candidate, path) !== target)
+    throw new Error('Path escapes sync candidate');
+  let current = candidate;
+  for (const component of path.split(sep).filter(Boolean)) {
+    current = join(current, component);
+    try {
+      if (lstatSync(current).isSymbolicLink()) throw new Error(`Symlink in sync candidate path: ${path}`);
+    } catch (error) {
+      if (error.code === 'ENOENT') break;
+      throw error;
+    }
+  }
 }
 
 const report = { status: 'failed', published: false, applied: false, hostedActions: 'not-enabled' };
@@ -45,7 +63,15 @@ try {
   // No upstream workflow is trusted, including new or renamed ones. Preserve it as data.
   const workflows = join(output, '.github/workflows');
   const quarantine = join(output, '.github/upstream-workflows');
+  assertCandidatePath(output, workflows);
+  assertCandidatePath(output, quarantine);
+  assertCandidatePath(output, join(output, 'cny-sync-report.json'));
   const names = existsSync(workflows) ? readdirSync(workflows).filter(name => /\.ya?ml$/i.test(name)).sort() : [];
+  for (const name of names) {
+    assertCandidatePath(output, join(workflows,name));
+    assertCandidatePath(output, join(quarantine,name));
+    if (!lstatSync(join(workflows,name)).isFile()) throw new Error('Workflow must be a regular file');
+  }
   if (names.length) mkdirSync(quarantine, { recursive: true });
   for (const name of names) {
     const target = join(quarantine, name);
