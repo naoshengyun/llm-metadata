@@ -17,3 +17,7 @@ Use the five canonical triage labels. Before triage or changing issue status, re
 ### Domain docs
 
 Use the single-context layout. Before codebase exploration or changing domain terminology or decisions, read `docs/agents/domain.md`.
+
+### CNY requirements and decisions
+
+Before interpreting CNY scope, acceptance criteria or decision status, read `docs/requirements/CNY-SOURCE-REGISTRY.md`. Use its fixed source hashes and tracker links; historical tickets are not a new implementation queue.

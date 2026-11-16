@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-16",
+  "purpose": "Source registry and byte-identical read-only approved-baseline snapshots, not parallel live specifications",
+  "sources": [
+    {
+      "id": "spec",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云统一CNY定价-专项Spec草稿.md",
+      "version": "0.12",
+      "role": "规范性需求与稳定AC",
+      "sha256": "62af996b2d3136f34e17a86e5dd8887178addfee25cc572f355837ca5bf2af39",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task",
+      "snapshot": "snapshots/spec-v0.12.md"
+    },
+    {
+      "id": "tickets",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云统一CNY定价-候选任务拆解草稿.md",
+      "version": "0.12",
+      "role": "已批准T1—T7拆解与依赖",
+      "sha256": "fd4511a5ad5225d8b846f417035c24ac7879508fe0bb68ff0c6925ebbd1468f3",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task",
+      "snapshot": "snapshots/tickets-v0.12.md"
+    },
+    {
+      "id": "decisions",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云统一CNY定价-必要决策清单.md",
+      "version": "0.12",
+      "role": "原D01—D08状态及职责边界",
+      "sha256": "c098a2fd383b2d934852a3da76d271a53d9c7d38793753e02e7a86bbaa06edce",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task"
+    },
+    {
+      "id": "coverage",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云线上启用模型清单与定价覆盖矩阵.md",
+      "version": "0.6",
+      "role": "18平台/136原三元组及141差5证据",
+      "sha256": "a2201fdb08c4592845accdb976ec20b1ae7779c6f239186be26de4c198bb6233",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task"
+    },
+    {
+      "id": "gaps",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云统一CNY定价-开发就绪差距报告.md",
+      "version": "0.4",
+      "role": "历史只读差距与D/O/R边界，非现状",
+      "sha256": "68cabbf33eb32ff2d69583d2ba616765f9ab937b33cb9ea81404ccbceca991ab",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task"
+    },
+    {
+      "id": "sync-advice",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-16-脑生云llm-metadata-fork持续同步与维护边界.md",
+      "version": null,
+      "role": "proposed-for-planner历史建议，不作为已批准自动化",
+      "sha256": "459cd92e2a3203a71d43d2e95b3a0352b5f027080be4bcf50d29ec3b2462136b",
+      "maintenanceAuthority": "Planner canonical obs source; Dev does not edit it in this task"
+    }
+  ],
+  "tracker": {
+    "requirements": {
+      "number": 5,
+      "title": "需求记录：统一 CNY 官方价格源已批准基线与来源追溯",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/5"
+    },
+    "map": {
+      "number": 6,
+      "title": "决策地图：统一 CNY 价格源的已确认选择与后续验收边界",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/6"
+    },
+    "basis": {
+      "number": 7,
+      "title": "确认记录：官方基准、币种归一与运营职责",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/7"
+    },
+    "native": {
+      "number": 8,
+      "title": "确认记录：原版复用、价格形状与受控应用边界",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/8"
+    },
+    "fork": {
+      "number": 9,
+      "title": "确认记录：单 fork 隔离、同步 PR 与手动候选 CI",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/9"
+    },
+    "stg-inputs": {
+      "number": 10,
+      "title": "待定输入：所选 stg 目标、映射与实测条件",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/10"
+    },
+    "apply-confirmation": {
+      "number": 11,
+      "title": "待定确认：固定候选的实例应用与配置恢复意图",
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/11"
+    }
+  },
+  "authorizationRecords": [
+    {
+      "sessionId": "8e06f49b-06f8-48e4-b20e-06b5092d3b46",
+      "messageId": "u9z3o25zqmdfbsyh2pmob53y",
+      "at": "2026-11-16T09:55:54.610Z",
+      "scope": "organization fork/PR target"
+    },
+    {
+      "sessionId": "8e06f49b-06f8-48e4-b20e-06b5092d3b46",
+      "messageId": "cyknpwluwegdvceuplxa3j59",
+      "at": "2026-11-16T10:25:57.076Z",
+      "scope": "reviewed integration, controlled test/candidate CI, stg plan only"
+    },
+    {
+      "sessionId": "8e06f49b-06f8-48e4-b20e-06b5092d3b46",
+      "messageId": "dkt89g3kod44n3jzkiwc1wja",
+      "at": "2026-11-16T14:38:27.629Z",
+      "scope": "merge reviewed PRs when fixed version/rules satisfied; no deployment/price-call authorization"
+    }
+  ]
+}
