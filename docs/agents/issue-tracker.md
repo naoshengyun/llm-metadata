@@ -38,3 +38,24 @@ A ticket is startable when all its blockers are closed.
 "Publish to the issue tracker" means create a GitHub issue in this repository.
 "Fetch the relevant ticket" means read that GitHub issue and its comments.
 Closing a development ticket does not imply production release or operational acceptance.
+
+## Wayfinding operations
+
+A decision map is one GitHub issue labelled `wayfinder:map`; its decision/input
+records are native sub-issues. Use a `wayfinder:<type>` label for child records,
+not triage readiness labels: a decision record is not an implementation ticket.
+Refer to maps and records by linked title, with the issue number inside the link.
+
+Create issues before wiring cross-references. Use native sub-issues and
+`dependencies/blocked_by`; these REST relationships use the issue database
+`id`, not its displayed issue number. Verify parent and dependency readbacks.
+Where the repository cannot support native relationships, retain explicit
+linked parent and `Blocked by` lines, and report that fallback accurately.
+
+The map indexes decisions; their source/detail belongs in the linked record.
+Historical approved choices may be documented without a new interview, with
+original approval evidence and remaining scope stated. This is not permission
+to resolve a new HITL choice or duplicate already completed implementation work.
+Open input/approval records remain open until the authorized human input exists.
+A closed decision or completed development ticket does not authorize release,
+stg execution, supplier calls or production price application.
