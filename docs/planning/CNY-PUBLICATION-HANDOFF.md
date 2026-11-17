@@ -1,5 +1,10 @@
 # 发布开发交接回执（2026-11-17）
 
+当前阶段：发布开发完成，尚未真实部署。#18/#19/#20/#21均已关闭；[父汇总与AC追溯](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)、[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)已记录实际完成，不重复新建回执。 当前发布前待项见[收口入口](CNY-PUBLICATION-FRONTIER.md)。下文保留原交接/调查时点记录，其“尚未运行/当前可开工”等不再是实时状态。
+
+## 历史记录（原文保留）
+
+
 2026-11-17更新：v1.2已记录用户接受每次粘贴URL、保留原版；[#22已解决](https://github.com/naoshengyun/llm-metadata/issues/22)。#20恢复ready，仍依赖#19；#21仍依赖#20。PUB-AC-11页面运行/确认应用尚未验证，不得据ready或决定关闭宣称票已通过。当前来源见[登记](../requirements/publication-sources.json)，实际保存需准备独立目标/selection并另确认。
 
 ## 开发入口

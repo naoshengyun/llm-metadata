@@ -12,7 +12,7 @@
       "sha256": "01df99e3b2b88c382d4a5f7f1de211fde86b3dd05a001ad5216e64aaca37f901",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布增量Spec.md",
       "status": "development-ready-runtime-acceptance-open",
-      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
+      "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
     },
     {
       "id": "tickets",
@@ -21,7 +21,7 @@
       "sha256": "9fc5d63020205598bd569bb10ce5762d6b51a9f118f3fa8d69c217d5d1c177d9",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布任务拆解.md",
       "status": "development-ready-runtime-acceptance-open",
-      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
+      "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
     },
     {
       "id": "design",
@@ -30,7 +30,7 @@
       "sha256": "6b9370f18c211792e6d5dc7ba7e2905fdf9faf3c62d6c3b7817f895c9212ea9e",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
       "status": "development-ready-runtime-acceptance-open",
-      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
+      "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
     },
     {
       "id": "operations",
@@ -61,7 +61,8 @@
         "summaryPath": "/Users/kohr/baymax_work/obs/wiki/summaries/业务/2026-11-17-newapi工具附加费统一为零配置与说明-summary.md",
         "summarySha256": "8034aa165eb812b1c5bea7283c5f7d1683af1adcb9f783efbbff07a41399f13a",
         "authorization": "documentation and future customer zero-surcharge policy; no target writes or publication"
-      }
+      },
+      "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
     },
     {
       "id": "ui-evidence",
@@ -70,13 +71,14 @@
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
       "sha256": "14e2986af26a55efae0ba8aec481931c67e7c76fda0d00f2e99d0d3592d1f1a4",
       "status": "static-evidence-runtime-unverified",
-      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
+      "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
     }
   ],
   "tracker": {
     "spec": {
       "number": 18,
-      "url": "https://github.com/naoshengyun/llm-metadata/issues/18"
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/18",
+      "state": "CLOSED"
     },
     "tickets": [
       {
@@ -104,8 +106,8 @@
         "blockedBy": [
           20
         ],
-        "readiness": "ready-for-agent",
-        "state": "OPEN"
+        "readiness": "completed",
+        "state": "CLOSED"
       }
     ],
     "relationships": "native sub-issues under #18; native dependencies read back verified",
@@ -113,8 +115,22 @@
       "recordedAt": "2026-11-17",
       "T01": "#19 CLOSED; PR23 merged 2026-11-17T05:37:04Z at 1caf6b7831d618d8f766b03771a84a8a864e9236",
       "T02": "#20 CLOSED; PR24 merged 2026-11-17T10:07:09Z at e5cbf0403c3225c1ba71a1b8a92829d044a05ebd",
-      "T03": "#21/PR25 OPEN at read; Dev/QA handle implementation",
-      "restoration": "Not an original #20 closing requirement; no new restoration or cleanup authorization"
+      "T03": "#21 CLOSED; PR25 merged 2026-11-17T11:29:11Z at 80578d757cdde0e3a77bff4608bdd1d93ae42e9d",
+      "restoration": "Not an original #20 closing requirement; no new restoration or cleanup authorization",
+      "stage": "publication-development-complete-not-deployed",
+      "observedAfter": "2026-11-17T11:29:11Z",
+      "parent": "#18 CLOSED after all three children accepted and integrated",
+      "reviewedHead": "ec95407a68a556f9227835c5930b8dc7ab9282a6",
+      "qaReportPath": "/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/pr25-ec95407/REVIEW.md",
+      "qaReportSha256": "c2413ab90e897a52f398bef91745035a4e4ab958a7049f17f917a74a94e485d7",
+      "evidence": "Standards PASS / Spec PASS; 102/102; independent fixed rc50 A→B→A and extracted candidate inline JS local verification. Not a live Pages deployment or CI run.",
+      "parentCloseout": "https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733",
+      "existingMapReceipt": "https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090",
+      "openOperationalRecords": [
+        6,
+        10,
+        11
+      ]
     }
   },
   "history": [
@@ -275,5 +291,7 @@
       "scope": "strict publication validation and truthful S/H/page acceptance; no core changes"
     }
   ],
-  "versionMeaning": "Registry revision; per-document versions authoritative (only operations advanced to v1.4)"
+  "versionMeaning": "Registry revision; per-document versions authoritative (only operations advanced to v1.4)",
+  "currentStage": "publication-development-complete-not-deployed",
+  "closeoutMaintenance": "Status/index-only update; no canonical source edits, no document version bumps, no new execution scope."
 }

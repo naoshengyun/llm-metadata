@@ -49,7 +49,7 @@
 
 本轮没有新增需用户重选的D业务问题。Planner已核对AC-24为Spec横向约束，原票未显式分配，不追加原票AC或新任务。尚未决定的运营策略和输入见决策索引；它们只阻止相应后续O执行，不回溯阻止T1—T7开发。
 
-## 独立发布增量（2026-11-17）
+## 独立发布增量（2026-11-17；下列版本说明保留历史时点）
 
 新发布正文由Planner维护于obs outputs/qa，v1.0的Spec、拆解、设计/授权及运营接入路径与hash见[发布来源登记](publication-sources.json)。仓库只留字节一致的固定快照与索引，不维护第二份活正文；原v0.12和AC-01—30不改。发布增量沿用PUB-AC-01—10。
 
@@ -62,3 +62,7 @@ v1.2后续决定：用户接受每次粘贴URL、保留原版，#22已关闭；#
 发布v1.3技术事实修正：PUB-AC-02编号不变、原文明确修订（不是旧AC原文未变）。固定rc50对空message错误envelope可能标success却无可用所选价格；发布侧严格校验且valid H逐项核对全部选择/值，保留空message负例。历史快照不改，业务范围及无价格写入等边界不变。
 
 发布来源登记v1.4仅提升运营接入正文至v1.4，其余正式正文仍v1.3并保持原hash。工具附加费显式零价已从原用户消息追溯确认，只授权文档记录/后续政策，非目标写入；官方quote/artifact非零报价保留。#19/#20已合并关闭，恢复不是#20原验收门槛；当前执行状态详见登记的executionObservation，不倒改历史快照。
+
+## 发布开发阶段收口（2026-11-17）
+
+发布开发完成，尚未真实部署。#18/#19/#20/#21均已合并对应实现并关闭；[原AC与父汇总回执](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)，[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)。当前版本/hash及固定QA报告见[发布登记](publication-sources.json)的executionObservation；Spec/Tickets/design/UI事实仍v1.3、运营v1.4，本轮未改正文或冻结快照。#6/#10/#11仍OPEN；真实O余项不否定开发完成。恢复非原开发门槛，不授权恢复/清理；既有发布前待项见[当前入口](../planning/CNY-PUBLICATION-FRONTIER.md)。
