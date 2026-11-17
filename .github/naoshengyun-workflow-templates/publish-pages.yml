@@ -1,0 +1,130 @@
+# INACTIVE CANDIDATE: outside .github/workflows; deploy is additionally disabled.
+# Activation/allowlist/environment/live preflight require separate approval and QA.
+name: naoshengyun-cny-pages-candidate
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha: { description: Reviewed business source SHA, required: true, type: string }
+      state_directory:
+        { description: Tracked reviewed local snapshot directory, required: true, type: string }
+      plan_file:
+        { description: Tracked reviewed promotion or rollback plan, required: true, type: string }
+      confirmation_file:
+        { description: Tracked explicit review record, required: true, type: string }
+      snapshot_revision:
+        { description: Exact reviewed deployment snapshot hash, required: true, type: string }
+      release_id:
+        {
+          description: Explicit approved release (no default selection),
+          required: true,
+          type: string,
+        }
+      manifest_sha256: { description: External manifest hash, required: true, type: string }
+      plan_id:
+        {
+          description: Exact reviewed plan and semantic diff identity,
+          required: true,
+          type: string,
+        }
+      approval_ref: { description: Explicit human approval reference, required: true, type: string }
+permissions:
+  contents: read
+concurrency:
+  group: naoshengyun-cny-publication
+  cancel-in-progress: false
+jobs:
+  stage:
+    if: github.repository == 'naoshengyun/llm-metadata' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/naoshengyun'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STATE_DIRECTORY: ${{ inputs.state_directory }}
+      PLAN_FILE: ${{ inputs.plan_file }}
+      CONFIRMATION_FILE: ${{ inputs.confirmation_file }}
+      EXPECTED_REVISION: ${{ inputs.snapshot_revision }}
+      RELEASE_ID: ${{ inputs.release_id }}
+      MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+      PLAN_ID: ${{ inputs.plan_id }}
+      APPROVAL_REF: ${{ inputs.approval_ref }}
+    steps:
+      - name: Reject changed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { ref: '${{ github.sha }}', persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: '22' }
+      - run: npm ci --ignore-scripts
+      - run: npm run test:cny
+      - name: Verify reviewed snapshot, selection and exact confirmation
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync,realpathSync,lstatSync,writeFileSync} from 'node:fs';
+          import {resolve,join,dirname} from 'node:path';
+          import {execFileSync} from 'node:child_process';
+          import {verifyLocalPublication,runPublicationCommand} from './scripts/publication-transition.mjs';
+          import {executePublicationTransition} from './.cache/cny-build/cny/publication-promotion.js';
+          const e=process.env,root=realpathSync('.');
+          assert.equal(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),e.EXPECTED_SHA);
+          assert.equal(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),'');
+          const safe=relative=>{
+            assert.ok(relative&&!relative.startsWith('/')&&!relative.split('/').includes('..'));
+            const file=resolve(relative),actual=realpathSync(file);
+            assert.ok(actual.startsWith(root+'/')&&!lstatSync(file).isSymbolicLink());
+            execFileSync('git',['ls-files','--error-unmatch','--',relative],{stdio:'pipe'});
+            return actual;
+          };
+          const state=dirname(safe(e.STATE_DIRECTORY+'/publication-state.json')),plan=JSON.parse(readFileSync(safe(e.PLAN_FILE))),confirmation=JSON.parse(readFileSync(safe(e.CONFIRMATION_FILE)));
+          const verified=await verifyLocalPublication(state,e.EXPECTED_REVISION,true);
+          assert.equal(verified.pointer.releaseId,e.RELEASE_ID);assert.equal(verified.pointer.manifestSha256,e.MANIFEST_SHA256);
+          assert.equal(plan.id,e.PLAN_ID);assert.equal(plan.snapshot.revision,e.EXPECTED_REVISION);
+          assert.equal(plan.identity.releaseId,e.RELEASE_ID);assert.equal(plan.identity.manifestSha256,e.MANIFEST_SHA256);
+          assert.equal(confirmation.approvalRef,e.APPROVAL_REF);
+          const receipt=await executePublicationTransition({read:async()=>verified.snapshot,canSubmit:async()=>false,hasAttempt:async()=>false,claim:async()=>false,submit:async()=>{throw Error('verification cannot submit');}},plan,confirmation);
+          assert.equal(receipt.status,'already-applied');
+          const output=join(e.RUNNER_TEMP,'cny-pages-site');
+          await runPublicationCommand(['export',state,output,e.EXPECTED_REVISION,'candidate']);
+          writeFileSync(join(e.RUNNER_TEMP,'cny-pages-review-receipt.json'),JSON.stringify({...receipt,sourceSha:e.EXPECTED_SHA,publisher:e.GITHUB_ACTOR,realDeployment:false},null,2));
+          JS
+      - name: Package only verified snapshot files
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --directory "$RUNNER_TEMP/cny-pages-site" -cf "$RUNNER_TEMP/artifact.tar" .
+          printf 'artifact_name=cny-pages-%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: ${{ runner.temp }}/artifact.tar
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cny-pages-review-receipt.json
+          if-no-files-found: error
+  deploy:
+    if: ${{ false }} # Intentional: separate activation/review/live preflight required.
+    needs: stage
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy reviewed immutable artifact (candidate only, never executed here)
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          artifact_name: ${{ needs.stage.outputs.artifact_name }}
