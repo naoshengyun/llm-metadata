@@ -11,7 +11,8 @@
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布增量Spec.md",
       "sha256": "01df99e3b2b88c382d4a5f7f1de211fde86b3dd05a001ad5216e64aaca37f901",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布增量Spec.md",
-      "status": "development-ready-runtime-acceptance-open"
+      "status": "development-ready-runtime-acceptance-open",
+      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
     },
     {
       "id": "tickets",
@@ -19,7 +20,8 @@
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布任务拆解.md",
       "sha256": "9fc5d63020205598bd569bb10ce5762d6b51a9f118f3fa8d69c217d5d1c177d9",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布任务拆解.md",
-      "status": "development-ready-runtime-acceptance-open"
+      "status": "development-ready-runtime-acceptance-open",
+      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
     },
     {
       "id": "design",
@@ -27,15 +29,39 @@
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
       "sha256": "6b9370f18c211792e6d5dc7ba7e2905fdf9faf3c62d6c3b7817f895c9212ea9e",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
-      "status": "development-ready-runtime-acceptance-open"
+      "status": "development-ready-runtime-acceptance-open",
+      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
     },
     {
       "id": "operations",
-      "version": "1.3",
+      "version": "1.4",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布运营接入.md",
-      "sha256": "2d9a33cef5cc60fb1b6c0700ccb526d01f7f21a539ff916cbc4b40b69c3e20c8",
-      "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布运营接入.md",
-      "status": "development-ready-runtime-acceptance-open"
+      "sha256": "6b94afbeaf5bad22b7169e60b05e6be50442e81df27f1aa431aa04271bbbdbca",
+      "snapshot": "snapshots/publication-v1.4/2026-11-17-脑生云CNY价格源发布运营接入.md",
+      "status": "operations-policy-recorded-not-applied",
+      "observedSourceChange": {
+        "sha256": "a15caaff37713a133f53430fd144163d1ab90f3743ac85344e05ec3efea60876",
+        "scope": "preexisting appended zero-surcharge paragraph preserved; no rollback"
+      },
+      "decisionSources": {
+        "sessionId": "c7b31428-cf0c-4880-8a89-ded4af93da5b",
+        "sessionUrl": "cindy://session/c7b31428-cf0c-4880-8a89-ded4af93da5b?device=c547f67a413b46d4f2cd7fc3e34627433b76544eaeeba12bedcf01d68bdb2e51",
+        "userMessages": [
+          {
+            "id": "pxd2jy1x8ocbomua89akhedn",
+            "at": "2026-11-17T10:06:01.650Z"
+          },
+          {
+            "id": "yctyjexuqmpczxdmd47pg9ml",
+            "at": "2026-11-17T10:09:59.192Z"
+          }
+        ],
+        "rawPath": "/Users/kohr/baymax_work/obs/raw/R01-项目文档/G-工作任务包/脑生云/知识库建设/2026-11-17-newapi工具附加费统一为零确认.md",
+        "rawSha256": "296d013f52fec81972d2c3fb0b6c3b48de0f5d9e56c641d3714e978a5ba1eae0",
+        "summaryPath": "/Users/kohr/baymax_work/obs/wiki/summaries/业务/2026-11-17-newapi工具附加费统一为零配置与说明-summary.md",
+        "summarySha256": "8034aa165eb812b1c5bea7283c5f7d1683af1adcb9f783efbbff07a41399f13a",
+        "authorization": "documentation and future customer zero-surcharge policy; no target writes or publication"
+      }
     },
     {
       "id": "ui-evidence",
@@ -43,7 +69,8 @@
       "version": "1.3",
       "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
       "sha256": "14e2986af26a55efae0ba8aec481931c67e7c76fda0d00f2e99d0d3592d1f1a4",
-      "status": "static-evidence-runtime-unverified"
+      "status": "static-evidence-runtime-unverified",
+      "statusMeaning": "Status recorded at v1.3 planning time; see tracker executionObservation for later completion; source bytes unchanged"
     }
   ],
   "tracker": {
@@ -57,7 +84,8 @@
         "number": 19,
         "url": "https://github.com/naoshengyun/llm-metadata/issues/19",
         "blockedBy": [],
-        "readiness": "ready-for-agent"
+        "readiness": "completed",
+        "state": "CLOSED"
       },
       {
         "id": "PUB-T02",
@@ -66,7 +94,8 @@
         "blockedBy": [
           19
         ],
-        "readiness": "ready-for-agent"
+        "readiness": "completed",
+        "state": "CLOSED"
       },
       {
         "id": "PUB-T03",
@@ -75,10 +104,18 @@
         "blockedBy": [
           20
         ],
-        "readiness": "ready-for-agent"
+        "readiness": "ready-for-agent",
+        "state": "OPEN"
       }
     ],
-    "relationships": "native sub-issues under #18; native dependencies read back verified"
+    "relationships": "native sub-issues under #18; native dependencies read back verified",
+    "executionObservation": {
+      "recordedAt": "2026-11-17",
+      "T01": "#19 CLOSED; PR23 merged 2026-11-17T05:37:04Z at 1caf6b7831d618d8f766b03771a84a8a864e9236",
+      "T02": "#20 CLOSED; PR24 merged 2026-11-17T10:07:09Z at e5cbf0403c3225c1ba71a1b8a92829d044a05ebd",
+      "T03": "#21/PR25 OPEN at read; Dev/QA handle implementation",
+      "restoration": "Not an original #20 closing requirement; no new restoration or cleanup authorization"
+    }
   },
   "history": [
     {
@@ -210,9 +247,24 @@
           "status": "static-evidence-runtime-unverified"
         }
       ]
+    },
+    {
+      "version": "1.3",
+      "snapshotCommit": "98fd6ed9ef14c0d3f178b58c9ee0cf7da4ab3ad6",
+      "sources": [
+        {
+          "id": "operations",
+          "version": "1.3",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布运营接入.md",
+          "sha256": "2d9a33cef5cc60fb1b6c0700ccb526d01f7f21a539ff916cbc4b40b69c3e20c8",
+          "snapshot": "snapshots/publication-v1.3/2026-11-17-脑生云CNY价格源发布运营接入.md",
+          "status": "development-ready-runtime-acceptance-open"
+        }
+      ],
+      "scope": "operations superseded only; other current documents remain v1.3"
     }
   ],
-  "version": "1.3",
+  "version": "1.4",
   "uiRequirementRecord": "https://github.com/naoshengyun/llm-metadata/issues/22",
   "uiDecisionRecord": "https://github.com/naoshengyun/llm-metadata/issues/22#issuecomment-6938923921",
   "technicalCorrections": [
@@ -222,5 +274,6 @@
       "reason": "Fixed rc50 empty-message error envelope can aggregate as success with no usable selected prices",
       "scope": "strict publication validation and truthful S/H/page acceptance; no core changes"
     }
-  ]
+  ],
+  "versionMeaning": "Registry revision; per-document versions authoritative (only operations advanced to v1.4)"
 }
