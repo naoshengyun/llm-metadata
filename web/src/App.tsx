@@ -84,8 +84,8 @@ function FooterSource() {
   return (
     <a href="./publication.html" className="underline underline-offset-2">
       {locale === 'zh'
-        ? '43 项官方 CNY 基础价 · partial · 核价 2026-11-16 · 来源与下载'
-        : '43 official CNY base prices · partial · checked 2026-11-16 · sources/downloads'}
+        ? '上游完整模型资料 · CNY 基础价 · 缺价明确标注 · 来源与下载'
+        : 'Full upstream catalog · CNY base prices · missing prices explicit · sources/downloads'}
     </a>
   );
 }
@@ -207,15 +207,14 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
     fetchProviders(locale)
       .then(({ providers: list }) => {
         if (cancelled) return;
-        const sorted = list
-          .filter((p) => !p.subscription)
-          .sort((a, b) => a.name.localeCompare(b.name));
+        const sorted = list.sort((a, b) => a.name.localeCompare(b.name));
         setProviders(sorted);
         const fromHash = readHash().provider;
         setSelectedId((current) => {
           const initial =
             sorted.find((p) => p.id === (current ?? fromHash)) ??
             sorted.find((p) => p.id === fromHash) ??
+            sorted.find((p) => p.id === 'alibaba-cn') ??
             sorted[0];
           return initial ? initial.id : null;
         });
@@ -445,19 +444,17 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
                 <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[11px]">
                   {selectedMeta.id}
                 </span>
-                {selectedMeta.currency && (
+                {true && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span
                         tabIndex={0}
                         className="text-muted-foreground focus-visible:ring-ring/50 rounded-full border px-2 py-0.5 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none"
                       >
-                        {selectedMeta.currency}
+                        CNY
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      {t('app.billingCurrency', { currency: selectedMeta.currency })}
-                    </TooltipContent>
+                    <TooltipContent>{t('app.billingCurrency', { currency: 'CNY' })}</TooltipContent>
                   </Tooltip>
                 )}
                 {selectedMeta.doc && (
@@ -486,6 +483,9 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
                   />
                 )}
               </BlurFade>
+              {selectedMeta.description && (
+                <p className="text-muted-foreground w-full text-sm">{selectedMeta.description}</p>
+              )}
               <div className="ml-auto flex w-full items-center gap-2 sm:w-auto">
                 <div className="relative flex-1 sm:w-72">
                   <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
@@ -532,7 +532,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
                   key={loadedProvider.id}
                   models={models}
                   query={modelQuery}
-                  providerCurrency={selectedMeta.currency}
+                  providerCurrency="CNY"
                   billing={selectedMeta.billing}
                   onOpenModel={handleOpenModel}
                 />

@@ -1,3 +1,4 @@
+import { PricingNotice } from '@/components/pricing-notice';
 import { useMemo, type ReactNode } from 'react';
 import { CalendarDays, SearchX } from 'lucide-react';
 
@@ -94,7 +95,7 @@ function ModelCard({
                   pricing={pricing}
                   isNew={isNew}
                   status={model.status}
-                  providerCurrency={provider.currency}
+                  providerCurrency="CNY"
                 />
               </div>
               <div className="text-muted-foreground flex items-center gap-0.5 font-mono text-xs">
@@ -104,6 +105,7 @@ function ModelCard({
             </div>
           </header>
 
+          <PricingNotice model={model} />
           {model.description && (
             <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
               {model.description}
@@ -172,7 +174,7 @@ export function ModelCards({
     () =>
       buildModelRows(models, {
         query,
-        providerCurrency: provider.currency,
+        providerCurrency: 'CNY',
         billing: provider.billing,
         deployment,
         exchangeRates,

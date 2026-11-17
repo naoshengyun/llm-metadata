@@ -1,3 +1,4 @@
+import { PricingNotice } from '@/components/pricing-notice';
 import { Fragment, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, SearchX } from 'lucide-react';
@@ -354,6 +355,7 @@ export function PricingTable({
                             >
                               {model.name || model.id}
                             </button>
+                            <PricingNotice model={model} />
                             <ModelBadges
                               pricing={pricing}
                               isNew={isNew}

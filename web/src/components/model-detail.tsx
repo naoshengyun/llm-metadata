@@ -1,3 +1,4 @@
+import { PricingNotice } from '@/components/pricing-notice';
 import { useEffect, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
@@ -322,7 +323,7 @@ export function ModelDetail({
   const { deployment, exchangeRates } = useNewApi();
   const intl = INTL_LOCALES[locale];
   const pricing = parseModelPricing(model.cost, t, locale, {
-    providerCurrency: provider.currency,
+    providerCurrency: 'CNY',
   });
   const expr = modelExpr(model.cost, provider.billing, deployment, exchangeRates);
   const longWrites = longCacheWrites(provider.billing);
@@ -392,7 +393,7 @@ export function ModelDetail({
           pricing={pricing}
           isNew={isNewRelease(model.release_date, Date.now())}
           status={model.status}
-          providerCurrency={provider.currency}
+          providerCurrency="CNY"
         />
       </BlurFade>
       <BlurFade delay={0.05} className="mt-2 flex items-center gap-1">
@@ -445,6 +446,7 @@ export function ModelDetail({
       {/* 描述 + 关键参数 */}
       <BlurFade delay={0.15}>
         <section className="grid gap-6 py-8 md:grid-cols-2">
+          <PricingNotice model={model} />
           {model.description && (
             <p className="text-muted-foreground max-w-prose text-sm leading-relaxed">
               {model.description}

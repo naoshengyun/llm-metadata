@@ -1,0 +1,9 @@
+{
+  "upstreamSha": "b755761bf19fdcd4d4ad433d2431882c370ad05e",
+  "releaseId": "6801ef85bb27d8df30720ea5fe80ac3803b4144d55565468ad459279f25dd9ad",
+  "manifestSha256": "f279a9c1865c17809d0d89d29fafa0e6261fdd72698c047b9bf1880a11f32dcb",
+  "approval": {
+    "reference": "486 user delegation: upstream-only missing prices explicit; publish all eligible, 2026-11-17",
+    "confirmed": true
+  }
+}

@@ -25,19 +25,19 @@ export function NewApiSettings() {
         </DialogHeader>
         <p>
           {zh
-            ? '43 项固定官方基准报价 · 部分覆盖（partial），完整包 complete=false。'
-            : '43 fixed official base-price entries · partial coverage · complete=false.'}
+            ? '上游完整目录 · CNY 默认展示。仅金额 USD ×7 一次，明确原始 CNY 保持。'
+            : 'Complete upstream catalog · CNY default. USD monetary amounts ×7 once; original CNY retained.'}
         </p>
         <p>
           {zh
-            ? '原始核价日期：2026-11-16。国产 CNY 保持，国外 USD ×7 一次。缓存、阶梯和多模态条件见模型详情。'
-            : 'Prices checked: 2026-11-16. Original CNY retained; USD ×7 once. See model details for cache, tier and modality conditions.'}
+            ? '缺少原始人民币价的国内端点、订阅及不支持项明确标注，不以零补齐；价格 API 只导出全部合格且已选区域的项目。'
+            : 'Domestic endpoints without original CNY, subscriptions and unsupported tariffs are marked explicitly, never filled with zero. The API exports all eligible selected-region prices.'}
         </p>
         <p>USDExchangeRate=1 · QuotaPerUnit=500000</p>
         <p>
           {zh
-            ? '配置来自固定快照，分组倍率独立配置；不在浏览器重新换汇或生成另一套价格。插件/工具未选择；官方工具报价不等于对客附加费或实例已清零。'
-            : 'Configuration comes from the fixed snapshot. Group ratios are independent. Plugins/tools are not selected. Official tool references do not establish customer surcharges or instance settings.'}
+            ? '元数据与上游来源/更新时间保持；快照发布不代表重新核价或实例配置生效。'
+            : 'Metadata and upstream dates are preserved. Publishing a snapshot does not reverify prices or apply instance configuration.'}
         </p>
         <CopyButton
           label={zh ? '复制全部配置' : 'Copy full configuration'}
