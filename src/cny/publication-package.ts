@@ -41,6 +41,7 @@ function utf8File(bytes: Uint8Array): string {
 export function buildPublicationPackage(
   artifactBytes: Uint8Array,
   selection: PublicationSelection,
+  version: 'v1' | 'v2' = 'v1',
 ) {
   const artifactText = utf8File(artifactBytes);
   const artifact = JSON.parse(artifactText) as FixedArtifact;
@@ -221,7 +222,13 @@ export function buildPublicationPackage(
       sale: 'not-approved',
     },
   };
-  const operations = `# 固定版本运营接入\n\n先核对manifest、固定版本hash、selection及partial/excluded和原核价日期；测试选择不是首发批准。此包只交付数据，不自动改实例。\n\n模型：在原版 Model prices → Upstream price sync（或模型metadata的Sync pricing）输入本目录ratio_config.json完整固定URL，核对实际URL，逐模型拉取、选择及预览；仅明确获准后Confirm Changes并核对结果。需要Root/SUPER_ADMIN权限。URL仅组件内存，刷新/关闭后重填；预设名称/Official徽标不随URL改变。空价格、无差异或success提示不能替代所选字段齐全。没有选择模型时跳过模型源，空模型文件不表示有可应用模型。\n\n插件：同版plugin_prices.json是每model的plugin→expression对象，在Model prices相应插件编辑器分别核对；模型URL不导入它们。\n\n工具：同版tool_prices.json是每千次CNY单价，在Tool prices的visual/JSON页面独立处理。必须fresh全表基线/合并、独占窗口、保存后读回，不能覆盖未选键；原版PUT无CAS。无独占则不应用该分区。\n\n目标预检：固定原版rc50，USDExchangeRate=1、QuotaPerUnit=500000，已归一USD×7不再乘7；组倍率由运营独立配置且不随包改写。模型/插件/工具非全局原子。冲突不强盖，超时先读回，unknown不报成功。\n\n源回退不恢复实例，不重算历史账单。实例恢复需新意图、fresh版本/工具独占及读回，保留未选键。下载校验、配置应用、真实调用、计费/账单、可售批准逐项记录，不相互代替。真实目标/渠道/alias/usage与预算走各自确认；不要求全136调用才开发本包。\n`;
+  if (!['v1', 'v2'].includes(version)) throw new Error('unsupported publication adapter');
+  let operations = `# 固定版本运营接入\n\n先核对manifest、固定版本hash、selection及partial/excluded和原核价日期；测试选择不是首发批准。此包只交付数据，不自动改实例。\n\n模型：在原版 Model prices → Upstream price sync（或模型metadata的Sync pricing）输入本目录ratio_config.json完整固定URL，核对实际URL，逐模型拉取、选择及预览；仅明确获准后Confirm Changes并核对结果。需要Root/SUPER_ADMIN权限。URL仅组件内存，刷新/关闭后重填；预设名称/Official徽标不随URL改变。空价格、无差异或success提示不能替代所选字段齐全。没有选择模型时跳过模型源，空模型文件不表示有可应用模型。\n\n插件：同版plugin_prices.json是每model的plugin→expression对象，在Model prices相应插件编辑器分别核对；模型URL不导入它们。\n\n工具：同版tool_prices.json是每千次CNY单价，在Tool prices的visual/JSON页面独立处理。必须fresh全表基线/合并、独占窗口、保存后读回，不能覆盖未选键；原版PUT无CAS。无独占则不应用该分区。\n\n目标预检：固定原版rc50，USDExchangeRate=1、QuotaPerUnit=500000，已归一USD×7不再乘7；组倍率由运营独立配置且不随包改写。模型/插件/工具非全局原子。冲突不强盖，超时先读回，unknown不报成功。\n\n源回退不恢复实例，不重算历史账单。实例恢复需新意图、fresh版本/工具独占及读回，保留未选键。下载校验、配置应用、真实调用、计费/账单、可售批准逐项记录，不相互代替。真实目标/渠道/alias/usage与预算走各自确认；不要求全136调用才开发本包。\n`;
+  if (version === 'v2')
+    operations = operations.replace(
+      /工具：[^\n]+/,
+      '工具：tool_prices.json仅保留官方报价参考，不是已证采购成本，不可直接作为对客应用值。脑生云独立工具附加费：fresh读取目标全部有效内置、模型前缀及已有自定义键，保留匹配规则并显式数值0；空对象、删键、null或缺价不等于0。不凭空新增业务键，不将工具成本移入模型表达式；模型、插件及分组倍率保持各自规则。工具全表无CAS，须独占、另行确认并读回；本包不自动生成或应用目标全键零价表。',
+    );
   const files: Record<string, string> = {
     'artifact.json': artifactText,
     'ratio_config.json': json(
@@ -237,7 +244,7 @@ export function buildPublicationPackage(
   };
   const content = {
     schemaVersion: 1,
-    adapterVersion: 'cny-package/v1',
+    adapterVersion: version === 'v2' ? 'cny-package/v2' : 'cny-package/v1',
     artifactId: artifact.id,
     sourceSha: artifact.sourceSha,
     artifactFileSha256: sha(artifactText),
@@ -280,7 +287,13 @@ export function verifyPublicationPackage(
   >['manifest'];
   if (manifest.releaseId !== expected.releaseId || typeof files['artifact.json'] !== 'string')
     throw new Error('missing artifact or wrong version');
-  const rebuilt = buildPublicationPackage(Buffer.from(files['artifact.json']), manifest.selection);
+  if (!['cny-package/v1', 'cny-package/v2'].includes(manifest.adapterVersion))
+    throw new Error('unsupported publication adapter');
+  const rebuilt = buildPublicationPackage(
+    Buffer.from(files['artifact.json']),
+    manifest.selection,
+    manifest.adapterVersion === 'cny-package/v2' ? 'v2' : 'v1',
+  );
   if (
     rebuilt.releaseId !== expected.releaseId ||
     rebuilt.manifestSha256 !== expected.manifestSha256 ||
@@ -320,7 +333,7 @@ export async function downloadPublicationPackage(
   >['manifest'];
   if (
     manifest.schemaVersion !== 1 ||
-    manifest.adapterVersion !== 'cny-package/v1' ||
+    !['cny-package/v1', 'cny-package/v2'].includes(manifest.adapterVersion) ||
     manifest.releaseId !== expected.releaseId ||
     !manifest.inventory ||
     hash(Object.keys(manifest.inventory).sort()) !== hash([...payloadNames].sort())

@@ -1,0 +1,66 @@
+name: naoshengyun-pages
+run-name: Pages ${{ inputs.release_id }} from ${{ inputs.expected_sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha: { description: Exact reviewed source commit, required: true, type: string }
+      release_id: { description: Exact user-approved release, required: true, type: string }
+      manifest_sha256: { description: External manifest hash, required: true, type: string }
+permissions:
+  contents: read
+concurrency:
+  group: naoshengyun-cny-publication
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'naoshengyun/llm-metadata' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/naoshengyun'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      RELEASE_ID: ${{ inputs.release_id }}
+      MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+    steps:
+      - name: Bind reviewed source
+        run: |
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { ref: '${{ github.sha }}', persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '22' }
+      - run: npm ci --ignore-scripts
+      - run: npm run test:cny
+      - name: Exact approved data and clean source
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{execFileSync}from'node:child_process';
+          const r=JSON.parse(readFileSync('data/cny/publication/first-release.json'));
+          assert.equal(r.releaseId,process.env.RELEASE_ID);assert.equal(r.manifestSha256,process.env.MANIFEST_SHA256);
+          assert.equal(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),'');
+          JS
+      - name: Build verified public snapshot and page
+        run: node scripts/build-pages-site.mjs data/cny/publication/first-release.json "${{ runner.temp }}/pages-site"
+      - name: Package regular generated files
+        run: tar --directory "${{ runner.temp }}/pages-site" -cf "${{ runner.temp }}/artifact.tar" .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/artifact.tar
+          if-no-files-found: error
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
