@@ -1,20 +1,14 @@
-# CNY发布当前入口（2026-11-17收口）
+# CNY发布当前入口（2026-11-17首发收口）
 
-发布开发完成，尚未真实部署。#18/#19/#20/#21均已关闭；[父汇总与AC追溯](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)、[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)已记录实际完成，不重复新建回执。
+**真实Pages首页与43原生模型静态价格源首发已完成，独立公网QA PASS。** [首页](https://naoshengyun.github.io/llm-metadata/) / [模型JSON](https://naoshengyun.github.io/llm-metadata/api/newapi/ratio_config.json)。用户原答复仅43模型，插件/工具不选，不沿用43+9建议或53候选。
 
-PR25于2026-11-17T11:29:11Z合并，merge `80578d757cdde0e3a77bff4608bdd1d93ae42e9d`；固定QA head `ec95407a68a556f9227835c5930b8dc7ab9282a6` Standards/Spec PASS，102/102、独立rc50 A→B→A及候选inline JS本地验证通过。已亲读固定报告并核对SHA256 `c2413ab90e897a52f398bef91745035a4e4ab958a7049f17f917a74a94e485d7`；不是本轮重跑测试、真实部署或CI。
+[既有全面回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6948364424)；[实际run44083046403](https://github.com/naoshengyun/llm-metadata/actions/runs/44083046403) build/deploy success；PR26 merge dff5832572825c6d811d08f2aacd6e19ebaa4899；deployment7853180390 success。hosted103/103和独立浏览器/匿名HTTP验收来自固定QA报告，不是本轮重跑。
 
-## 正式来源与当前状态
+[正式执行记录](../requirements/snapshots/publication-execution-20261117/2026-11-17-脑生云CNY价格源43模型首发执行记录.md)包含原授权、完整release/manifest hash、证据归属和回退限制。[来源登记](../requirements/publication-sources.json)：原Spec/Tickets/design/UI证据v1.3、Opsv1.4均未改；新增执行记录v1.0，不机械提升规范版本。#18—21保持开发CLOSED；#6/#10/#11保持OPEN。
 
-[来源登记](../requirements/publication-sources.json)记录真实逐文件版本/hash及executionObservation。Spec/Tickets/design/UI事实正文仍v1.3，运营正文v1.4；本轮全数未改字节、未机械升版本。历史快照及历史验收时点保持；以前“尚未运行”不能解释为当前未完成。
+## 既有未完成事项与后续版本边界
 
-页面已验收范围以#20原条件和实际证据为准。恢复不是开发门槛，未授权恢复或清理，保留I/UI实例现状。#6/#10/#11仍OPEN，真实业务/生产O范围未完成；这不否定#18开发汇总已关闭。
-
-## 既有真实发布前待项（不启动新范围）
-
-- 明确首发selection、来源核价日期、固定包/release/hash/diff与当次确认；测试A/B、53候选不自动首发，136参考/141差5及incomplete保持。
-- Pages、环境保护、精确动作许可及实际部署执行授权；不因开发通过自动开通/启用。
-- 实际公开读取、回退与运营网络验证，不能用本地/mock结果替代。
-- 未来交付说明须处理Ops v1.4对客零工具附加费与旧包非零官方报价参考的语义差异；官方报价不伪称采购成本，不改旧artifact/包。说明变化需新身份与校验；不自动修改模板产品或实施全键转换。
-
-以上是已存在的发布边界，不是新的执行票或访谈；本轮不联系Dev、不开Pages/改权限/启用CI/部署/写价/清理实例。
+- 生产目标工具全有效键显式0尚未验证；不选工具不等于清零。v2包已同步零费说明，原v1/quote/artifact不改，官方报价不是已证采购成本。
+- 实际生产new-api配置、采购成本/usage/钱包账单/可售和整体O/R，及特定运营网络验证仍单列；不否定已完成首发。
+- 首次无旧公开版本，未做破坏性真实回退。后续更新/回退必须保留当前release固定URL/原字节，并走新审阅的历史保留路径及确认；不能把first-release null-base脚本直接当通用覆盖/回退脚本。
+- 当前完整包仍partial/complete=false，136参考/141差5保留。后续选择与具体执行按其变更范围确认，不自动再次部署/供应商测试/新建票/恢复清理UII。

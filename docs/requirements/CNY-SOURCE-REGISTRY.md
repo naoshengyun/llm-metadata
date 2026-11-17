@@ -66,3 +66,7 @@ v1.2后续决定：用户接受每次粘贴URL、保留原版，#22已关闭；#
 ## 发布开发阶段收口（2026-11-17）
 
 发布开发完成，尚未真实部署。#18/#19/#20/#21均已合并对应实现并关闭；[原AC与父汇总回执](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)，[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)。当前版本/hash及固定QA报告见[发布登记](publication-sources.json)的executionObservation；Spec/Tickets/design/UI事实仍v1.3、运营v1.4，本轮未改正文或冻结快照。#6/#10/#11仍OPEN；真实O余项不否定开发完成。恢复非原开发门槛，不授权恢复/清理；既有发布前待项见[当前入口](../planning/CNY-PUBLICATION-FRONTIER.md)。
+
+## 真实首发后续状态（2026-11-17）
+
+此前“尚未部署/首发待定”为历史阶段，已被实际授权与执行取代：用户明确仅43原生模型，插件/工具不选；PR26 dff583、run44083046403与deployment7853180390成功，固定QA独立公网PASS。[新执行记录](snapshots/publication-execution-20261117/2026-11-17-脑生云CNY价格源43模型首发执行记录.md)及[来源登记](publication-sources.json)提供原消息/完整hash/范围。不改既有规范或快照版本；真实生产O/工具清零/特定网络/真实回退仍不可由首发推定。地图既有回执已完整，不重复comment。

@@ -72,6 +72,15 @@
       "sha256": "14e2986af26a55efae0ba8aec481931c67e7c76fda0d00f2e99d0d3592d1f1a4",
       "status": "static-evidence-runtime-unverified",
       "statusMeaning": "Historical document status at its recorded version; current development stage is tracker.executionObservation. Canonical bytes/version unchanged at closeout."
+    },
+    {
+      "id": "first-publication-execution",
+      "version": "1.0",
+      "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源43模型首发执行记录.md",
+      "snapshot": "snapshots/publication-execution-20261117/2026-11-17-脑生云CNY价格源43模型首发执行记录.md",
+      "sha256": "62f204b63e88e248eb1dc3cd7d703e99f93d3db2dae61f5463e875a6cfedb1e3",
+      "status": "public-first-release-accepted-operations-incomplete",
+      "role": "execution record, not a normative Spec revision"
     }
   ],
   "tracker": {
@@ -117,20 +126,46 @@
       "T02": "#20 CLOSED; PR24 merged 2026-11-17T10:07:09Z at e5cbf0403c3225c1ba71a1b8a92829d044a05ebd",
       "T03": "#21 CLOSED; PR25 merged 2026-11-17T11:29:11Z at 80578d757cdde0e3a77bff4608bdd1d93ae42e9d",
       "restoration": "Not an original #20 closing requirement; no new restoration or cleanup authorization",
-      "stage": "publication-development-complete-not-deployed",
+      "stage": "first-public-release-accepted-operations-incomplete",
       "observedAfter": "2026-11-17T11:29:11Z",
       "parent": "#18 CLOSED after all three children accepted and integrated",
-      "reviewedHead": "ec95407a68a556f9227835c5930b8dc7ab9282a6",
-      "qaReportPath": "/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/pr25-ec95407/REVIEW.md",
-      "qaReportSha256": "c2413ab90e897a52f398bef91745035a4e4ab958a7049f17f917a74a94e485d7",
-      "evidence": "Standards PASS / Spec PASS; 102/102; independent fixed rc50 A→B→A and extracted candidate inline JS local verification. Not a live Pages deployment or CI run.",
       "parentCloseout": "https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733",
       "existingMapReceipt": "https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090",
       "openOperationalRecords": [
         6,
         10,
         11
-      ]
+      ],
+      "publication": {
+        "run": 44083046403,
+        "deployment": 7853180390,
+        "sourceSha": "dff5832572825c6d811d08f2aacd6e19ebaa4899",
+        "pr": 26,
+        "releaseId": "74e69aea7269e8b0c2ac216cb13d332b23324c9adc6fb9f6e9ceeefb5bd91c1b",
+        "packageManifestSha256": "b13bb57933d8083b7d3cc64fdaf49524f5c6ce09ada202629c12a1faf47c7a81",
+        "selectedModels": 43,
+        "selectedPlugins": 0,
+        "selectedTools": 0,
+        "qaReportPath": "/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/pages-run-44083046403/REVIEW.md",
+        "qaReportSha256": "ffc7386b852e5000b2c53bb9b4d3dcf7d7e07969eb21f96f9cabeaaba91ea230",
+        "recordSourceId": "first-publication-execution",
+        "existingMapReceipt": "https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6948364424",
+        "authorization": {
+          "sessionId": "8e06f49b-06f8-48e4-b20e-06b5092d3b46",
+          "deploymentRelayId": "h7ffxqn3xvdtqzz61d5sbrwo",
+          "selectionUserMessageId": "m1yvx7d7w0kuvpab662fbjo2",
+          "selectionAt": "2026-11-17T12:01:50.468Z"
+        },
+        "homepage": "https://naoshengyun.github.io/llm-metadata/",
+        "nativeApi": "https://naoshengyun.github.io/llm-metadata/api/newapi/ratio_config.json",
+        "fixedManifest": "https://naoshengyun.github.io/llm-metadata/versions/74e69aea7269e8b0c2ac216cb13d332b23324c9adc6fb9f6e9ceeefb5bd91c1b/manifest.json",
+        "realRollback": "not performed: first public release, no prior public version",
+        "toolZeroConfiguration": "not applied or verified; selected tools empty is not zero-config evidence"
+      },
+      "developmentReviewedHead": "ec95407a68a556f9227835c5930b8dc7ab9282a6",
+      "developmentQaReportPath": "/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/pr25-ec95407/REVIEW.md",
+      "developmentQaReportSha256": "c2413ab90e897a52f398bef91745035a4e4ab958a7049f17f917a74a94e485d7",
+      "developmentEvidence": "Standards PASS / Spec PASS; 102/102; independent fixed rc50 A→B→A and extracted candidate inline JS local verification. Not a live Pages deployment or CI run."
     }
   },
   "history": [
@@ -292,6 +327,29 @@
     }
   ],
   "versionMeaning": "Registry revision; per-document versions authoritative (only operations advanced to v1.4)",
-  "currentStage": "publication-development-complete-not-deployed",
-  "closeoutMaintenance": "Status/index-only update; no canonical source edits, no document version bumps, no new execution scope."
+  "currentStage": "first-public-release-accepted-operations-incomplete",
+  "closeoutMaintenance": "Existing normative sources unchanged; new execution record v1.0 added with authorization and fixed public QA evidence; no new execution scope.",
+  "executionHistory": [
+    {
+      "recordedAt": "2026-11-17",
+      "T01": "#19 CLOSED; PR23 merged 2026-11-17T05:37:04Z at 1caf6b7831d618d8f766b03771a84a8a864e9236",
+      "T02": "#20 CLOSED; PR24 merged 2026-11-17T10:07:09Z at e5cbf0403c3225c1ba71a1b8a92829d044a05ebd",
+      "T03": "#21 CLOSED; PR25 merged 2026-11-17T11:29:11Z at 80578d757cdde0e3a77bff4608bdd1d93ae42e9d",
+      "restoration": "Not an original #20 closing requirement; no new restoration or cleanup authorization",
+      "stage": "publication-development-complete-not-deployed",
+      "observedAfter": "2026-11-17T11:29:11Z",
+      "parent": "#18 CLOSED after all three children accepted and integrated",
+      "reviewedHead": "ec95407a68a556f9227835c5930b8dc7ab9282a6",
+      "qaReportPath": "/Users/kohr/brainx_ai/llm-metadata/.cindy-worktrees/calm-cohen/qa-evidence/pr25-ec95407/REVIEW.md",
+      "qaReportSha256": "c2413ab90e897a52f398bef91745035a4e4ab958a7049f17f917a74a94e485d7",
+      "evidence": "Standards PASS / Spec PASS; 102/102; independent fixed rc50 A→B→A and extracted candidate inline JS local verification. Not a live Pages deployment or CI run.",
+      "parentCloseout": "https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733",
+      "existingMapReceipt": "https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090",
+      "openOperationalRecords": [
+        6,
+        10,
+        11
+      ]
+    }
+  ]
 }

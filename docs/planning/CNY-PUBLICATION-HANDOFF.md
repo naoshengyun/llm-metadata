@@ -1,6 +1,6 @@
 # 发布开发交接回执（2026-11-17）
 
-当前阶段：发布开发完成，尚未真实部署。#18/#19/#20/#21均已关闭；[父汇总与AC追溯](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)、[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)已记录实际完成，不重复新建回执。 当前发布前待项见[收口入口](CNY-PUBLICATION-FRONTIER.md)。下文保留原交接/调查时点记录，其“尚未运行/当前可开工”等不再是实时状态。
+当前阶段：发布开发已完成，后续43模型真实首发亦已部署并独立公网QA通过。#18/#19/#20/#21均保持关闭；[父汇总与AC追溯](https://github.com/naoshengyun/llm-metadata/issues/18#issuecomment-6946813733)、[既有地图回执](https://github.com/naoshengyun/llm-metadata/issues/6#issuecomment-6946855090)已记录实际完成，不重复新建回执。 当前发布记录及运营余项见[收口入口](CNY-PUBLICATION-FRONTIER.md)。下文保留原交接/调查时点记录，其“尚未运行/当前可开工”等不再是实时状态。
 
 ## 历史记录（原文保留）
 
