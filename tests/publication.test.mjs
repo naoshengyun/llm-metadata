@@ -229,3 +229,23 @@ test('S: equivalent selection key ordering produces identical fixed-version file
     rmSync(two, { recursive: true, force: true });
   }
 });
+test('S: an explicit native-name to official-record mapping remains usable without guessing aliases', () => {
+  const seed = fixture();
+  const a = buildOfficialSnapshot({
+    sourceSha: seed.sourceSha,
+    catalog: seed.quotes,
+    reference: seed.data.reference,
+    selection: { 'native-billing-model': 'm' },
+  }).artifact;
+  const r = buildModelRelease(a, { ...options, models: ['native-billing-model'] });
+  assert.deepEqual(r.modelSource.data, {
+    billing_mode: { 'native-billing-model': 'tiered_expr' },
+    billing_expr: { 'native-billing-model': 'tier("standard", p * 21 + c * 105)' },
+  });
+  assert.equal(r.selected[0].quoteId, 'm');
+  a.selection['native-billing-model'] = 'missing-record';
+  assert.throws(
+    () => buildModelRelease(reissue(a), { ...options, models: ['native-billing-model'] }),
+    /source/,
+  );
+});

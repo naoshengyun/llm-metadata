@@ -44,7 +44,7 @@ export function buildModelRelease(artifact: FixedArtifact, selection: ModelRelea
       !price.billing_expr.trim()
     )
       throw new Error(`selected model requires a complete mode/expression pair: ${name}`);
-    const record = sourceRecords.find((q) => q.id === artifact.selection[name] && q.model === name);
+    const record = sourceRecords.find((q) => q.id === artifact.selection[name]);
     if (!record) throw new Error(`selected model has no eligible source: ${name}`);
     const regenerated = generateCny({
       upstream: { providers: {} },
