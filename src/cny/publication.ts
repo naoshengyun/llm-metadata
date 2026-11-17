@@ -1,4 +1,4 @@
-import { generateCny, hash, type OfficialQuote } from './generate.js';
+import { canonical, generateCny, hash, type OfficialQuote } from './generate.js';
 import { verifyArtifact, type FixedArtifact } from './artifact.js';
 import { createHash } from 'node:crypto';
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
@@ -8,6 +8,9 @@ export interface ModelReleaseSelection {
   models: string[];
   mode: 'partial' | 'full';
   purpose: 'test' | 'candidate';
+}
+function releaseJson(value: unknown): string {
+  return JSON.stringify(JSON.parse(canonical(value)), null, 2) + '\n';
 }
 export function buildModelRelease(artifact: FixedArtifact, selection: ModelReleaseSelection) {
   if (!verifyArtifact(artifact)) throw new Error('invalid fixed artifact');
@@ -95,7 +98,7 @@ export function buildModelRelease(artifact: FixedArtifact, selection: ModelRelea
       nativeBaseline: artifact.manifest.nativeBaseline,
       policy: structuredClone(artifact.manifest.policy),
     },
-    selection: { ...selection, models: names },
+    selection: { models: names, mode: selection.mode, purpose: selection.purpose },
     selected,
     notSelected,
     complete: artifact.manifest.complete,
@@ -108,9 +111,7 @@ export function buildModelRelease(artifact: FixedArtifact, selection: ModelRelea
       tools: 'separate-configuration-required',
     },
     modelSource,
-    modelSourceSha256: createHash('sha256')
-      .update(JSON.stringify(modelSource, null, 2) + '\n')
-      .digest('hex'),
+    modelSourceSha256: createHash('sha256').update(releaseJson(modelSource)).digest('hex'),
   };
   return { ...content, id: hash(content) };
 }
@@ -118,7 +119,7 @@ export function buildModelRelease(artifact: FixedArtifact, selection: ModelRelea
 /** Writes only a local immutable candidate version; no hosting or promotion. */
 export function writeModelRelease(root: string, release: ReturnType<typeof buildModelRelease>) {
   const { id, ...content } = release;
-  const response = JSON.stringify(release.modelSource, null, 2) + '\n';
+  const response = releaseJson(release.modelSource);
   if (
     !/^[a-f0-9]{64}$/.test(id) ||
     hash(content) !== id ||
@@ -149,7 +150,7 @@ export function writeModelRelease(root: string, release: ReturnType<typeof build
     throw new Error('model response must completely cover selection');
   const directory = join(realpathSync(root), id);
   mkdirSync(directory); // Exclusive: existing directories, files and symlinks all reject.
-  writeFileSync(join(directory, 'release.json'), JSON.stringify(release, null, 2) + '\n', {
+  writeFileSync(join(directory, 'release.json'), releaseJson(release), {
     flag: 'wx',
   });
   writeFileSync(join(directory, 'ratio_config.json'), response, { flag: 'wx' });

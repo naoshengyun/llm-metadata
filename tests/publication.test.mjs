@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildArtifact } from '../.cache/cny-build/cny/artifact.js';
-import { hash } from '../.cache/cny-build/cny/generate.js';
+import { canonical, hash } from '../.cache/cny-build/cny/generate.js';
 import { createHash } from 'node:crypto';
 
 function fixture() {
@@ -158,7 +158,7 @@ test('S: recomputed hashes cannot make an incomplete model response writable', (
     const bad = buildModelRelease(fixture(), options);
     delete bad.modelSource.data.billing_expr.m;
     bad.modelSourceSha256 = createHash('sha256')
-      .update(JSON.stringify(bad.modelSource, null, 2) + '\n')
+      .update(JSON.stringify(JSON.parse(canonical(bad.modelSource)), null, 2) + '\n')
       .digest('hex');
     const { id, ...content } = bad;
     bad.id = hash(content);
@@ -182,7 +182,7 @@ test('S: strict publication envelope rejects missing/false/nonboolean success an
       const bad = buildModelRelease(fixture(), options);
       alter(bad.modelSource);
       bad.modelSourceSha256 = createHash('sha256')
-        .update(JSON.stringify(bad.modelSource, null, 2) + '\n')
+        .update(JSON.stringify(JSON.parse(canonical(bad.modelSource)), null, 2) + '\n')
         .digest('hex');
       const { id, ...content } = bad;
       bad.id = hash(content);
@@ -190,5 +190,42 @@ test('S: strict publication envelope rejects missing/false/nonboolean success an
     }
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+test('S: equivalent selection key ordering produces identical fixed-version file bytes', () => {
+  const one = mkdtempSync(join(tmpdir(), 'cny-release-order-a-')),
+    two = mkdtempSync(join(tmpdir(), 'cny-release-order-b-'));
+  try {
+    const reverseKeys = (x) =>
+      Array.isArray(x)
+        ? x.map(reverseKeys)
+        : x && typeof x === 'object'
+          ? Object.fromEntries(
+              Object.entries(x)
+                .reverse()
+                .map(([k, v]) => [k, reverseKeys(v)]),
+            )
+          : x;
+    const a = fixture(),
+      first = buildModelRelease(a, options),
+      second = buildModelRelease(reverseKeys(a), {
+        purpose: 'test',
+        mode: 'partial',
+        models: ['m'],
+      });
+    assert.equal(first.id, second.id);
+    const d1 = writeModelRelease(one, first),
+      d2 = writeModelRelease(two, second);
+    assert.deepEqual(
+      readFileSync(join(d1, 'release.json')),
+      readFileSync(join(d2, 'release.json')),
+    );
+    assert.deepEqual(
+      readFileSync(join(d1, 'ratio_config.json')),
+      readFileSync(join(d2, 'ratio_config.json')),
+    );
+  } finally {
+    rmSync(one, { recursive: true, force: true });
+    rmSync(two, { recursive: true, force: true });
   }
 });

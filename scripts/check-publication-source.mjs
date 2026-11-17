@@ -1,7 +1,7 @@
 /** H: independent disposable rc50 fetch/preview only. Never reuse the retained I target. */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFileSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
