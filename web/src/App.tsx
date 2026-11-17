@@ -6,7 +6,7 @@ import { CopyButton } from '@/components/copy-button';
 import { LocaleToggle } from '@/components/locale-toggle';
 import { CARD_GRID, ModelCards } from '@/components/model-cards';
 import { ModelDetail } from '@/components/model-detail';
-import { NewApiSettings } from '@/components/newapi-settings';
+import { NewApiSettings } from '@/components/publication-settings';
 import { PricingTable } from '@/components/pricing-table';
 import { ProviderIcon } from '@/components/provider-icon';
 import { ProviderSidebar } from '@/components/provider-sidebar';
@@ -42,7 +42,7 @@ import { NewApiProvider, providerRatioConfig, useNewApi } from '@/lib/newapi';
 import { cn } from '@/lib/utils';
 import { readStoredViewMode, storeViewMode, type ViewMode } from '@/lib/view-mode';
 
-const REPO_URL = 'https://github.com/basellm/llm-metadata';
+const REPO_URL = 'https://github.com/naoshengyun/llm-metadata';
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -347,7 +347,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
             className="focus-visible:ring-ring/50 flex items-center gap-2 rounded-sm font-semibold tracking-tight focus-visible:ring-2 focus-visible:outline-none"
           >
             <span aria-hidden className="bg-primary size-2.5 rounded-full" />
-            LLM Metadata
+            脑生云 · CNY
           </a>
           <AnimatedShinyText className="hidden text-sm sm:inline">
             {t('app.tagline')}
@@ -389,6 +389,20 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
         )}
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 pb-6">
+          {providers && (
+            <details className="shrink-0 rounded border p-2 md:hidden">
+              <summary>
+                {locale === 'zh' ? '搜索供应商 / 全部模型' : 'Search providers / all models'}
+              </summary>
+              <ProviderSidebar
+                mobile
+                providers={providers}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onSelectModel={handleOpenModelIn}
+              />
+            </details>
+          )}
           {/* 移动端：供应商选择器 */}
           {providers && selectedId && (
             <div className="shrink-0 md:hidden">

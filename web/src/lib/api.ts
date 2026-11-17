@@ -13,6 +13,12 @@ export interface ReasoningOption {
 }
 
 export interface Model {
+  publication?: {
+    quoteId: string;
+    source: { url: string; checkedAt: string };
+    priceList: string;
+    feeDeclarations: unknown[];
+  };
   id: string;
   name?: string;
   description?: string;
