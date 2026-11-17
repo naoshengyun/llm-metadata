@@ -61,7 +61,9 @@ export function ProviderSidebar({
   selectedId,
   onSelect,
   onSelectModel,
+  mobile = false,
 }: {
+  mobile?: boolean;
   providers: ProviderIndexItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -99,7 +101,13 @@ export function ProviderSidebar({
   const hiddenCount = modelResults.length - visibleModels.length;
 
   return (
-    <aside className="hidden w-60 min-h-0 shrink-0 flex-col gap-3 md:flex">
+    <aside
+      className={
+        mobile
+          ? 'flex max-h-[45dvh] min-h-0 flex-col gap-3'
+          : 'hidden w-60 min-h-0 shrink-0 flex-col gap-3 md:flex'
+      }
+    >
       <div className="relative shrink-0">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input

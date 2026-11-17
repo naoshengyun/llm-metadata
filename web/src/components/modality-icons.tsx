@@ -11,11 +11,13 @@ export function ModalityIcons({
   className?: string;
 }) {
   const { t } = useI18n();
+  if (supported.size === 0) return <span className={className}>—</span>;
   return (
     <span className={cn('flex items-center gap-2.5', className)}>
       {CORE_MODALITIES.map((value) => {
         const { icon: Icon } = MODALITY_META[value];
         const active = supported.has(value);
+        if (supported.size === 0) return <span className={className}>—</span>;
         return (
           <Icon
             key={value}

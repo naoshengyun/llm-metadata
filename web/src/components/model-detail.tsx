@@ -426,10 +426,13 @@ export function ModelDetail({
           value={formatContext(model.limit?.output)}
           sub={t('detail.tokens')}
         />
-        <StatCell label={t('table.input')} value={<ModalityIcons supported={inputModalities} />} />
+        <StatCell
+          label={t('table.input')}
+          value={model.modalities?.input ? <ModalityIcons supported={inputModalities} /> : '—'}
+        />
         <StatCell
           label={t('table.output')}
-          value={<ModalityIcons supported={outputModalities} />}
+          value={model.modalities?.output ? <ModalityIcons supported={outputModalities} /> : '—'}
         />
         <BorderBeam
           size={120}
@@ -512,6 +515,29 @@ export function ModelDetail({
               : undefined
           }
         >
+          {model.publication && (
+            <div className="mb-4 space-y-3 text-sm break-words">
+              <p>
+                {model.publication.priceList} · {model.publication.source.checkedAt}
+                {' · '}
+                {locale === 'zh' ? '源币种' : 'Source currency'}: {model.publication.sourceCurrency}{' '}
+                → CNY
+              </p>
+              <a
+                className="underline"
+                href={model.publication.source.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {locale === 'zh' ? '官方价目来源' : 'Official price source'}
+              </a>
+              <p>
+                {locale === 'zh'
+                  ? 'CNY 基础价 / 每百万 Token；缓存 TTL、上下文阶梯和多模态适用条件以以下报价字段、说明及固定表达式为准。'
+                  : 'CNY base price / million tokens. Cache TTL, context tiers and modality conditions follow the quoted fields, description and fixed expression below.'}
+              </p>
+            </div>
+          )}
           <div className="flex flex-col gap-8">
             {hasPrices(pricing) && (
               <PriceBlock
@@ -531,6 +557,22 @@ export function ModelDetail({
               />
             ))}
           </div>
+          {model.publication && (
+            <details className="mt-4 text-sm">
+              <summary>
+                {locale === 'zh' ? '完整报价字段（CNY）' : 'Full quoted fields (CNY)'}
+              </summary>
+              <pre className="overflow-x-auto rounded border p-3 text-xs whitespace-pre-wrap break-all">
+                {JSON.stringify(
+                  Object.fromEntries(
+                    Object.entries(model.cost ?? {}).filter(([k]) => k !== 'publication_expr'),
+                  ),
+                  null,
+                  2,
+                )}
+              </pre>
+            </details>
+          )}
           {expr && (
             <ExprBlock
               expr={expr}
@@ -551,36 +593,37 @@ export function ModelDetail({
       />
 
       {/* 模态 */}
-      <DetailSection title={t('detail.modalities')}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {CORE_MODALITIES.map((value) => {
-            const { icon } = MODALITY_META[value];
-            const status = modalityStatus(value);
-            return (
-              <StatusItem
-                key={value}
-                icon={icon}
-                label={modalityLabel(value, t)}
-                status={status.text}
-                active={status.active}
-              />
-            );
-          })}
-          {extraModalities.map((value) => {
-            const status = modalityStatus(value);
-            return (
-              <StatusItem
-                key={value}
-                icon={FileText}
-                label={modalityLabel(value, t)}
-                status={status.text}
-                active={status.active}
-              />
-            );
-          })}
-        </div>
-      </DetailSection>
-
+      {model.modalities && (
+        <DetailSection title={t('detail.modalities')}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CORE_MODALITIES.map((value) => {
+              const { icon } = MODALITY_META[value];
+              const status = modalityStatus(value);
+              return (
+                <StatusItem
+                  key={value}
+                  icon={icon}
+                  label={modalityLabel(value, t)}
+                  status={status.text}
+                  active={status.active}
+                />
+              );
+            })}
+            {extraModalities.map((value) => {
+              const status = modalityStatus(value);
+              return (
+                <StatusItem
+                  key={value}
+                  icon={FileText}
+                  label={modalityLabel(value, t)}
+                  status={status.text}
+                  active={status.active}
+                />
+              );
+            })}
+          </div>
+        </DetailSection>
+      )}
       {/* 能力 */}
       {features.length > 0 && (
         <DetailSection title={t('detail.features')}>

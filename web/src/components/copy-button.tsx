@@ -19,7 +19,7 @@ export function CopyButton({
   label,
   className,
 }: {
-  text: string | (() => string);
+  text: string | (() => string | Promise<string>);
   label?: string;
   className?: string;
 }) {
@@ -32,7 +32,7 @@ export function CopyButton({
   const handleCopy = async (event: MouseEvent) => {
     event.stopPropagation();
     try {
-      await navigator.clipboard.writeText(typeof text === 'function' ? text() : text);
+      await navigator.clipboard.writeText(await (typeof text === 'function' ? text() : text));
       setCopied(true);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 1500);

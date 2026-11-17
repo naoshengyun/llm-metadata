@@ -16,11 +16,7 @@ import {
   type NewApiDeployment,
 } from '@billing/deployment';
 import type { BillingExprUnit } from '@billing/expr';
-import {
-  buildRatioConfig,
-  type NewApiPriceConfig,
-  type RatioConfigProvider,
-} from '@billing/ratio-config';
+import { type NewApiPriceConfig, type RatioConfigProvider } from '@billing/ratio-config';
 
 import type { ModelCost, ProviderBillingRule } from './api';
 import { formatMoney } from './format';
@@ -41,15 +37,6 @@ interface NewApiContextValue {
 
 const NewApiContext = createContext<NewApiContextValue | null>(null);
 
-function readStored(): unknown {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as unknown) : null;
-  } catch {
-    return null;
-  }
-}
-
 function writeStored(deployment: NewApiDeployment | null): void {
   try {
     if (deployment) localStorage.setItem(STORAGE_KEY, JSON.stringify(deployment));
@@ -69,8 +56,16 @@ export function NewApiProvider({
   exchangeRates: ExchangeRates;
   children: ReactNode;
 }) {
-  const defaults = useMemo(() => defaultDeployment(exchangeRates), [exchangeRates]);
-  const [stored, setStored] = useState<unknown>(readStored);
+  const defaults = useMemo(
+    () => ({
+      ...defaultDeployment(exchangeRates),
+      quotaDisplayType: 'CNY' as const,
+      usdExchangeRate: 1,
+      preferredListCurrency: 'CNY' as const,
+    }),
+    [exchangeRates],
+  );
+  const [stored, setStored] = useState<unknown>(null);
 
   const deployment = useMemo(
     () => (stored ? sanitizeDeployment(stored, defaults) : defaults),
@@ -119,6 +114,8 @@ export function modelExpr(
   deployment: NewApiDeployment,
   exchangeRates: ExchangeRates,
 ): ModelExpr | undefined {
+  if (typeof cost?.publication_expr === 'string')
+    return { expr: cost.publication_expr, unit: 'token', sheetCurrency: 'CNY' };
   const result = buildDeploymentBillingExpr(cost, billing ?? {}, deployment, exchangeRates);
   return result.expr === null
     ? undefined
@@ -128,10 +125,21 @@ export function modelExpr(
 /** 单个供应商的 /api/ratio_config 载荷（与托管文件同形，按当前部署生成） */
 export function providerRatioConfig(
   provider: RatioConfigProvider,
-  deployment: NewApiDeployment,
-  exchangeRates: ExchangeRates,
+  _deployment: NewApiDeployment,
+  _exchangeRates: ExchangeRates,
 ): NewApiPriceConfig {
-  return buildRatioConfig([provider], deployment, exchangeRates).config;
+  const config: NewApiPriceConfig = {
+    success: true,
+    message: '',
+    data: { billing_mode: {}, billing_expr: {} },
+  };
+  for (const [id, model] of Object.entries(provider.models)) {
+    if (typeof model.cost?.publication_expr !== 'string')
+      throw Error('Fixed publication expression required');
+    config.data.billing_mode[id] = 'tiered_expr';
+    config.data.billing_expr[id] = model.cost.publication_expr;
+  }
+  return config;
 }
 
 /** 系数单位说明："1 quota-USD" 在该部署上显示为多少展示货币（如 "¥7.3"） */

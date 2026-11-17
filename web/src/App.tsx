@@ -6,7 +6,7 @@ import { CopyButton } from '@/components/copy-button';
 import { LocaleToggle } from '@/components/locale-toggle';
 import { CARD_GRID, ModelCards } from '@/components/model-cards';
 import { ModelDetail } from '@/components/model-detail';
-import { NewApiSettings } from '@/components/newapi-settings';
+import { NewApiSettings } from '@/components/publication-settings';
 import { PricingTable } from '@/components/pricing-table';
 import { ProviderIcon } from '@/components/provider-icon';
 import { ProviderSidebar } from '@/components/provider-sidebar';
@@ -42,7 +42,7 @@ import { NewApiProvider, providerRatioConfig, useNewApi } from '@/lib/newapi';
 import { cn } from '@/lib/utils';
 import { readStoredViewMode, storeViewMode, type ViewMode } from '@/lib/view-mode';
 
-const REPO_URL = 'https://github.com/basellm/llm-metadata';
+const REPO_URL = 'https://github.com/naoshengyun/llm-metadata';
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -78,24 +78,15 @@ function HeaderStats({ providers, models }: { providers: number; models: number 
   );
 }
 
-/** 数据来源脚注：消息中的 {link} 占位符渲染为 models.dev 链接 */
+/** Fixed publication source, separate from upstream application authorship. */
 function FooterSource() {
-  const { t } = useI18n();
+  const { locale } = useI18n();
   return (
-    <span>
-      {renderMessage(t('app.footerSource'), {
-        link: (
-          <a
-            href="https://models.dev"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-foreground underline underline-offset-2"
-          >
-            models.dev
-          </a>
-        ),
-      })}
-    </span>
+    <a href="./publication.html" className="underline underline-offset-2">
+      {locale === 'zh'
+        ? '43 项官方 CNY 基础价 · partial · 核价 2026-11-16 · 来源与下载'
+        : '43 official CNY base prices · partial · checked 2026-11-16 · sources/downloads'}
+    </a>
   );
 }
 
@@ -347,7 +338,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
             className="focus-visible:ring-ring/50 flex items-center gap-2 rounded-sm font-semibold tracking-tight focus-visible:ring-2 focus-visible:outline-none"
           >
             <span aria-hidden className="bg-primary size-2.5 rounded-full" />
-            LLM Metadata
+            脑生云 · CNY
           </a>
           <AnimatedShinyText className="hidden text-sm sm:inline">
             {t('app.tagline')}
@@ -389,6 +380,20 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
         )}
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 pb-6">
+          {providers && (
+            <details className="shrink-0 rounded border p-2 md:hidden">
+              <summary>
+                {locale === 'zh' ? '搜索供应商 / 全部模型' : 'Search providers / all models'}
+              </summary>
+              <ProviderSidebar
+                mobile
+                providers={providers}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onSelectModel={handleOpenModelIn}
+              />
+            </details>
+          )}
           {/* 移动端：供应商选择器 */}
           {providers && selectedId && (
             <div className="shrink-0 md:hidden">

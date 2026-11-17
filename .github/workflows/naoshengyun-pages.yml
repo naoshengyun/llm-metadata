@@ -39,8 +39,11 @@ jobs:
           assert.equal(r.releaseId,process.env.RELEASE_ID);assert.equal(r.manifestSha256,process.env.MANIFEST_SHA256);
           assert.equal(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),'');
           JS
+      - run: npm --prefix web ci --ignore-scripts
       - name: Build verified public snapshot and page
-        run: node scripts/build-pages-site.mjs data/cny/publication/first-release.json "${{ runner.temp }}/pages-site"
+        run: node scripts/build-visual-site.mjs data/cny/publication/first-release.json "${{ runner.temp }}/pages-site"
+      - name: Verify exact visual catalog and immutable API
+        run: node scripts/check-visual-site.mjs "${{ runner.temp }}/pages-site"
       - name: Package regular generated files
         run: tar --directory "${{ runner.temp }}/pages-site" -cf "${{ runner.temp }}/artifact.tar" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
