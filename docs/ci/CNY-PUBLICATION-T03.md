@@ -28,7 +28,7 @@ node scripts/publication-transition.mjs export state-dir new-site-dir expected-r
 
 确认记录为 `{confirmed:true, actor:"明确确认者", approvalRef:"实际批准记录", planId:"精确计划ID"}`。本地测试只使用明确test批准引用，不伪装首发批准。输出plan/receipt/目录拒覆写；有receipt先读而不是盲重跑。failed/unknown的apply命令以非零退出并保留JSON回执；receipt的status和submission均须查看，零退出也不代表真实Pages已部署。LocalPublicationPlatform对本地state文件使用独占锁和rename整快照，检查旧revision，attempt记录保留在本地状态目录，不进公开快照；它不证明真实Pages支持全局CAS。
 
-附加 `candidate` 参数的verify/export拒绝purpose=test。只有明确人工核价/首发选择与对应candidate包能进入未来真实发布候选，现有四项/53项或本票A/B测试不自动获选。
+附加 `candidate` 参数的verify/export拒绝当前或任何保留历史版本purpose=test，避免把本地测试固定URL一起公开。真实候选状态须与开发演练状态分开；只有明确人工核价/首发选择与对应candidate包能进入未来真实发布候选，现有四项/53项或本票A/B测试不自动获选。
 
 ## 已批准验证位置与可重复入口
 

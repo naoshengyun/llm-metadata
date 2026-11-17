@@ -64,8 +64,8 @@ function semanticDiff(before: Package | null, after: Package) {
     for (const key of [
       ...new Set([...Object.keys(old[partition]), ...Object.keys(next[partition])]),
     ].sort()) {
-      const b = old[partition][key] ?? null,
-        a = next[partition][key] ?? null;
+      const b = Object.hasOwn(old[partition], key) ? old[partition][key] : null,
+        a = Object.hasOwn(next[partition], key) ? next[partition][key] : null;
       if (hash(b) !== hash(a)) changes.push({ partition, key, before: b, after: a });
     }
   return changes;
@@ -113,7 +113,7 @@ export function verifyPublicationSnapshot(snapshot: PublicationSnapshot) {
     snapshot.files['.nojekyll'] !== ''
   )
     throw new Error('inconsistent stable pointer or model source');
-  return { pointer, target };
+  return { pointer, target, versions: validated };
 }
 
 /** Prepares data only. The caller must obtain a new confirmation before submitting it. */

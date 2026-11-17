@@ -108,8 +108,13 @@ export async function verifyLocalPublication(stateDir, expectedRevision, require
   if (!snapshot || snapshot.revision !== expectedRevision)
     throw new Error('reviewed snapshot revision mismatch');
   const verified = verifyPublicationSnapshot(snapshot);
-  if (requireCandidate && verified.target.manifest.selection.purpose !== 'candidate')
-    throw new Error('test selection is not a publication candidate');
+  if (
+    requireCandidate &&
+    Object.values(verified.versions).some(
+      (version) => version.manifest.selection.purpose !== 'candidate',
+    )
+  )
+    throw new Error('current or retained test selection is not a publication candidate');
   return { snapshot, ...verified };
 }
 export async function runPublicationCommand(args) {

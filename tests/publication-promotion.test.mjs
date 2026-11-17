@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  LocalPublicationPlatform,
+  verifyLocalPublication,
+} from '../scripts/publication-transition.mjs';
 import { buildOfficialSnapshot } from '../scripts/build-official-cny.mjs';
 import { buildPublicationPackage } from '../.cache/cny-build/cny/publication-package.js';
 import {
@@ -24,13 +30,13 @@ const artifact = Buffer.from(
     }).artifact,
   ),
 );
-function pack(models = ['kimi-k3.1-pro']) {
+function pack(models = ['kimi-k3.1-pro'], purpose = 'test') {
   return buildPublicationPackage(artifact, {
     models,
     plugins: {},
     tools: [],
     mode: 'partial',
-    purpose: 'test',
+    purpose,
   });
 }
 test('S: a reviewed package produces one stable pointer/model snapshot without changing source dates', () => {
@@ -310,4 +316,58 @@ test('S: concurrent transitions from one old revision cannot both replace the st
     JSON.parse((await platform.read()).files['current.json']).releaseId,
     successful.target.releaseId,
   );
+});
+test('S: candidate export rejects retained test versions even when the current release is candidate', async () => {
+  const mixed = mkdtempSync(join(tmpdir(), 'cny-mixed-candidate-')),
+    clean = mkdtempSync(join(tmpdir(), 'cny-clean-candidate-'));
+  try {
+    const a = pack(),
+      b = pack(['kimi-k3.1-pro', 'claude-sonnet-4-5'], 'candidate'),
+      platform = new LocalPublicationPlatform(mixed);
+    const first = preparePublicationTransition(null, a.files, a, 'promote');
+    await executePublicationTransition(platform, first, confirm(first));
+    const next = preparePublicationTransition(await platform.read(), b.files, b, 'promote');
+    await executePublicationTransition(platform, next, confirm(next));
+    await assert.rejects(
+      verifyLocalPublication(mixed, next.snapshot.revision, true),
+      /test.*candidate|retained test/,
+    );
+    const cleanPlatform = new LocalPublicationPlatform(clean),
+      reviewed = preparePublicationTransition(null, b.files, b, 'promote');
+    await executePublicationTransition(cleanPlatform, reviewed, confirm(reviewed));
+    assert.equal(
+      (await verifyLocalPublication(clean, reviewed.snapshot.revision, true)).pointer.releaseId,
+      b.releaseId,
+    );
+  } finally {
+    rmSync(mixed, { recursive: true, force: true });
+    rmSync(clean, { recursive: true, force: true });
+  }
+});
+test('S: explicit native model names do not inherit object properties in the semantic diff', () => {
+  const mapped = buildOfficialSnapshot({
+    sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
+    catalog: read('official-catalog.json'),
+    reference: read('coverage-reference.json'),
+    selection: { constructor: JSON.parse(artifact).selection['kimi-k3.1-pro'] },
+  }).artifact;
+  const p = buildPublicationPackage(Buffer.from(JSON.stringify(mapped)), {
+    models: ['constructor'],
+    plugins: {},
+    tools: [],
+    mode: 'partial',
+    purpose: 'test',
+  });
+  const plan = preparePublicationTransition(null, p.files, p, 'promote');
+  assert.deepEqual(plan.diff, [
+    {
+      partition: 'models',
+      key: 'constructor',
+      before: null,
+      after: {
+        billing_mode: 'tiered_expr',
+        billing_expr: 'tier("standard", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)',
+      },
+    },
+  ]);
 });
