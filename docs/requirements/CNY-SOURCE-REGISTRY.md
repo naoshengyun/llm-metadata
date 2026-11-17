@@ -54,3 +54,5 @@
 新发布正文由Planner维护于obs outputs/qa，v1.0的Spec、拆解、设计/授权及运营接入路径与hash见[发布来源登记](publication-sources.json)。仓库只留字节一致的固定快照与索引，不维护第二份活正文；原v0.12和AC-01—30不改。发布增量沿用PUB-AC-01—10。
 
 [开发方案批准#17](https://github.com/naoshengyun/llm-metadata/issues/17)确认三票/S-H/D4可作为开发依据；实际Pages/许可/启用/部署/首发名单及实例/供应商操作仍未授权。GitHub执行票承载工作状态和依赖，规范变更先回obs升版本；不得用票实现结果倒改批准范围。
+
+发布增量v1.1追加用户确认的PUB-AC-11页面全流程效果，原PUB-AC-01—10及v1.0快照不改。当前路径/hash/历史版本见publication-sources.json；#20页面适配待证为needs-info，#19独立格式开发保持ready，#21不新增页面AC。既有开发批准不等于运营页面端到端已验收。
