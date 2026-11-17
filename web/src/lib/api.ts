@@ -15,6 +15,7 @@ export interface ReasoningOption {
 export interface Model {
   publication?: {
     quoteId: string;
+    sourceCurrency: string;
     source: { url: string; checkedAt: string };
     priceList: string;
     feeDeclarations: unknown[];
@@ -48,7 +49,7 @@ export interface Provider {
   api?: string;
   doc?: string;
   iconURL?: string;
-  /** 端点结算货币（缺省 USD） */
+  /** 浏览价目币种（本发布为 CNY 基础价；源币种见 publication） */
   currency?: string;
   /** 订阅套餐端点（Token Plan / Coding Plan）：用量从预付额度抵扣，逐 token 价目不适用 */
   subscription?: boolean;

@@ -519,6 +519,9 @@ export function ModelDetail({
             <div className="mb-4 space-y-3 text-sm break-words">
               <p>
                 {model.publication.priceList} · {model.publication.source.checkedAt}
+                {' · '}
+                {locale === 'zh' ? '源币种' : 'Source currency'}: {model.publication.sourceCurrency}{' '}
+                → CNY
               </p>
               <a
                 className="underline"

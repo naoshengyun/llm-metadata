@@ -66,6 +66,7 @@ for (const id of request.selection.models) {
     last_updated: quote.source.checkedAt,
     publication: {
       quoteId: quote.id,
+      sourceCurrency: quote.currency,
       source: quote.source,
       priceList: quote.priceList,
       feeDeclarations: quote.feeDeclarations,

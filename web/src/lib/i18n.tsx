@@ -39,13 +39,14 @@ const en = {
   'app.searchModels': 'Search models…',
   'app.retry': 'Retry',
   'app.tableFootnote':
-    "{count} models · Prices per 1M tokens in the provider's billing currency · Expand a row for tier details.",
+    '{count} models · Prices per 1M tokens as CNY base prices · Expand a row for tier details.',
   'app.cardsFootnote':
-    "{count} models · Prices per 1M tokens in the provider's billing currency · Open a card for tier details.",
+    '{count} models · Prices per 1M tokens as CNY base prices · Open a card for tier details.',
   'app.footerSource': 'Data from {link} and community overrides · Native providers only',
   'app.updated': 'Updated {date}',
   'app.apiDocs': 'API documentation',
-  'app.billingCurrency': 'This endpoint bills in {currency}',
+  'app.billingCurrency':
+    'Base prices displayed in {currency}; source currency is recorded in model details',
   'theme.toggle': 'Toggle theme',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
@@ -118,7 +119,7 @@ const en = {
   'detail.priceListHint': 'Official list for the same endpoint · not a conversion',
   'detail.otherEndpoints': 'Other endpoints',
   'detail.otherEndpointsHint':
-    'The same model ID on other native endpoints (regional variants), each in its own billing currency.',
+    'The same model ID on other native endpoints (regional variants), using the selected CNY base-price lists.',
   'detail.otherEndpointsError': 'Failed to load other endpoints.',
   'copy.copy': 'Copy to clipboard',
   'copy.copied': 'Copied',
@@ -213,13 +214,13 @@ const zh: Messages = {
   'app.searchModels': '搜索模型…',
   'app.retry': '重试',
   'app.tableFootnote':
-    '{count} 个模型 · 价格按每 100 万 tokens 计（供应商结算货币） · 点击行可展开阶梯明细。',
+    '{count} 个模型 · 价格按每 100 万 tokens 计（CNY 基础价） · 点击行可展开阶梯明细。',
   'app.cardsFootnote':
-    '{count} 个模型 · 价格按每 100 万 tokens 计（供应商结算货币） · 点击卡片查看阶梯明细。',
+    '{count} 个模型 · 价格按每 100 万 tokens 计（CNY 基础价） · 点击卡片查看阶梯明细。',
   'app.footerSource': '数据来自 {link} 与社区覆写 · 仅收录原生供应商',
   'app.updated': '更新于 {date}',
   'app.apiDocs': 'API 文档',
-  'app.billingCurrency': '该端点以 {currency} 结算',
+  'app.billingCurrency': '以 {currency} 展示基础价；源币种见模型详情',
   'theme.toggle': '切换主题',
   'theme.light': '浅色',
   'theme.dark': '深色',
@@ -251,7 +252,8 @@ const zh: Messages = {
   'table.deprecated': '已弃用',
   'table.beta': '测试版',
   'table.estimated': '≈ USD',
-  'table.estimatedHint': '上游美元数值——该端点以 {currency} 结算，尚未录入官方 {currency} 价格',
+  'table.estimatedHint':
+    '上游美元数值——以 {currency} 展示基础价；源币种见模型详情，尚未录入官方 {currency} 价格',
   'table.empty': '没有匹配的模型。',
   'table.expr': 'new-api 计费表达式',
   'table.expand': '展开 {model} 的价格明细',
@@ -291,7 +293,7 @@ const zh: Messages = {
   'detail.priceListHint': '同一端点的官方价目 · 非汇率换算',
   'detail.otherEndpoints': '其他端点',
   'detail.otherEndpointsHint':
-    '同一模型 ID 在其他原生端点（国内 / 国际版本）的价格，各按其结算货币展示。',
+    '同一模型 ID 在其他原生端点（国内 / 国际版本）的价格，按已选 CNY 基础价展示。',
   'detail.otherEndpointsError': '其他端点加载失败。',
   'copy.copy': '复制',
   'copy.copied': '已复制',
@@ -378,13 +380,13 @@ const ja: Messages = {
   'app.searchModels': 'モデルを検索…',
   'app.retry': '再試行',
   'app.tableFootnote':
-    '{count} モデル · 価格は 100 万トークンあたり（プロバイダーの請求通貨） · 行を展開すると段階詳細を表示します。',
+    '{count} モデル · 価格は 100 万トークンあたり（CNY 基準価格） · 行を展開すると段階詳細を表示します。',
   'app.cardsFootnote':
-    '{count} モデル · 価格は 100 万トークンあたり（プロバイダーの請求通貨） · カードを開くと段階詳細を表示します。',
+    '{count} モデル · 価格は 100 万トークンあたり（CNY 基準価格） · カードを開くと段階詳細を表示します。',
   'app.footerSource': 'データは {link} とコミュニティの上書きに基づく · ネイティブプロバイダーのみ',
   'app.updated': '更新日 {date}',
   'app.apiDocs': 'API ドキュメント',
-  'app.billingCurrency': 'このエンドポイントは {currency} で請求されます',
+  'app.billingCurrency': '基準価格の表示通貨: {currency}。元通貨はモデル詳細に記載。',
   'theme.toggle': 'テーマを切り替え',
   'theme.light': 'ライト',
   'theme.dark': 'ダーク',
@@ -417,7 +419,7 @@ const ja: Messages = {
   'table.beta': 'ベータ',
   'table.estimated': '≈ USD',
   'table.estimatedHint':
-    '上流の USD 値 — このエンドポイントは {currency} で請求されますが、公式の {currency} 価格は未登録です',
+    '上流の USD 値 — 基準価格の表示通貨: {currency}。元通貨はモデル詳細に記載。が、公式の {currency} 価格は未登録です',
   'table.empty': '検索に一致するモデルがありません。',
   'table.expr': 'new-api 課金式',
   'table.expand': '{model} の価格詳細を展開',
@@ -457,7 +459,7 @@ const ja: Messages = {
   'detail.priceListHint': '同じエンドポイントの公式価格表 · 換算値ではありません',
   'detail.otherEndpoints': '他のエンドポイント',
   'detail.otherEndpointsHint':
-    '他のネイティブエンドポイント（地域別）における同じモデル ID の価格を、各請求通貨で表示します。',
+    '他のネイティブエンドポイント（地域別）における同じモデル ID の価格を、選択した CNY 基準価格で表示します。',
   'detail.otherEndpointsError': '他のエンドポイントの読み込みに失敗しました。',
   'copy.copy': 'コピー',
   'copy.copied': 'コピーしました',
@@ -512,7 +514,7 @@ const ja: Messages = {
   'newapi.mustBeNonNegative': '0 以上の値が必要です',
   'newapi.symbolRequired': '通貨記号は必須です',
   'pricing.estimatedNote':
-    '表示価格は上流の USD 値です。このエンドポイントは {currency} で請求されます。',
+    '表示価格は上流の USD 値です。基準価格の表示通貨: {currency}。元通貨はモデル詳細に記載。。',
   'pricing.timeBased': '時間帯別価格',
   'pricing.otherTimes': 'その他の時間帯',
   'pricing.now': '現在',
