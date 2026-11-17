@@ -26,3 +26,11 @@
 ## 尚未证实 / 不能推导
 
 Pages已开通、稳定URL已存在、token可部署、域名/中国访问SLA；任何默认完整性发布政策；首版53候选全部可售/现价；自动定时维护、最新官方价持续成立；真实目标/渠道/倍率和账单已验收。均不得由历史CI、候选包或本轮“推进”推定。
+
+## Planner固定输入复核（2026-11-17）
+
+- 本轮工作树从干净镜像上下文切至独立 `docs/cny-publication-planner-review`，父候选固定为 `fb78b59a12d6043575b91cef72ff441e26e9c856`；远程候选仍为该hash，业务分支仍为 `f616d0a927caae1cab5b3fad96784c7d10c588f6`。原候选分支查询无PR，Issues仅原5—11，无发布执行票。
+- 亲自读取原版仓库的固定git对象 `f2aa91232ed3e5878a614762ace6736a2b74257f:controller/ratio_sync.go`：L417—431先验success；L435—451只要data含至少一个pricingSyncFields字段就按type1接受。因此“缺模型字段或其他分区原版必拒绝”不是事实。发布侧必须验证所选模型mode/expr配对与全包完整性，原生fetch仅证明协议可消费。
+- 亲自核对候选 `scripts/build-official-cny.mjs` L195及 `src/cny/cli.ts` L61：ratio_config只有data，缺success。新增封装须产生独立发布输出身份，不能覆盖旧artifact。
+- 本轮再次读取组织库API：PUBLIC/default=naoshengyun；Pages查询404；Release列表为空；selected-actions仍仅checkout/setup-node/upload-artifact三固定SHA，github_owned_allowed=false、verified_allowed=false。这些是当次查询事实，不保证未来状态。
+- 直接读取地图及恢复回执：#6/#10/#11 OPEN，#5/#7/#8/#9 CLOSED。#6移入“发布规划”并保留执行禁区，语义与当前委派一致；未据Dev修改反推业务批准。本次未查询或更改运行中fixture。

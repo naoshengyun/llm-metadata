@@ -4,7 +4,7 @@
 
 ## 来源与新增范围
 
-原规范仍为[来源登记](../requirements/CNY-SOURCE-REGISTRY.md)所指 obs Spec/Tickets v0.12；AC-01—30、T1—T7及冻结副本不改。本轮用户经Planner明确授权：先整理地图，再准备稳定发布规划/执行票，发布后推进运营真实配置与调用验收。**稳定发布从旧地图的out-of-scope移入本轮新增规划范围**，没有倒算为原T1—T7已批准内容。本文为待Planner核对的派生增量草稿，批准后由Planner确定其正式维护位置及tracker入口，避免产生另一份原Spec。
+原规范仍为[来源登记](../requirements/CNY-SOURCE-REGISTRY.md)所指 obs Spec/Tickets v0.12；AC-01—30、T1—T7及冻结副本不改。本轮用户经Planner明确授权：先整理地图，再准备稳定发布规划/执行票，发布后推进运营真实配置与调用验收。**稳定发布从旧地图的out-of-scope移入本轮新增规划范围**，没有倒算为原T1—T7已批准内容。本文为Planner核对后的待用户审阅增量草稿，批准后由Planner确定其正式维护位置及tracker入口，避免产生另一份原Spec。
 
 ## 已完成与后续余项
 
@@ -71,19 +71,25 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 | 新AC | 可观察结果 | 拟测试位置 / 依赖 |
 |---|---|---|
 | PUB-AC-01 | 同一固定输入/选择/适配器得到同一releaseId与内容；旧版本拒覆写 | S；复用原AC-21身份，不重定义 |
-| PUB-AC-02 | 原版URL消费接受success/data和模型expr，错误envelope/缺分区拒绝；不冒称插件/工具已导入 | S+H（新位置待确认） |
+| PUB-AC-02 | 发布侧先验证所选模型mode/expr成对、非空且覆盖选择；固定rc50原生fetch接受success/data并预览一致。错误envelope由原版拒绝；缺字段/缺分区由发布侧拒绝，不冒称原版验证全包或插件/工具已导入 | S+H（新位置待确认） |
 | PUB-AC-03 | 子集显式列selected/excluded/complete；full模式拒绝incomplete；保留136参考及缺5状态 | S；原AC-24横向D不变 |
-| PUB-AC-04 | 文件inventory/hash/manifest一一绑定，缺文件/错字节/混版本拒绝 | S+H |
-| PUB-AC-05 | 稳定指针和模型源来自同一版本；失败保留旧入口；固定URL内容不变 | H |
+| PUB-AC-04 | 文件inventory/hash/manifest一一绑定，缺文件/错字节/混版本拒绝；manifest自身hash由外部回执/指针绑定，避免循环 | S+H |
+| PUB-AC-05 | 稳定指针和模型源来自同一版本；提交前失败保留旧入口；提交后回执不明先读回并标unknown；固定URL内容不变 | H |
 | PUB-AC-06 | 新版本提升、旧版本回退都有确认身份/diff/读回，不向实例写配置 | S+H |
 | PUB-AC-07 | 默认只手动、最低权限；无push/cron发布/上游自动合入；缺确认不能提升 | S/确定性平台mock；真实托管运行另获授权 |
 | PUB-AC-08 | 运营说明分别给出模型URL、插件对象、工具千次单位/独占及目标CNY预检 | S/文档；已有A/I证据关联 |
 | PUB-AC-09 | 发布保留原始核价时间，发布/构建/同步不刷新官网核价状态 | S |
 | PUB-AC-10 | 来源回退不标实例已恢复；接入结果区分下载/配置/调用/可售 | S/H及文档；真实O不在开发闭环 |
 
+### 发布前精确选择门禁（提案，尚未批准）
+
+开发测试允许使用明确标注的测试selection，不能提升为首版名单。真实发布前须呈现同一份可核对记录：artifactId/sourceSha/适配器版本/releaseId、按模型/插件/工具列出的精确selected身份与数量、每项来源/核价日期/单位、136参考逐行去向、未选与不可表达条目的不同原因、141差5注记、输出inventory/hash、新旧语义diff、确认者及批准记录。任何选择、字节或来源改变都使此前确认失效；测试四项和53候选不自动获选。
+
+完整参考行、官方价目条目、原生模型键、插件项和工具项是不同计数单位，不要求它们数字相等，不把重复协议行合并丢弃。可表达但未获选条目应标为未选，不伪装成缺价；原候选excluded不删改，发布选择另记。partial只表示公开交付的选择范围，原完整包complete=false原样可见；不代表可售批准。
+
 ### Testing Decisions（待用户确认）
 
-复用S：固定产物/schema/语义diff、拒覆写与负例；现有官方快照和CI包完整性测试可提供先例。**新增H建议**：本地静态HTTP fixture下载固定版/稳定入口并由隔离原版rc50的上游fetch/preview路径读取，验证源URL与完整envelope；这不是供应商调用，也不是旧I保存读回已覆盖的新结论。HTTP失败/缓存混版/缺文件用确定性响应；平台提升/权限用mock。原I仍只按获准配置导入读回范围解释。真实Pages部署/公开GET、运营目标应用和消费测试分别另获执行授权，不算已通过。H位置与票粒度未确认前不发布ready-for-agent票。
+复用S：固定产物/schema/语义diff、拒覆写与负例；现有官方快照和CI包完整性测试可提供先例。**新增H建议**：本地静态HTTP fixture下载固定版/稳定入口并由隔离原版rc50的上游fetch/preview路径读取，验证源URL与完整envelope；这不是供应商调用，也不是旧I保存读回已覆盖的新结论。HTTP失败/缓存混版/缺文件用确定性响应；平台提升/权限用mock。H只调用隔离原版fetch/preview读取源，不调用保存价格接口；先记录模型/插件/工具与options基线，结束读回证明无配置写入。使用独立测试实例或进程，不复用或修改仍运行的I夹具；实际资源准备待开发票授权。本地HTTP连通性须从原版运行环境验证，不能默认容器内localhost就是宿主。原I仍只按获准配置导入读回范围解释。真实Pages部署/公开GET、运营目标应用和消费测试分别另获执行授权，不算已通过。H位置与票粒度未确认前不发布ready-for-agent票。
 
 ### Out of Scope
 
@@ -92,3 +98,7 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 ### Further Notes
 
 [候选执行票](publication-tickets/README.md)只供粒度确认；[运营接入草稿](CNY-PUBLICATION-OPERATIONS-DRAFT.md)供核对。批准后由Planner形成正式增量记录，再发已配置GitHub tracker；建议后续implement-spec/tdd，完成独立审查后再申请真实发布动作。
+
+## 本轮审阅与决策顺序
+
+固定输入、修正及首轮最小选择见[Planner审阅回执](CNY-PUBLICATION-PLANNER-REVIEW.md)。本轮先向原线程确认D1托管方向；D2子集规则与D3手动更新是可独立讨论的政策，暂不把四个问题一次推出。D1之后才能具体审D4权限；规则明确后展示H及三票粒度，精确首版名单在真实发布前单独确认。后移问题不等于默认批准。

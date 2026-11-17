@@ -7,3 +7,16 @@ Status: draft-awaiting-user
 **Blocked by:** 无候选票；开工前需增量Spec、子集政策及S/H位置和本拆分获批。
 
 关闭条件：PUB-AC-01、PUB-AC-02、PUB-AC-03、PUB-AC-09；原固定artifact保持，发布适配success/data生成新release身份，partial/排除项/原日期可见；本地HTTP+隔离原版fetch演示通过且没有供应商/实例价格写入。模型URL不会偷偷携带插件/工具；按TDD逐行为并经独立审查。此关闭不代表公开发布。
+
+## Seam 与可独立演示的路径
+
+S：固定候选→显式测试selection→模型发布响应与身份；H：本地静态HTTP→固定rc50原生fetch/preview→所选mode/expr精确比较。H只读，不保存价格，不复用原I夹具。
+
+演示：一个明确测试模型子集得到新发布身份和success/data；原版预览值与候选一致；同输入重建字节一致。去掉success由原版报错；去掉所选expr或混币由发布侧拒绝（原版不承担这项完整性保证）。旧artifact字节保持。测试selection不得叫首版可售名单。
+
+## 关闭证据
+
+- [ ] PUB-AC-01/02/03/09逐项给出输入身份、期望及结果；原候选hash前后相同。
+- [ ] H请求记录和配置前后读回证明未保存模型/插件/工具；失败路径不会输出可提升版本。
+- [ ] 报告标明partial、来源日期、全参考/排除项，且插件工具未由模型URL导入。
+- [ ] 固定实现commit与独立审查结论关联；没有公网发布结论。
