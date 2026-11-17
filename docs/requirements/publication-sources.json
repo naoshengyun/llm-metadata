@@ -37,5 +37,37 @@
       "snapshot": "snapshots/publication-v1.0/2026-11-17-脑生云CNY价格源发布运营接入.md",
       "status": "development-approved-not-deployed"
     }
-  ]
+  ],
+  "snapshotCommit": "951a03fb0aef398af6f0ada6ae492da5bd314642",
+  "tracker": {
+    "spec": {
+      "number": 18,
+      "url": "https://github.com/naoshengyun/llm-metadata/issues/18"
+    },
+    "tickets": [
+      {
+        "id": "PUB-T01",
+        "number": 19,
+        "url": "https://github.com/naoshengyun/llm-metadata/issues/19",
+        "blockedBy": []
+      },
+      {
+        "id": "PUB-T02",
+        "number": 20,
+        "url": "https://github.com/naoshengyun/llm-metadata/issues/20",
+        "blockedBy": [
+          19
+        ]
+      },
+      {
+        "id": "PUB-T03",
+        "number": 21,
+        "url": "https://github.com/naoshengyun/llm-metadata/issues/21",
+        "blockedBy": [
+          20
+        ]
+      }
+    ],
+    "relationships": "native sub-issues under #18; native dependencies read back verified"
+  }
 }
