@@ -36,7 +36,7 @@ export function convertSheet(value, factor) {
   if (Array.isArray(value)) return value.map((v) => convertSheet(v, factor));
   const out = structuredClone(value);
   for (const [k, v] of Object.entries(out)) {
-    if (money.has(k) && typeof v === 'number') out[k] = Number((v * factor).toPrecision(15));
+    if (money.has(k) && typeof v === 'number') out[k] = factor === 1 ? v : Number((v * factor).toPrecision(15));
     else if (structure.has(k) && v && typeof v === 'object') out[k] = convertSheet(v, factor);
   }
   return out;
