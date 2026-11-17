@@ -9,6 +9,12 @@ import { randomBytes, publicEncrypt, constants, createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildModelRelease, writeModelRelease } from '../.cache/cny-build/cny/publication.js';
 import { hash } from '../.cache/cny-build/cny/generate.js';
+import { buildPublicationPackage } from '../.cache/cny-build/cny/publication-package.js';
+import {
+  preparePublicationTransition,
+  executePublicationTransition,
+  downloadStablePublication,
+} from '../.cache/cny-build/cny/publication-promotion.js';
 
 const artifactPath = process.argv[2];
 if (!artifactPath) throw new Error('provide the fixed artifact.json path explicitly');
@@ -40,9 +46,19 @@ assert.equal(metadata.Config.Labels['org.opencontainers.image.version'], 'v1.0.0
 const prefix = '/' + randomBytes(16).toString('hex');
 const httpRequests = [],
   apiRequests = [];
+let stableSnapshot = null;
+const transitions = [];
 const modelBytes = readFileSync(join(directory, 'ratio_config.json'));
 const server = createServer((req, res) => {
   httpRequests.push({ method: req.method, path: req.url });
+  if (req.method === 'GET' && stableSnapshot && req.url.startsWith(prefix + '/')) {
+    const body = stableSnapshot.files[req.url.slice(prefix.length + 1)];
+    if (body !== undefined) {
+      res.setHeader('content-type', 'application/json');
+      res.end(body);
+      return;
+    }
+  }
   if (
     req.method !== 'GET' ||
     ![
@@ -216,6 +232,74 @@ try {
   assert.deepEqual(missingSuccess.prices, {}); // Native empty-message error path mislabels success; record it honestly.
   const falseEmptyMessage = await sourceFetch('/false-empty.json');
   assert.deepEqual(falseEmptyMessage.prices, {});
+  if (process.argv.includes('--publication-transitions')) {
+    const a = buildPublicationPackage(originalBytes, {
+      ...selection,
+      models: ['kimi-k3.1-pro'],
+      plugins: {},
+      tools: [],
+    });
+    const b = buildPublicationPackage(originalBytes, { ...selection, plugins: {}, tools: [] });
+    const attempts = new Set();
+    const platform = {
+      claim: async (id) => {
+        if (attempts.has(id)) return false;
+        attempts.add(id);
+        return true;
+      },
+      read: async () => structuredClone(stableSnapshot),
+      canSubmit: async () => true,
+      submit: async (snapshot, expected) => {
+        assert.equal(stableSnapshot?.revision ?? null, expected);
+        stableSnapshot = structuredClone(snapshot);
+      },
+    };
+    for (const [action, p] of [
+      ['promote', a],
+      ['promote', b],
+      ['rollback', a],
+    ]) {
+      const plan = preparePublicationTransition(await platform.read(), p.files, p, action);
+      const receipt = await executePublicationTransition(platform, plan, {
+        confirmed: true,
+        actor: 'isolated-H-reviewer',
+        approvalRef: 'test-only-H',
+        planId: plan.id,
+      });
+      assert.equal(receipt.status, 'applied');
+      const downloaded = await downloadStablePublication(
+        `http://127.0.0.1:${server.address().port}${prefix}/`,
+        p,
+      );
+      const native = await sourceFetch('/api/newapi/ratio_config.json');
+      const expected = JSON.parse(p.files['ratio_config.json']).data,
+        previews = [];
+      for (const model of p.manifest.selection.models) {
+        const price = {
+          billing_mode: expected.billing_mode[model],
+          billing_expr: expected.billing_expr[model],
+        };
+        assert.deepEqual(native.prices[model].upstreams['CNY-H'], price);
+        const preview = await request('/api/option/model_pricing/preview', 'POST', {
+          model_name: model,
+          pricing: {
+            'billing_setting.billing_mode': price.billing_mode,
+            'billing_setting.billing_expr': price.billing_expr,
+          },
+        });
+        assert.equal(preview.effective['billing_setting.billing_expr'], price.billing_expr);
+        assert.equal(preview.effective['billing_setting.billing_mode'], price.billing_mode);
+        previews.push({ model, price, effective: preview.effective });
+      }
+      transitions.push({ action, receipt, downloaded, native, previews });
+    }
+    writeFileSync(
+      join(root, 'publication-state.json'),
+      JSON.stringify(stableSnapshot, null, 2) + '\n',
+      { mode: 0o600 },
+    );
+    assert.equal(transitions.length, 3);
+  }
   const optionsAfter = await request('/api/option/'),
     pricingAfter = await request('/api/option/model_pricing');
   const normalized = (opts) => [...opts].sort((a, b) => a.key.localeCompare(b.key));
@@ -250,6 +334,7 @@ try {
     rejected,
     missingSuccess,
     falseEmptyMessage,
+    transitions,
     nativeMissingSuccessLimit:
       'empty message can label success despite empty prices; not a usable import',
     apiRequests,
