@@ -12,10 +12,10 @@
 
 | 候选票 | 主责AC | 复用/回归AC | 决策门禁 |
 |---|---|---|---|
-| T01 | PUB-AC-01/02/03/09 | 无 | 增量Spec、子集规则、S/H及粒度批准 |
+| T01 | PUB-AC-01/02/03/09 | 无 | D2分批规则已满足；增量Spec、S/H及粒度批准仍待完成 |
 | T02 | PUB-AC-04/08/10 | PUB-AC-01/03 | T01关闭及共同Spec/粒度批准 |
 | T03 | PUB-AC-05/06/07 | PUB-AC-09/10 | T02关闭；D1已确认Pages，D3/D4及发布格式仍待批准 |
 
 三票均附独立演示和关闭证据，不重复新建原执行票。无票间阻塞不等于可立即开工：当前共同审批门禁尚未满足。精确首版名单不阻止使用明确测试selection开发，但未确认名单/版本/发布意图不得实际发布。
 
-2026-11-17状态推进：仅PUB-D1已确认，见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)。三票仍draft-awaiting-user；供原线程审批的行为/粒度对照见[第二轮前沿](../CNY-PUBLICATION-FRONTIER.md)。
+2026-11-17状态推进：PUB-D1及PUB-D2均已确认，见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)。D2见[分批发布记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15)。D3已提问待答，不重复问。三票仍draft-awaiting-user；供原线程审批的行为/粒度对照见[第二轮前沿](../CNY-PUBLICATION-FRONTIER.md)。

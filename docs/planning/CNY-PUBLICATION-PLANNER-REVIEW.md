@@ -1,6 +1,6 @@
 # Planner首轮发布规划审阅（2026-11-17，历史审阅时点）
 
-后续更新：PUB-D1已确认Pages，见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)及[当前决策前沿](CNY-PUBLICATION-FRONTIER.md)。下文保留首轮回执，不再按其托管问题访谈。
+后续更新：PUB-D1已确认Pages，PUB-D2已确认分批规则（[记录#15](https://github.com/naoshengyun/llm-metadata/issues/15)）；D3已提问待答。托管见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)及[当前决策前沿](CNY-PUBLICATION-FRONTIER.md)。下文保留首轮回执，不再按其托管问题访谈。
 
 首轮状态：待用户决策；不是已批准Spec或ready票。本轮由Planner规划职责直接完成，不交Dev起草，不新建规划任务。原讨论与业务决定留在Cindy线程 `8bfd5c3c-28db-436b-8f99-d3b3a18e5ebb`。
 

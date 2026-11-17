@@ -14,7 +14,7 @@
 | 本地配置I | 四项应用→读回→新确认→恢复/读回均独立QA PASS；原279项、配额/组保持；实例原基线留存，不清理 |
 | 真实业务输入 | [所选stg目标与实测条件](https://github.com/naoshengyun/llm-metadata/issues/10)继续OPEN；关闭需获选真实目标/版本/协议/渠道/alias/schema、受控身份及对应调用条件，不要求全136 |
 | 真实业务意图与执行 | [实例应用与恢复意图](https://github.com/naoshengyun/llm-metadata/issues/11)本地子集闭环，真实业务余项OPEN；需对应目标/固定候选/选择/新确认与实际结果，不复用本地授权 |
-| 稳定发布 | 新增规划；托管方向已选Pages；首版选择与发布授权尚未决定，不依赖前两项O全部关闭才开发 |
+| 稳定发布 | 新增规划；托管方向已选Pages；分批规则已确认；精确首发名单与发布授权尚未决定，不依赖前两项O全部关闭才开发 |
 
 I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-20261117/REVIEW.md` SHA256 `4ccf1a72dd566f5c92eafa8831bda8e13ffe7bc2cbb89aa044474da9d04cf857`；恢复报告 `calm-cohen/qa-evidence/local-I-restoration-20261117/REVIEW.md` SHA256 `1d5b6d11c213c13295e3ebfb52563bae68f4ebc18fddcd206f564c9896b6f432`。完整回执在[恢复记录](https://github.com/naoshengyun/llm-metadata/issues/11#issuecomment-6934368738)。I不等于真实usage/消费/账单/O/R。
 
@@ -23,13 +23,13 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 | 决定 | 类型 / 状态 | 必要前提 | 建议及后续依赖 |
 |---|---|---|---|
 | PUB-D1 托管方向 | 已确认；[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14) | 用户原线程选择，2026-11-17宿主核实转交 | 采用现有组织仓库GitHub Pages，不新增外部服务；具体入口格式及D4权限仍待审 |
-| PUB-D2 版本、选择及完整性 | HITL，待定 | 已有manifest/固定候选能力 | 推荐显式选中子集，保留全参考/排除项，标partial；首版精确条目与hash在发布前另展示确认 |
-| PUB-D3 更新方式与核价 | HITL，待定 | 原币/核价日期政策已定 | 推荐人工核价PR、手动发布，无cron；核价责任/频率/SLA待运营细化，不先造永久新鲜度承诺 |
+| PUB-D2 分批发布规则 | 已确认；[决定记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15) | 用户原线程选择，2026-11-17宿主核实转交 | 允许资料完整、原版可表达且经用户确认的模型子集；保留136参考及未发布原因，partial/complete=false和141差5不改；精确首发名单另确认 |
+| PUB-D3 更新方式与核价 | HITL，已提问待答（不重复问） | 原币/核价日期政策已定 | 推荐人工核价PR、手动发布，无cron；核价责任/频率/SLA待运营细化，不先造永久新鲜度承诺 |
 | PUB-D4 权限与运营接入 | HITL，待审 | D1已确认；触发/审批策略待D3 | 审查后单独审批发布权限/部署保护；实例应用与发布分开，模型URL与插件/工具步骤分开 |
 
-依赖：D1→D4；D2/D3可独立选择。D2与增量中相应契约、测试位置/票粒度批准后即可形成PUB-T01可执行票；D1已满足；D3/D4仍阻塞PUB-T03，不人为阻塞前两条离线开发。各票按自身必要前置批准后登记。发布后运营验收仍回原#10/#11，不能把其整体OPEN变为开发硬前置。
+依赖：D1→D4；D2/D3可独立选择。D2政策已满足；增量契约、测试位置/票粒度仍需批准后才能形成PUB-T01可执行票；D1已满足；D3/D4仍阻塞PUB-T03，不人为阻塞前两条离线开发。各票按自身必要前置批准后登记。发布后运营验收仍回原#10/#11，不能把其整体OPEN变为开发硬前置。
 
-### 可评审方案（仅托管方向已确认）
+### 可评审方案（托管方向与分批规则已确认）
 
 托管方向已确认使用现有public仓库Pages，候选入口形状 `https://naoshengyun.github.io/llm-metadata/cny/v1/`，**现在不存在且本轮不创建/请求该端点**。Release固定包只保留为历史备选，未被选为首版托管；不再重复询问。没有新增自定义域或外部服务授权。
 
@@ -37,7 +37,7 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 
 建议入口区分：`current.json`是稳定发现指针；`versions/<releaseId>/`是固定内容；模型原生同步专用稳定JSON是另一个消费入口。new-api不认识current指针，不能直接把它当倍率源。稳定模型JSON与指针应在同一部署快照中由同一已验证版本生成；缓存可能让不同请求读到不同部署，严格绑定时从指针取得固定版本URL，不承诺跨请求全球原子。回退提升旧已验版本，保留历史目录；回退发布入口不等于恢复任何实例价格。
 
-首版不直接沿用“53候选=发布53项”，也不把四项I测试视为可售名单。推荐支持显式子集发布，保留全18平台136原参考、缺5资料注记及全部excluded；缺字段/混币/无schema条目拒绝。若用户要求全平台完整发布，则complete=false必须阻止该模式；子集模式也必须显示complete=false及selection，不制造全量成功。核价日期仍为来源日期，构建/发布不能刷新它。
+首版不直接沿用“53候选=发布53项”，也不把四项I测试视为可售名单。已确认支持符合资料完整/原版可表达且经用户确认条件的模型子集分批发布，保留全18平台136原参考、缺5资料注记及全部excluded；缺字段/混币/无schema条目拒绝。若用户要求全平台完整发布，则complete=false必须阻止该模式；子集模式也必须显示complete=false及selection，不制造全量成功。核价日期仍为来源日期，构建/发布不能刷新它。
 
 ## Spec 增量草稿
 
@@ -72,7 +72,7 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 |---|---|---|
 | PUB-AC-01 | 同一固定输入/选择/适配器得到同一releaseId与内容；旧版本拒覆写 | S；复用原AC-21身份，不重定义 |
 | PUB-AC-02 | 发布侧先验证所选模型mode/expr成对、非空且覆盖选择；固定rc50原生fetch接受success/data并预览一致。错误envelope由原版拒绝；缺字段/缺分区由发布侧拒绝，不冒称原版验证全包或插件/工具已导入 | S+H（新位置待确认） |
-| PUB-AC-03 | 子集显式列selected/excluded/complete；full模式拒绝incomplete；保留136参考及缺5状态 | S；原AC-24横向D不变 |
+| PUB-AC-03 | 子集只含资料完整、原版可表达的项，真实发布前须用户确认精确名单；显式列selected/未选原因/excluded/complete；full模式拒绝incomplete；保留136参考及缺5状态 | S；原AC-24横向D不变 |
 | PUB-AC-04 | 文件inventory/hash/manifest一一绑定，缺文件/错字节/混版本拒绝；manifest自身hash由外部回执/指针绑定，避免循环 | S+H |
 | PUB-AC-05 | 稳定指针和模型源来自同一版本；提交前失败保留旧入口；提交后回执不明先读回并标unknown；固定URL内容不变 | H |
 | PUB-AC-06 | 新版本提升、旧版本回退都有确认身份/diff/读回，不向实例写配置 | S+H |
@@ -81,7 +81,7 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 | PUB-AC-09 | 发布保留原始核价时间，发布/构建/同步不刷新官网核价状态 | S |
 | PUB-AC-10 | 来源回退不标实例已恢复；接入结果区分下载/配置/调用/可售 | S/H及文档；真实O不在开发闭环 |
 
-### 发布前精确选择门禁（提案，尚未批准）
+### 发布前精确选择门禁（分批规则已批准，具体名单及技术记录格式待审）
 
 开发测试允许使用明确标注的测试selection，不能提升为首版名单。真实发布前须呈现同一份可核对记录：artifactId/sourceSha/适配器版本/releaseId、按模型/插件/工具列出的精确selected身份与数量、每项来源/核价日期/单位、136参考逐行去向、未选与不可表达条目的不同原因、141差5注记、输出inventory/hash、新旧语义diff、确认者及批准记录。任何选择、字节或来源改变都使此前确认失效；测试四项和53候选不自动获选。
 
@@ -101,4 +101,4 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 
 ## 本轮审阅与决策顺序
 
-固定输入、修正及首轮最小选择见[Planner审阅回执](CNY-PUBLICATION-PLANNER-REVIEW.md)。D1托管方向已确认并归档，不重问。当前独立业务前沿为D2子集规则和D3手动核价/发布；推荐问题与S/H、三票审批材料见[第二轮决策前沿](CNY-PUBLICATION-FRONTIER.md)。D4可据Pages具体化，仍未获得权限修改或部署授权。精确首版名单在真实发布前单独确认，后移问题不等于默认批准。
+固定输入、修正及首轮最小选择见[Planner审阅回执](CNY-PUBLICATION-PLANNER-REVIEW.md)。D1托管方向已确认并归档，不重问。D2分批规则已确认，具体名单另确认；D3手动核价/发布已提问待答，不重复询问。S/H、三票审批材料见[第二轮决策前沿](CNY-PUBLICATION-FRONTIER.md)。D4可据Pages具体化，仍未获得权限修改或部署授权。精确首版名单在真实发布前单独确认，后移问题不等于默认批准。
