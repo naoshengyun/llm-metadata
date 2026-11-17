@@ -48,3 +48,9 @@
 - 当前工作流隔离、API409修订和真实运行细节只维护在[CI运行手册](../ci/CNY-CI-ACTIVATION.md)，不在本索引另造可执行步骤。[AC/Ticket/seam映射](CNY-TRACEABILITY.md)保留D/O/R边界。
 
 本轮没有新增需用户重选的D业务问题。Planner已核对AC-24为Spec横向约束，原票未显式分配，不追加原票AC或新任务。尚未决定的运营策略和输入见决策索引；它们只阻止相应后续O执行，不回溯阻止T1—T7开发。
+
+## 独立发布增量（2026-11-17）
+
+新发布正文由Planner维护于obs outputs/qa，v1.0的Spec、拆解、设计/授权及运营接入路径与hash见[发布来源登记](publication-sources.json)。仓库只留字节一致的固定快照与索引，不维护第二份活正文；原v0.12和AC-01—30不改。发布增量沿用PUB-AC-01—10。
+
+[开发方案批准#17](https://github.com/naoshengyun/llm-metadata/issues/17)确认三票/S-H/D4可作为开发依据；实际Pages/许可/启用/部署/首发名单及实例/供应商操作仍未授权。GitHub执行票承载工作状态和依赖，规范变更先回obs升版本；不得用票实现结果倒改批准范围。
