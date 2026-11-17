@@ -439,3 +439,45 @@ test('S: existing unknown operations remain unknown after permission loss or an 
     assert.equal(result.submission, 'unknown');
   }
 });
+test('S: a stale no-attempt read cannot downgrade another callers unresolved submission', async () => {
+  const p = pack();
+  for (const readFails of [false, true]) {
+    const platform = new Platform(),
+      plan = preparePublicationTransition(null, p.files, p, 'promote');
+    let captured, release;
+    const capturedRead = new Promise((r) => {
+        captured = r;
+      }),
+      delayedRead = new Promise((r) => {
+        release = r;
+      });
+    const lookup = platform.hasAttempt.bind(platform);
+    let delayFirst = true;
+    platform.hasAttempt = async (operationId) => {
+      const observed = await lookup(operationId);
+      if (delayFirst) {
+        delayFirst = false;
+        captured();
+        await delayedRead;
+      }
+      return observed;
+    };
+    platform.submit = async () => {
+      throw new Error('ambiguous accepted request');
+    };
+    const late = executePublicationTransition(platform, plan, confirm(plan));
+    await capturedRead;
+    const active = await executePublicationTransition(platform, plan, confirm(plan));
+    assert.equal(active.status, 'unknown');
+    assert.equal(await lookup(active.operationId), true);
+    platform.permitted = false;
+    if (readFails)
+      platform.read = async () => {
+        throw new Error('late initial read failed');
+      };
+    release();
+    const result = await late;
+    assert.equal(result.status, 'unknown');
+    assert.equal(result.submission, 'unknown');
+  }
+});

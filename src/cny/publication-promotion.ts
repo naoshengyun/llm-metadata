@@ -248,36 +248,32 @@ export async function executePublicationTransition(
     /* Unknown journal state must not be treated as a new attempt. */
   }
   assertUnchanged();
-  let current: PublicationSnapshot | null;
+  let current: PublicationSnapshot | null = null;
+  let readFailed = false;
   try {
     current = await platform.read();
     if (current) verifyPublicationSnapshot(current);
   } catch {
-    return makeReceipt(
-      existed === false ? 'failed' : 'unknown',
-      existed === false ? 'not-attempted' : 'unknown',
-      null,
-    );
+    readFailed = true;
   }
   assertUnchanged();
-  if (current?.revision === plan.snapshot.revision) {
+  if (!readFailed && current?.revision === plan.snapshot.revision) {
     return makeReceipt('already-applied', 'not-attempted', current.revision);
   }
-  if (existed !== false) return makeReceipt('unknown', 'unknown', current?.revision ?? null);
-  if ((current?.revision ?? null) !== plan.fromRevision)
-    throw new Error('previous publication revision conflict');
-  if (preparePublicationTransition(current, target.files, plan.identity, plan.action).id !== id)
-    throw new Error('inconsistent publication plan or semantic diff');
-  const permitted = await platform.canSubmit();
-  assertUnchanged();
-  if (!permitted) {
-    return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
-  }
+  if (existed !== false)
+    return makeReceipt('unknown', 'unknown', readFailed ? null : (current?.revision ?? null));
+  // A negative lookup can become stale across awaits. Only atomic ownership
+  // permits a definitive "not attempted" failure for this operation identity.
   let claimed: boolean;
   try {
     claimed = await platform.claim(operationId);
   } catch {
-    return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
+    const observed = await readRevision();
+    return makeReceipt(
+      observed === plan.snapshot.revision ? 'applied' : 'unknown',
+      'unknown',
+      observed,
+    );
   }
   assertUnchanged();
   if (!claimed) {
@@ -288,6 +284,20 @@ export async function executePublicationTransition(
       observed,
     );
   }
+  if (readFailed) return makeReceipt('failed', 'not-attempted', null);
+  if ((current?.revision ?? null) !== plan.fromRevision)
+    throw new Error('previous publication revision conflict');
+  if (preparePublicationTransition(current, target.files, plan.identity, plan.action).id !== id)
+    throw new Error('inconsistent publication plan or semantic diff');
+  let permitted: boolean;
+  try {
+    permitted = await platform.canSubmit();
+  } catch {
+    assertUnchanged();
+    return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
+  }
+  assertUnchanged();
+  if (!permitted) return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
   let submission: PublicationSubmission = 'acknowledged';
   try {
     await platform.submit(structuredClone(plan.snapshot), plan.fromRevision);

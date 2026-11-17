@@ -8,7 +8,7 @@
 
 1. `preparePublicationTransition(current, files, identity, action)`重新核验当前全部历史固定包和目标包，生成完整部署快照、旧revision/旧release身份、目标身份、模型/插件/工具语义diff和planId。rollback只能选已保留版本；历史文件拒变更。仅有插件/工具而未选模型的包不能提升为原生稳定模型源。
 2. `executePublicationTransition(platform, plan, confirmation)`要求显式confirmed、确认者、批准引用和精确planId；入口私有复制固定输入，异步read/权限/claim等待后拒绝绑定变化，给submit独立payload副本，不以被适配器改写的对象作为期望值。验证快照/目标/diff一致，重建期望计划并检查旧revision。平台仅有read/既有attempt只读查询/权限/原子claim/整快照CAS-submit，接口没有网关应用能力。
-3. operationId绑定planId、确认者及批准引用。平台在提交前持久记住它；先只读查询既有操作，再判断是否允许新提交。既有不明操作的核验独立于当前写权限，权限撤销、journal不可读或初始read失败都不能把旧unknown误改failed；精确目标读回才解除不确定。同一不明操作不盲重发，新的尝试须新的明确批准引用；既有成功结果返回already-applied。claim不是用户授权，它只是防重机制。
+3. operationId绑定planId、确认者及批准引用。只读hasAttempt的false可能跨await变旧，不能当“没有旧操作”的证明。只有原子claim取得该操作的独占所有权，才可在尚未submit时报告新操作failed；claim已有/不明或未获所有权只读核验，不能按后来权限失败改写旧unknown。claim是协调元数据，不是发布权限或用户授权；真正submit仍须权限及旧revision/完整计划核对。既有不明操作的核验独立于当前写权限，权限撤销、journal不可读或初始read失败不解除不确定，只有精确目标读回可解。同一不明操作不盲重发，新的尝试须新的明确批准引用；既有成功结果返回already-applied。
 4. 提交前确定拒绝返回failed且旧入口保持；只有平台能证明未受理时才用PublicationNotSubmittedError。提交异常先记unknown并读回：精确匹配目标可确定applied，同时保留submission=unknown；旧版、其他版本或读失败保留unknown。禁止把所有超时都说成未提升。
 5. `downloadStablePublication(base, expectedIdentity)`核对发现指针、固定版本整包及稳定模型字节；缓存混版时拒绝并提示固定URL/hash。它是维护者读取验证接口，不改原版网关协议、不充当代理。
 
@@ -46,6 +46,8 @@ node scripts/publication-transition.mjs export state-dir new-site-dir expected-r
 | PUB-AC-10 | 回执instanceConfiguration=not-written，源回退不解释为配置/消费/可售通过 |
 
 独立QA在首版5564f991f发现PROM-F1（异步可变确认）、PROM-S1（旧unknown遇权限变化误失败/初始read异常）、PROM-S2（提交后才发现回执路径错误）；原不通过报告 `qa-evidence/pr25-5564f99/REVIEW.md` / SHA256 `8a9c606c577ecc75385927c8ee7a0810acd3f34c0ee395214daa3c54aeab97b8` 保留。修复按同票S seam逐项红绿并重新提交固定head，独立结论须另取得；正向H或原96/98测试不能替代这些反例关闭。
+
+0090f05复审已独立关闭PROM-F1/S2，但PROM-S1并发负查询变旧仍不通过，报告 `qa-evidence/pr25-0090f05/REVIEW.md` / SHA256 `f29e7738e098061258a7581c005b97f42d73a742501c84f5228e510d03777162`。本轮以原子claim的操作所有权决定能否报告新failed，而非增加一次非原子查询；延迟false查询/另一调用已经unknown/权限撤销及初始读失败均有独立可控红绿回归。旧不通过状态不改写，新固定head须另获独立结论。
 
 ## 后续运营政策的来源区别
 
