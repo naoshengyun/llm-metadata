@@ -39,4 +39,6 @@ Pages已开通、稳定URL已存在、token可部署、域名/中国访问SLA；
 
 用户经原Planner线程正式选择现有组织仓库GitHub Pages；本次宿主核实转交明确只授权规划方向。见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)。这更新的是决策状态，不更新上文API核对时点：没有因选择而开通站点、发布端点或改变权限。
 
-2026-11-17后续：PUB-D2已确认允许符合资料完整、原版可表达且经用户确认条件的模型子集分批发布；全136参考和未发布原因、partial/complete=false、141差5保留。见[决定记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15)。具体首发名单与真实发布未批准；D3已提问待答。
+2026-11-17后续：PUB-D2已确认允许符合资料完整、原版可表达且经用户确认条件的模型子集分批发布；全136参考和未发布原因、partial/complete=false、141差5保留。见[决定记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15)。具体首发名单与真实发布未批准；D3后续已确认（#16），原待答状态已被替代。
+
+2026-11-17最新：PUB-D3已确认人工核价PR→审阅固定候选→手动发布指定版本，无定时/代码提交自动发布，上游同步分开；实际发布版本另确认。[决定记录（#16）](https://github.com/naoshengyun/llm-metadata/issues/16)。长期SLA、精确名单、权限启用或部署未获批准；剩余审批见[三票/S-H及D4表](CNY-PUBLICATION-APPROVAL.md)。

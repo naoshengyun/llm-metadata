@@ -1,6 +1,6 @@
 # Planner首轮发布规划审阅（2026-11-17，历史审阅时点）
 
-后续更新：PUB-D1已确认Pages，PUB-D2已确认分批规则（[记录#15](https://github.com/naoshengyun/llm-metadata/issues/15)）；D3已提问待答。托管见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)及[当前决策前沿](CNY-PUBLICATION-FRONTIER.md)。下文保留首轮回执，不再按其托管问题访谈。
+后续更新：PUB-D1已确认Pages，PUB-D2已确认分批规则（[记录#15](https://github.com/naoshengyun/llm-metadata/issues/15)）；D3后续已确认（#16），原待答状态已被替代。托管见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)及[当前决策前沿](CNY-PUBLICATION-FRONTIER.md)。下文保留首轮回执，不再按其托管问题访谈。
 
 首轮状态：待用户决策；不是已批准Spec或ready票。本轮由Planner规划职责直接完成，不交Dev起草，不新建规划任务。原讨论与业务决定留在Cindy线程 `8bfd5c3c-28db-436b-8f99-d3b3a18e5ebb`。
 
@@ -36,3 +36,5 @@ Pages API本次404、Release空；官方文档确认自定义部署涉及pages/i
 ## 检查范围
 
 只读核对固定源码、Git refs、GitHub状态与官方托管说明；对原obs规范和快照重算SHA256并逐字节比较一致。完成PUB-AC覆盖、相对链接及git diff空白检查。未运行计费套件、未实施产品代码、未触发CI/发布/实例写入/供应商调用/清理。
+
+2026-11-17最新：PUB-D3已确认人工核价PR→审阅固定候选→手动发布指定版本，无定时/代码提交自动发布，上游同步分开；实际发布版本另确认。[决定记录（#16）](https://github.com/naoshengyun/llm-metadata/issues/16)。长期SLA、精确名单、权限启用或部署未获批准；剩余审批见[三票/S-H及D4表](CNY-PUBLICATION-APPROVAL.md)。

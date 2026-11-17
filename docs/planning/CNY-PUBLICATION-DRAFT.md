@@ -24,12 +24,12 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 |---|---|---|---|
 | PUB-D1 托管方向 | 已确认；[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14) | 用户原线程选择，2026-11-17宿主核实转交 | 采用现有组织仓库GitHub Pages，不新增外部服务；具体入口格式及D4权限仍待审 |
 | PUB-D2 分批发布规则 | 已确认；[决定记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15) | 用户原线程选择，2026-11-17宿主核实转交 | 允许资料完整、原版可表达且经用户确认的模型子集；保留136参考及未发布原因，partial/complete=false和141差5不改；精确首发名单另确认 |
-| PUB-D3 更新方式与核价 | HITL，已提问待答（不重复问） | 原币/核价日期政策已定 | 推荐人工核价PR、手动发布，无cron；核价责任/频率/SLA待运营细化，不先造永久新鲜度承诺 |
-| PUB-D4 权限与运营接入 | HITL，待审 | D1已确认；触发/审批策略待D3 | 审查后单独审批发布权限/部署保护；实例应用与发布分开，模型URL与插件/工具步骤分开 |
+| PUB-D3 更新方式与核价 | 已确认；[决定记录（#16）](https://github.com/naoshengyun/llm-metadata/issues/16) | 用户原线程正式答复，宿主核实转交 | 人工核价PR→审阅固定候选→手动发布指定版本，无定时/提交自动发布；上游同步分开，真实发布版本另确认；不推定长期SLA |
+| PUB-D4 权限与运营接入 | HITL，待审 | D1/D3已确认；具体方案见审批表B | 审查后单独审批发布权限/部署保护；实例应用与发布分开，模型URL与插件/工具步骤分开 |
 
-依赖：D1→D4；D2/D3可独立选择。D2政策已满足；增量契约、测试位置/票粒度仍需批准后才能形成PUB-T01可执行票；D1已满足；D3/D4仍阻塞PUB-T03，不人为阻塞前两条离线开发。各票按自身必要前置批准后登记。发布后运营验收仍回原#10/#11，不能把其整体OPEN变为开发硬前置。
+依赖：D1/D2/D3均已确认。D2政策已满足；增量契约、测试位置/票粒度仍需批准后才能形成PUB-T01可执行票；D1/D3已满足；D4仍阻塞PUB-T03，不人为阻塞前两条离线开发。各票按自身必要前置批准后登记。发布后运营验收仍回原#10/#11，不能把其整体OPEN变为开发硬前置。
 
-### 可评审方案（托管方向与分批规则已确认）
+### 可评审方案（D1托管、D2分批与D3手动策略已确认）
 
 托管方向已确认使用现有public仓库Pages，候选入口形状 `https://naoshengyun.github.io/llm-metadata/cny/v1/`，**现在不存在且本轮不创建/请求该端点**。Release固定包只保留为历史备选，未被选为首版托管；不再重复询问。没有新增自定义域或外部服务授权。
 
@@ -64,7 +64,7 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 
 ### Implementation Decisions
 
-沿用固定候选、原价政策、native rc50和三分区契约；模型源发布适配需补齐原生success envelope，不能默改旧artifact。发布manifest覆盖原候选身份及实际HTTP输出hash，明确full/partial模式；完整包语义和来源日期保持。发布环境、触发和权限在D1—D4确定后固化；不以本草稿代为批准。
+沿用固定候选、原价政策、native rc50和三分区契约；模型源发布适配需补齐原生success envelope，不能默改旧artifact。发布manifest覆盖原候选身份及实际HTTP输出hash，明确full/partial模式；完整包语义和来源日期保持。D3已确定人工核价PR及手动触发；具体发布环境、权限和入口设计仍待D4批准；不以本草稿代为批准。
 
 ### 新验收编号（草稿，不覆盖AC-01—30）
 
@@ -101,4 +101,4 @@ I独立证据：应用报告 `calm-cohen/qa-evidence/local-I-application-2026111
 
 ## 本轮审阅与决策顺序
 
-固定输入、修正及首轮最小选择见[Planner审阅回执](CNY-PUBLICATION-PLANNER-REVIEW.md)。D1托管方向已确认并归档，不重问。D2分批规则已确认，具体名单另确认；D3手动核价/发布已提问待答，不重复询问。S/H、三票审批材料见[第二轮决策前沿](CNY-PUBLICATION-FRONTIER.md)。D4可据Pages具体化，仍未获得权限修改或部署授权。精确首版名单在真实发布前单独确认，后移问题不等于默认批准。
+固定输入、修正及首轮最小选择见[Planner审阅回执](CNY-PUBLICATION-PLANNER-REVIEW.md)。D1托管方向已确认并归档，不重问。D2分批规则已确认，具体名单另确认；D3已确认人工核价PR和固定版本手动发布，不重复询问。剩余A三票/S-H及B权限/入口/回退设计见[审批表](CNY-PUBLICATION-APPROVAL.md)。D4可据Pages具体化，仍未获得权限修改或部署授权。精确首版名单在真实发布前单独确认，后移问题不等于默认批准。
