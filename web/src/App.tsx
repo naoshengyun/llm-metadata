@@ -78,24 +78,15 @@ function HeaderStats({ providers, models }: { providers: number; models: number 
   );
 }
 
-/** 数据来源脚注：消息中的 {link} 占位符渲染为 models.dev 链接 */
+/** Fixed publication source, separate from upstream application authorship. */
 function FooterSource() {
-  const { t } = useI18n();
+  const { locale } = useI18n();
   return (
-    <span>
-      {renderMessage(t('app.footerSource'), {
-        link: (
-          <a
-            href="https://models.dev"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-foreground underline underline-offset-2"
-          >
-            models.dev
-          </a>
-        ),
-      })}
-    </span>
+    <a href="./publication.html" className="underline underline-offset-2">
+      {locale === 'zh'
+        ? '43 项官方 CNY 基础价 · partial · 核价 2026-11-16 · 来源与下载'
+        : '43 official CNY base prices · partial · checked 2026-11-16 · sources/downloads'}
+    </a>
   );
 }
 
