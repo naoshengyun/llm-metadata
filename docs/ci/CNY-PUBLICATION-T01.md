@@ -26,9 +26,9 @@ node scripts/check-publication-source.mjs .cache/official-cny/d5a84ca10d85993433
 
 测试选择仅Kimi/Claude两个模型，显式purpose=test。H调用原生ratio_sync/fetch及model_pricing/preview，逐字段比较所选mode/expr；没有价格/单位/组/工具保存接口调用。前后完整options与model_pricing哈希一致、渠道0、原artifact字节不变；finally只移除本命令创建的容器，复查其不存在，保留本地临时证据与release文件。`H-report.json`含实现HEAD、完整imageID/revision、releaseId、原始fetch/preview结果、负例、请求路径、前后hash和清理回执，凭证不入日志。
 
-Native rc50 limitation: a missing/false `success` with an empty `message` can be labelled `success` in `test_results` while returning no prices. A nonempty rejection message produces an explicit error. H records both cases and checks actual selected prices; it does not claim the native status flag validates a complete source. This was reported to Planner for canonical acceptance wording; no new-api change is made.
+Native rc50 limitation: a missing/false `success` with an empty `message` can be labelled `success` in `test_results` while returning no prices. A nonempty rejection message produces an explicit error. H records both cases and checks actual selected prices; it does not claim the native status flag validates a complete source. Canonical PUB-AC-02 v1.3 records this distinction; no new-api change is made.
 
-`--legacy-envelope`是开发红例：在正例位置供应缺success旧格式，所选字段断言失败；不是生产构建开关，也不能将此失败运行称为通过。正常H负例包含带message的拒绝响应及无message的缺success响应；它们均不产生可用所选价格，配置前后不变。
+`--legacy-envelope`是开发红例：在正例位置供应缺success旧格式，所选字段断言失败；不是生产构建开关，也不能将此失败运行称为通过。正常H负例分别包含带message的拒绝响应、无message的缺success响应、success=false且空message响应；它们均不产生可用所选价格，配置前后不变。
 
 ## 证据边界
 

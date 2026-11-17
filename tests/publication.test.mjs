@@ -167,3 +167,28 @@ test('S: recomputed hashes cannot make an incomplete model response writable', (
     rmSync(root, { recursive: true, force: true });
   }
 });
+test('S: strict publication envelope rejects missing/false/nonboolean success and malformed data', () => {
+  const root = mkdtempSync(join(tmpdir(), 'cny-release-envelope-'));
+  try {
+    for (const alter of [
+      (r) => delete r.success,
+      (r) => (r.success = false),
+      (r) => (r.success = 'true'),
+      (r) => delete r.data,
+      (r) => (r.data = null),
+      (r) => (r.data = {}),
+      (r) => (r.data.billing_mode = {}),
+    ]) {
+      const bad = buildModelRelease(fixture(), options);
+      alter(bad.modelSource);
+      bad.modelSourceSha256 = createHash('sha256')
+        .update(JSON.stringify(bad.modelSource, null, 2) + '\n')
+        .digest('hex');
+      const { id, ...content } = bad;
+      bad.id = hash(content);
+      assert.throws(() => writeModelRelease(root, bad), /response/);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

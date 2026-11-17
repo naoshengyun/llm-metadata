@@ -128,6 +128,12 @@ export function writeModelRelease(root: string, release: ReturnType<typeof build
   const names = release.selection.models;
   const data = release.modelSource.data;
   if (
+    [data, data?.billing_mode, data?.billing_expr].some(
+      (value) => !value || typeof value !== 'object' || Array.isArray(value),
+    )
+  )
+    throw new Error('model response requires data and model field maps');
+  if (
     release.modelSource.success !== true ||
     !names.length ||
     hash(Object.keys(data).sort()) !== hash(['billing_expr', 'billing_mode']) ||

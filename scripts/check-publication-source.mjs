@@ -45,7 +45,12 @@ const server = createServer((req, res) => {
   httpRequests.push({ method: req.method, path: req.url });
   if (
     req.method !== 'GET' ||
-    ![prefix + '/models.json', prefix + '/bad.json', prefix + '/missing.json'].includes(req.url)
+    ![
+      prefix + '/models.json',
+      prefix + '/bad.json',
+      prefix + '/missing.json',
+      prefix + '/false-empty.json',
+    ].includes(req.url)
   ) {
     res.writeHead(404);
     res.end();
@@ -60,6 +65,8 @@ const server = createServer((req, res) => {
         data: release.modelSource.data,
       }),
     );
+  else if (req.url.endsWith('/false-empty.json'))
+    res.end(JSON.stringify({ success: false, message: '', data: release.modelSource.data }));
   else if (req.url.endsWith('/missing.json') || process.argv.includes('--legacy-envelope'))
     res.end(JSON.stringify({ data: release.modelSource.data }));
   else res.end(modelBytes);
@@ -207,6 +214,8 @@ try {
   assert.deepEqual(rejected.prices, {});
   const missingSuccess = await sourceFetch('/missing.json');
   assert.deepEqual(missingSuccess.prices, {}); // Native empty-message error path mislabels success; record it honestly.
+  const falseEmptyMessage = await sourceFetch('/false-empty.json');
+  assert.deepEqual(falseEmptyMessage.prices, {});
   const optionsAfter = await request('/api/option/'),
     pricingAfter = await request('/api/option/model_pricing');
   const normalized = (opts) => [...opts].sort((a, b) => a.key.localeCompare(b.key));
@@ -240,6 +249,7 @@ try {
     previewed,
     rejected,
     missingSuccess,
+    falseEmptyMessage,
     nativeMissingSuccessLimit:
       'empty message can label success despite empty prices; not a usable import',
     apiRequests,
