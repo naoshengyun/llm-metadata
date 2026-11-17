@@ -16,7 +16,7 @@ node scripts/check-visual-site.mjs /tmp/new-exclusive-site
 
 币种选择：明确CNY主sheet优先，其次明确CNY alternate。国内端点缺原CNY不采用USD估算。其他USD按金额白名单×7一次；嵌套tiers/schedule价格同样转换，阈值、时间、TTL、模型limit等不变。源cost所有字段仍可追溯。默认平台CNY/显示汇率1，不提供重算另一套汇率的新需求。
 
-国内默认映射在 `scripts/upstream-cny.mjs` 明确列出。全部订阅/国际区域导航仍可点击；初始导航默认alibaba-cn，全局同名搜索优先国内资料。原生API按模型键分组，若有国内非订阅记录，只在国内集合内选合格项，不降级到国际报价；否则在其他非订阅集合选。可表达同名冲突以provider ID稳定排序，记录每个winner和排除，完全不使用上游priority。不同端点的cost绝不混合。页面保留所有区域价，只有被选中项目提供原生表达式/复制；供应商复制是全量新API按provider的分区，不重算。
+国内默认映射在 `scripts/upstream-cny.mjs` 明确列出。全部订阅/国际区域导航仍可点击；初始导航默认alibaba-cn，全局同名搜索优先国内资料。原生API按模型键分组，若有国内非订阅记录，只在国内集合内选合格项，不降级到国际报价；否则在其他非订阅集合选。同一候选池中若多个合格项表达式不等价，则明确排除为歧义；等价项才以provider ID稳定排序，记录每个winner和排除，完全不使用上游priority。不同端点的cost绝不混合。页面保留所有区域价，只有被选中项目提供原生表达式/复制；供应商复制是全量新API按provider的分区，不重算。
 
 `buildBillingExpr`复用共享原生核心；费用未知、缺必要输出、未知价格字段、非支持单位、生成器warning或订阅都拒出，原因逐记录发布。明确官方0保留，缺失不造0。全量页面记录数/合格区域记录数/去重API键数分别报告，API不等于616键。
 
