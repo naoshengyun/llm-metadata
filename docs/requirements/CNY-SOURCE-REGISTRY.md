@@ -48,3 +48,7 @@
 - 当前工作流隔离、API409修订和真实运行细节只维护在[CI运行手册](../ci/CNY-CI-ACTIVATION.md)，不在本索引另造可执行步骤。[AC/Ticket/seam映射](CNY-TRACEABILITY.md)保留D/O/R边界。
 
 本轮没有新增需用户重选的D业务问题。Planner已核对AC-24为Spec横向约束，原票未显式分配，不追加原票AC或新任务。尚未决定的运营策略和输入见决策索引；它们只阻止相应后续O执行，不回溯阻止T1—T7开发。
+
+## 完整上游目录与合格CNY价格增量（Spec v2.0，2026-11-17）
+
+用户已选择仅用固定上游、缺价明确标注，并同步发布全部合格价格。新规范正文/批准记录/固定b755基线及hash见[独立来源登记](catalog-publication-sources.json)，对应现有[#29](https://github.com/naoshengyun/llm-metadata/issues/29)，不另建实施任务、不为文档整理设阻塞。旧v0.12、PUB-AC和43模型首发仅保留历史，不覆盖；新CAT-AC适用本增量。目录完整50/616与合格原生API键数量分开，旧fixed永久保留。
