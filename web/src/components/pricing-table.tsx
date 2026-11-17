@@ -355,7 +355,6 @@ export function PricingTable({
                             >
                               {model.name || model.id}
                             </button>
-                            <PricingNotice model={model} />
                             <ModelBadges
                               pricing={pricing}
                               isNew={isNew}
@@ -366,6 +365,7 @@ export function PricingTable({
                           <div className="text-muted-foreground truncate font-mono text-xs">
                             {model.id}
                           </div>
+                          <PricingNotice model={model} />
                         </div>
                       </div>
                     </TableCell>

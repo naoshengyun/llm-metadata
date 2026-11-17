@@ -32,11 +32,22 @@ const money = new Set([
   'per_10k_chars',
 ]);
 const structure = new Set(['tiers', 'context_over_200k', 'schedule', 'windows']);
+const nonPriceFields = new Set([
+  'tier',
+  'size',
+  'type',
+  'timezone',
+  'fallback',
+  'name',
+  'weekdays',
+  'hours',
+]);
 export function convertSheet(value, factor) {
   if (Array.isArray(value)) return value.map((v) => convertSheet(v, factor));
   const out = structuredClone(value);
   for (const [k, v] of Object.entries(out)) {
-    if (money.has(k) && typeof v === 'number') out[k] = factor === 1 ? v : Number((v * factor).toPrecision(15));
+    if (money.has(k) && typeof v === 'number')
+      out[k] = factor === 1 ? v : Number((v * factor).toPrecision(15));
     else if (structure.has(k) && v && typeof v === 'object') out[k] = convertSheet(v, factor);
   }
   return out;
@@ -56,7 +67,8 @@ function invalidSheet(value, path = '') {
 function unsupported(sheet) {
   for (const [k, v] of Object.entries(sheet)) {
     if (k.startsWith('per_') && k !== 'per_image') return `unsupported-unit:${k}`;
-    if (typeof v === 'number' && !money.has(k)) return `unknown-price-field:${k}`;
+    if (!money.has(k) && !structure.has(k) && !nonPriceFields.has(k))
+      return `unknown-price-field:${k}`;
     if (structure.has(k) && v && typeof v === 'object') {
       const list = Array.isArray(v) ? v : [v];
       for (const x of list) {
@@ -132,7 +144,9 @@ export function adaptCatalog(source) {
     const pool = domestic.length ? domestic : nonSubscription;
     // Published mapping is explicit and recorded; original priority is never consulted.
     pool.sort((a, b) => a.providerId.localeCompare(b.providerId));
-    const winner = pool.find((r) => r.status === 'eligible');
+    const eligible = pool.filter((r) => r.status === 'eligible');
+    const ambiguous = new Set(eligible.map((r) => r.expr)).size > 1;
+    const winner = ambiguous ? undefined : eligible[0];
     if (winner)
       selected[id] = {
         providerId: winner.providerId,
@@ -147,7 +161,9 @@ export function adaptCatalog(source) {
           status: row.status,
           reason:
             row.status === 'eligible'
-              ? `regional-duplicate:${winner?.providerId ?? 'domestic-price-unavailable'}`
+              ? ambiguous && pool.includes(row)
+                ? 'ambiguous-regional-prices'
+                : `regional-duplicate:${winner?.providerId ?? 'domestic-price-unavailable'}`
               : row.reason,
         });
   }

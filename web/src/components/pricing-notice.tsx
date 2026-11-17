@@ -9,10 +9,16 @@ export function PricingNotice({ model }: { model: Model }) {
   const status =
     p.status === 'missing'
       ? zh
-        ? '缺少原始 CNY 价格；未导出'
+        ? p.reason === 'missing-original-CNY'
+          ? '缺少原始 CNY 价格；未导出'
+          : '缺少上游源价格；未导出'
         : ja
-          ? '元の CNY 価格なし・未出力'
-          : 'Original CNY price unavailable; not exported'
+          ? p.reason === 'missing-original-CNY'
+            ? '元の CNY 価格なし・未出力'
+            : '上流価格なし・未出力'
+          : p.reason === 'missing-original-CNY'
+            ? 'Original CNY price unavailable; not exported'
+            : 'Upstream source price unavailable; not exported'
       : p.status === 'subscription'
         ? zh
           ? '订阅套餐；不是普通 Token 价'
@@ -37,7 +43,10 @@ export function PricingNotice({ model }: { model: Model }) {
                 ? '地域別参考価格・API は選択端点を使用'
                 : 'Regional price information; API uses selected endpoint';
   return (
-    <p className="text-muted-foreground my-2 text-xs break-words" data-price-status={p.status}>
+    <p
+      className="text-muted-foreground my-2 text-xs break-words whitespace-normal"
+      data-price-status={p.status}
+    >
       {status}
       {p.sourceCurrency ? ` · ${p.sourceCurrency} → CNY` : ''}
       {p.reason ? ` · ${p.reason}` : ''}

@@ -128,3 +128,25 @@ test('all eligible regional winners, every exclusion, and all locales bind one d
   for (const l of ['zh', 'ja']) assert.deepEqual(s.datasets[l].config, a.config);
   assert.equal(makeSnapshot().releaseId, s.releaseId);
 });
+test('unknown object/string charges and ambiguous domestic prices fail closed', () => {
+  for (const charge of ['variable', { amount: 2 }])
+    assert.equal(
+      adaptPrice({ id: 'openai' }, { cost: { input: 1, output: 2, unknown_charge: charge } })
+        .reason,
+      'unknown-price-field:unknown_charge',
+    );
+  const source = Object.fromEntries(
+    ['xiaomi', 'longcat'].map((id, i) => [
+      id,
+      {
+        id,
+        models: {
+          collision: { id: 'collision', cost: { currency: 'CNY', input: i + 1, output: 3 } },
+        },
+      },
+    ]),
+  );
+  const a = adaptCatalog(source);
+  assert.equal(a.selected.collision, undefined);
+  assert.ok(a.exclusions.every((r) => r.reason === 'ambiguous-regional-prices'));
+});
