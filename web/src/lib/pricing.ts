@@ -295,6 +295,11 @@ export function parseModelPricing(
       continue;
     }
 
+    // Explicit TTL cache creation prices must never enter the cache-read fallback.
+    if (/^cache_write_\d+[hm]$/.test(key)) {
+      modalityRows.set(humanizeKey(key), 'cacheWrite', value);
+      continue;
+    }
     const known = KNOWN_RATES[key];
     if (known) modalityRows.set(t(known.labelKey), known.column, value);
     else {

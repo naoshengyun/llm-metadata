@@ -426,10 +426,13 @@ export function ModelDetail({
           value={formatContext(model.limit?.output)}
           sub={t('detail.tokens')}
         />
-        <StatCell label={t('table.input')} value={<ModalityIcons supported={inputModalities} />} />
+        <StatCell
+          label={t('table.input')}
+          value={model.modalities?.input ? <ModalityIcons supported={inputModalities} /> : '—'}
+        />
         <StatCell
           label={t('table.output')}
-          value={<ModalityIcons supported={outputModalities} />}
+          value={model.modalities?.output ? <ModalityIcons supported={outputModalities} /> : '—'}
         />
         <BorderBeam
           size={120}
@@ -587,36 +590,37 @@ export function ModelDetail({
       />
 
       {/* 模态 */}
-      <DetailSection title={t('detail.modalities')}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {CORE_MODALITIES.map((value) => {
-            const { icon } = MODALITY_META[value];
-            const status = modalityStatus(value);
-            return (
-              <StatusItem
-                key={value}
-                icon={icon}
-                label={modalityLabel(value, t)}
-                status={status.text}
-                active={status.active}
-              />
-            );
-          })}
-          {extraModalities.map((value) => {
-            const status = modalityStatus(value);
-            return (
-              <StatusItem
-                key={value}
-                icon={FileText}
-                label={modalityLabel(value, t)}
-                status={status.text}
-                active={status.active}
-              />
-            );
-          })}
-        </div>
-      </DetailSection>
-
+      {model.modalities && (
+        <DetailSection title={t('detail.modalities')}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CORE_MODALITIES.map((value) => {
+              const { icon } = MODALITY_META[value];
+              const status = modalityStatus(value);
+              return (
+                <StatusItem
+                  key={value}
+                  icon={icon}
+                  label={modalityLabel(value, t)}
+                  status={status.text}
+                  active={status.active}
+                />
+              );
+            })}
+            {extraModalities.map((value) => {
+              const status = modalityStatus(value);
+              return (
+                <StatusItem
+                  key={value}
+                  icon={FileText}
+                  label={modalityLabel(value, t)}
+                  status={status.text}
+                  active={status.active}
+                />
+              );
+            })}
+          </div>
+        </DetailSection>
+      )}
       {/* 能力 */}
       {features.length > 0 && (
         <DetailSection title={t('detail.features')}>
