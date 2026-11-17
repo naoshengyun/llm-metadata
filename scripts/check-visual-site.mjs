@@ -1,60 +1,38 @@
-/** Run against a built site: proves the UI catalog is exactly the immutable selection. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-const out = process.argv[2];
-const read = (p) => JSON.parse(readFileSync(join(out, p)));
-const request = JSON.parse(readFileSync('data/cny/publication/first-release.json'));
-const artifact = JSON.parse(readFileSync(request.artifactPath));
-const api = read('api/newapi/ratio_config.json');
+import { makeSnapshot } from './upstream-snapshot.mjs';
+import { sha } from './upstream-cny.mjs';
+const out = process.argv[2],
+  s = makeSnapshot(),
+  read = (p) => JSON.parse(readFileSync(join(out, p)));
+const current = read('current.json');
+assert.equal(current.releaseId, s.releaseId);
+assert.equal(current.manifestSha256, s.manifestSha256);
+assert.deepEqual(read('api/newapi/ratio_config.json'), s.datasets.en.config);
+for (const l of ['en', 'zh', 'ja']) {
+  const prefix = 'api/' + (l === 'en' ? '' : `i18n/${l}/`);
+  assert.deepEqual(read(prefix + 'all.json'), JSON.parse(JSON.stringify(s.datasets[l].providers)));
+  for (const p of Object.values(JSON.parse(JSON.stringify(s.datasets[l].providers))))
+    assert.deepEqual(read(prefix + 'providers/' + p.id + '.json'), JSON.parse(JSON.stringify(p)));
+}
+for (const [p, b] of Object.entries(s.files))
+  assert.equal(readFileSync(join(out, 'versions', s.releaseId, p), 'utf8'), b);
+for (const [p, v] of Object.entries(read('site-manifest.json').files)) {
+  const b = readFileSync(join(out, p));
+  assert.equal(sha(b), v.sha256, p);
+  assert.equal(b.length, v.bytes, p);
+}
+const old = 'versions/74e69aea7269e8b0c2ac216cb13d332b23324c9adc6fb9f6e9ceeefb5bd91c1b/';
 assert.equal(
-  createHash('sha256')
-    .update(readFileSync(join(out, 'api/newapi/ratio_config.json')))
-    .digest('hex'),
+  sha(readFileSync(join(out, old + 'manifest.json'))),
+  'b13bb57933d8083b7d3cc64fdaf49524f5c6ce09ada202629c12a1faf47c7a81',
+);
+assert.equal(
+  sha(readFileSync(join(out, old + 'ratio_config.json'))),
   '951840fcad1e39ddf8d43d8a0f215d185c7d0cf91769044d68c3980ff7b8c501',
 );
-const all = read('api/all.json');
-const ids = Object.values(all)
-  .flatMap((p) => Object.keys(p.models))
-  .sort();
-assert.deepEqual(ids, [...request.selection.models].sort());
-assert.equal(ids.length, 43);
-for (const locale of ['', 'i18n/zh/', 'i18n/ja/']) {
-  const providers = read('api/' + locale + 'providers.json').providers;
-  assert.equal(
-    providers.reduce((n, p) => n + p.modelCount, 0),
-    43,
-  );
-  for (const p of providers) {
-    const detail = read('api/' + locale + 'providers/' + p.id + '.json');
-    assert.equal(Object.keys(detail.models).length, p.modelCount);
-    for (const [id, m] of Object.entries(detail.models)) {
-      assert.equal(m.cost.publication_expr, api.data.billing_expr[id]);
-      assert.equal(api.data.billing_mode[id], 'tiered_expr');
-      assert.equal(m.cost.currency, 'CNY');
-      const q = artifact.quotes.records.find((q) => q.id === artifact.selection[id]);
-      for (const key of Object.keys(q.cost).filter((k) => typeof q.cost[k] === 'number'))
-        assert.equal(m.cost[key], q.cost[key] * (q.currency === 'USD' ? 7 : 1));
-    }
-  }
-}
-const manifest = read('site-manifest.json');
-for (const [path, v] of Object.entries(manifest.files))
-  assert.equal(
-    createHash('sha256')
-      .update(readFileSync(join(out, path)))
-      .digest('hex'),
-    v.sha256,
-    path,
-  );
-assert.equal(read('current.json').releaseId, request.releaseId);
-assert.equal(
-  createHash('sha256')
-    .update(readFileSync(join(out, 'versions', request.releaseId, 'manifest.json')))
-    .digest('hex'),
-  request.manifestSha256,
-);
 console.log(
-  'PASS: 43 exact models; locale/provider counts; fixed expr/mode; original CNY/USD×7; current/fixed hashes; site inventory',
+  'PASS full frozen catalog/locales, selected CNY API, exclusions, release/inventory and immutable legacy files',
+  s.manifest.stats,
 );

@@ -1,3 +1,4 @@
+import { PricingNotice } from '@/components/pricing-notice';
 import { Fragment, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, SearchX } from 'lucide-react';
@@ -364,6 +365,7 @@ export function PricingTable({
                           <div className="text-muted-foreground truncate font-mono text-xs">
                             {model.id}
                           </div>
+                          <PricingNotice model={model} />
                         </div>
                       </div>
                     </TableCell>

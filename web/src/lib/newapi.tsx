@@ -7,7 +7,6 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 import type { Currency } from '@billing/currencies';
 import {
-  buildDeploymentBillingExpr,
   defaultDeployment,
   displayRate,
   displaySymbol,
@@ -110,16 +109,20 @@ export interface ModelExpr {
 
 export function modelExpr(
   cost: ModelCost | undefined,
-  billing: ProviderBillingRule | undefined,
-  deployment: NewApiDeployment,
-  exchangeRates: ExchangeRates,
+  _billing: ProviderBillingRule | undefined,
+  _deployment: NewApiDeployment,
+  _exchangeRates: ExchangeRates,
 ): ModelExpr | undefined {
   if (typeof cost?.publication_expr === 'string')
-    return { expr: cost.publication_expr, unit: 'token', sheetCurrency: 'CNY' };
-  const result = buildDeploymentBillingExpr(cost, billing ?? {}, deployment, exchangeRates);
-  return result.expr === null
-    ? undefined
-    : { expr: result.expr, unit: result.unit, sheetCurrency: result.sheetCurrency };
+    return {
+      expr: cost.publication_expr,
+      unit:
+        typeof cost.publication_unit === 'string' && cost.publication_unit === 'image'
+          ? 'image'
+          : 'token',
+      sheetCurrency: 'CNY',
+    };
+  return undefined;
 }
 
 /** 单个供应商的 /api/ratio_config 载荷（与托管文件同形，按当前部署生成） */
@@ -134,8 +137,7 @@ export function providerRatioConfig(
     data: { billing_mode: {}, billing_expr: {} },
   };
   for (const [id, model] of Object.entries(provider.models)) {
-    if (typeof model.cost?.publication_expr !== 'string')
-      throw Error('Fixed publication expression required');
+    if (typeof model.cost?.publication_expr !== 'string') continue;
     config.data.billing_mode[id] = 'tiered_expr';
     config.data.billing_expr[id] = model.cost.publication_expr;
   }

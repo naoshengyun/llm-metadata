@@ -1,18 +1,25 @@
-# CNY 可视化发布
+# 完整上游目录与 CNY 价格发布
 
-范围与逐项交互验收见 GitHub #27。复用 web/ 的上游 React 应用、设计系统、供应商导航/搜索、全局模型搜索、卡片/表格、详情、语言及主题。手机增加可折叠全局搜索，保持原供应商选择器。
+当前规范为 Planner 维护的 Spec v2.0，入口见 `docs/requirements/catalog-publication-sources.json`；实施/验收矩阵 #29。旧43首发及其Spec、固定目录保持历史身份，不作为新目录上限。
 
-构建先运行 `npm ci --ignore-scripts`、`npm --prefix web ci --ignore-scripts`、`npm run test:cny`，再执行：
+固定上游 `b755761bf19fdcd4d4ad433d2431882c370ad05e` 的三语言 `dist/api/**/all.json` 与 native config 复制到 `data/upstream/b755761bf/`；`source.json` 记录原文件路径/SHA。此固定源与继承UI代码同步核对，不在构建时联网滚动抓取或用自有raw补价。
 
 ```
-node scripts/build-visual-site.mjs data/cny/publication/first-release.json /tmp/unique-pages-directory
-node scripts/check-visual-site.mjs /tmp/unique-pages-directory
+npm ci --ignore-scripts
+npm --prefix web ci --ignore-scripts
+npm run test:cny
+node scripts/build-visual-site.mjs data/cny/publication/upstream-release.json /tmp/new-exclusive-site
+node scripts/check-visual-site.mjs /tmp/new-exclusive-site
 ```
 
-输出目录必须尚不存在。不得运行上游价格生成器向此输出目录混入全量价格。
+全部50供应商、616条模型与i18n保留。只适配 `model.cost` 为 CNY 价格视图，原始完整成本另留 `model.sourceCost`；非价格元数据逐字段不变，不以核价日期覆写模型更新时间。`model.cnyPrice`记录资格/币种/导出去向，元数据存在不代表有价或可售。无价格时cost只有CNY币种无数值，UI显示缺源与—，不能显示为0。非原生单位价可仅供资料，不生成表达式。
 
-适配差异：上游 new-api 面板允许更改部署汇率并重新生成表达式，这与固定 CNY 发布包不兼容。本版保留其工具栏入口，改为复制/下载原快照、查看部署单位要求及固定版本/来源链接。供应商复制只筛选固定表达式，不重新计算。页面不读取旧部署设置的 localStorage，避免旧 USD 偏好改变系数说明。浏览不代表实例设置被修改。
+币种选择：明确CNY主sheet优先，其次明确CNY alternate。国内端点缺原CNY不采用USD估算。其他USD按金额白名单×7一次；嵌套tiers/schedule价格同样转换，阈值、时间、TTL、模型limit等不变。源cost所有字段仍可追溯。默认平台CNY/显示汇率1，不提供重算另一套汇率的新需求。
 
-模型元数据仅来自 artifact 中明确选择的官方报价：名称使用原生模型身份，说明/价目/核价日期使用对应 quote。不从上游猜测上下文大小、发布日期或能力。报价字段完整保留 CNY 基础价、阶梯和缓存 TTL，原文说明保留多模态路径及限制。`publication.html` 保留此前发布索引以提供固定包和审计下载；首页改为完整应用。
+国内默认映射在 `scripts/upstream-cny.mjs` 明确列出。全部订阅/国际区域导航仍可点击；初始导航默认alibaba-cn，全局同名搜索优先国内资料。原生API按模型键分组，若有国内非订阅记录，只在国内集合内选合格项，不降级到国际报价；否则在其他非订阅集合选。同一候选池中若多个合格项表达式不等价，则明确排除为歧义；等价项才以provider ID稳定排序，记录每个winner和排除，完全不使用上游priority。不同端点的cost绝不混合。页面保留所有区域价，只有被选中项目提供原生表达式/复制；供应商复制是全量新API按provider的分区，不重算。
 
-版本目录、current.json、stable API 继续由原发布器生成。只有可变应用与浏览 API 和 site-manifest 增加/更新。站点 inventory 覆盖全部实际发布文件。Actions 仍限业务分支手动触发及原四个 action pins，不扩大策略。
+`buildBillingExpr`复用共享原生核心；费用未知、缺必要输出、未知价格字段、非支持单位、生成器warning或订阅都拒出，原因逐记录发布。明确官方0保留，缺失不造0。全量页面记录数/合格区域记录数/去重API键数分别报告，API不等于616键。
+
+新版本身份由固定source、全部派生三语言catalog、选择和排除产生；manifest包括每个固定文件SHA，`upstream-release.json`为已批准政策范围的具体构建回执。Pages workflow仍手动、业务分支、exact source/release/manifest输入和原4个SHA pins。构建先重现旧首发fixed目录，再新增新版本、切current和stable。严禁覆写旧versions目录。
+
+`publication.html`提供新来源、固定manifest、选择/缺源排除清单及旧发布索引；旧43原发布页移至 `legacy-publication.html`。旧current/stable属于可变入口允许切换，旧fixed字节必须保持。CI检查固定源/目录/API/排除/旧hash/inventory；独立QA另做逐字段、原价深层核对、浏览器实际复制/下载/搜索/详情/手机及公网验证。没有写实例、付费调用或自动定时改价。

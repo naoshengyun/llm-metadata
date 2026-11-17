@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-17",
+  "scope": "Complete fixed upstream catalog and all eligible CNY price publication; successor scope, not rewrite of historical 43 release",
+  "maintenanceAuthority": "Planner canonical obs source; repository immutable byte snapshot",
+  "source": {
+    "version": "2.0",
+    "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云完整上游目录与CNY价格发布Spec.md",
+    "snapshot": "snapshots/catalog-publication-v2.0/2026-11-17-脑生云完整上游目录与CNY价格发布Spec.md",
+    "sha256": "c2a5693a5efc58f900ac9e4b98fccf0a5f07b05c5f6afd2f4be0fd51c21cb270",
+    "status": "approved-implementation-in-progress-not-new-release-accepted"
+  },
+  "authorization": {
+    "userSessionId": "a3e9ca5b-cbba-4f51-82ac-35df033526f4",
+    "userMessageId": "c07h2rok6gtzxx5uf2fnykys",
+    "userAt": "2026-11-17T15:06:30.738Z",
+    "answeredQuestionRecordId": "ui51aqxdayaecr1nxce6cclo",
+    "answeredAt": "2026-11-17T15:10:44.817Z",
+    "answers": {
+      "A": "仅用上游，缺价明确标注（推荐）",
+      "C": "同步发布全部合格价格（推荐）"
+    },
+    "implementationRelayId": "vhj83amwccuq5vlntqnpgjpc",
+    "implementationRelayAt": "2026-11-17T15:13:44.193Z",
+    "implementationSessionId": "d78f8a2f-6023-429a-aaac-4685fcb352c2"
+  },
+  "upstream": {
+    "sha": "b755761bf19fdcd4d4ad433d2431882c370ad05e",
+    "providers": 50,
+    "modelRecords": 616,
+    "countEvidence": "dist/api/index.json",
+    "indexSha256": "e83aeb866582f26d433d44f6592649f224d515368e23fe272a367597d853469e",
+    "allJsonSha256": "033a5eb02c59466315ff7e81bbfffa14dcd596b8ca51f1c3e2983e65d2fefd5c",
+    "apiKeyCount": "determined by qualified-source/native-expression and explicit regional selection, not assumed 616 or 43"
+  },
+  "tracker": {
+    "issue": 29,
+    "url": "https://github.com/naoshengyun/llm-metadata/issues/29",
+    "noNewImplementationTask": true
+  },
+  "history": {
+    "originalSources": "sources.json",
+    "publicationSources": "publication-sources.json",
+    "retained43Release": "74e69aea7269e8b0c2ac216cb13d332b23324c9adc6fb9f6e9ceeefb5bd91c1b",
+    "policy": "all prior fixed URLs and bytes retained; all prior canonical files untouched"
+  }
+}

@@ -13,6 +13,14 @@ export interface ReasoningOption {
 }
 
 export interface Model {
+  cnyPrice?: {
+    status: string;
+    reason?: string;
+    sourceCurrency?: string;
+    exported?: boolean;
+    exportReason?: string;
+  };
+  sourceCost?: ModelCost;
   publication?: {
     quoteId: string;
     sourceCurrency: string;
@@ -44,6 +52,7 @@ export interface Model {
 }
 
 export interface Provider {
+  description?: string;
   id: string;
   name?: string;
   api?: string;
@@ -59,6 +68,7 @@ export interface Provider {
 }
 
 export interface ProviderIndexItem {
+  description?: string;
   id: string;
   name: string;
   doc?: string;
