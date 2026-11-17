@@ -256,3 +256,67 @@ test('S: invalid UTF-8 cannot be silently normalized while claiming original can
   bad[index] = 0xff;
   assert.throws(() => buildPublicationPackage(bad, selection), /UTF-8/);
 });
+
+test('S: rejected tool quotes remain excluded provenance, not selected contributors to a valid partial tool price', () => {
+  const seed = JSON.parse(candidate());
+  const valid = seed.quotes.records.find((q) => q.id === seed.selection.search_std);
+  const rejected = structuredClone(valid);
+  rejected.id = 'rejected-search-quote';
+  rejected.source.url = '';
+  rejected.tools[0].amount = 999;
+  const catalog = { ...seed.quotes, records: [...seed.quotes.records, rejected] };
+  const artifact = buildOfficialSnapshot({
+    sourceSha: seed.sourceSha,
+    catalog,
+    reference: seed.data.reference,
+    selection: { ...seed.selection, 'rejected-search-alias': rejected.id },
+  }).artifact;
+  assert.equal(artifact.tools.search_std, 10);
+  const bytes = Buffer.from(JSON.stringify(artifact));
+  const p = buildPublicationPackage(bytes, { ...selection, models: [], plugins: {} });
+  const record = JSON.parse(p.files['publication-record.json']);
+  assert.deepEqual(
+    record.selected.tools[0].quotes.map((q) => q.id),
+    [valid.id],
+  );
+  assert.equal(
+    record.notSelected.officialQuotes.find((q) => q.quoteId === rejected.id).reason,
+    'missing-source',
+  );
+  assert.ok(
+    JSON.parse(p.files['exclusions.json']).some(
+      (q) => q.id === rejected.id && q.status === 'missing-source',
+    ),
+  );
+  assert.equal(
+    verifyPublicationPackage(p.files, { releaseId: p.releaseId, manifestSha256: p.manifestSha256 })
+      .releaseId,
+    p.releaseId,
+  );
+});
+
+test('S: tool provenance uses actual candidate bindings, not a rejected task alias regenerated under its official name', () => {
+  const seed = JSON.parse(candidate());
+  const q = structuredClone(
+    seed.quotes.records.find((q) => q.id === seed.selection['doubao-seedance-2-0-fast-260128']),
+  );
+  q.id = 'task-with-rejected-binding';
+  q.tools = [{ key: 'search_std', amount: 0.01, unit: 'per_call', currency: 'CNY' }];
+  const artifact = buildOfficialSnapshot({
+    sourceSha: seed.sourceSha,
+    catalog: { ...seed.quotes, records: [...seed.quotes.records, q] },
+    reference: seed.data.reference,
+    selection: { ...seed.selection, 'unsupported-task-alias': q.id },
+  }).artifact;
+  assert.equal(artifact.tools.search_std, 10);
+  const p = buildPublicationPackage(Buffer.from(JSON.stringify(artifact)), {
+    ...selection,
+    models: [],
+    plugins: {},
+  });
+  const record = JSON.parse(p.files['publication-record.json']);
+  assert.deepEqual(
+    record.selected.tools[0].quotes.map((q) => q.id),
+    [seed.selection.search_std],
+  );
+});

@@ -156,8 +156,29 @@ export function buildPublicationPackage(
   const selectedTools = normalized.tools.map((key) => {
     const ids = new Set(Object.values(artifact.selection));
     const quotes = records
-      .filter((q) => ids.has(q.id) && q.tools?.some((t) => t.key === key))
+      .filter((q) => {
+        if (
+          !ids.has(q.id) ||
+          !q.tools?.some((t) => t.key === key) ||
+          regenerated.diagnostics.find((d) => d.id === q.id)?.status !== 'ready'
+        )
+          return false;
+        return Object.entries(artifact.selection)
+          .filter(([, id]) => id === q.id)
+          .some(([nativeName]) => {
+            const contribution = generateCny({
+              upstream: { providers: {} },
+              records: [q],
+              selection: { [nativeName]: q.id },
+            });
+            return (
+              contribution.diagnostics.every((d) => d.status === 'ready') &&
+              contribution.tools[key] === tools[key]
+            );
+          });
+      })
       .map((q) => structuredClone(q));
+    if (!quotes.length) throw new Error('selected tool has no eligible price contributor');
     for (const q of quotes) selectedQuotes.add(q.id);
     return {
       key,
