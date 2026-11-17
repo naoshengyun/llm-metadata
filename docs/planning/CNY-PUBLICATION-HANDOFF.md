@@ -25,3 +25,5 @@ AC分配：T01主责PUB-AC-01/02/03/09；T02主责04/08/10并回归01/03；T03�
 ## 验证回执
 
 四份新obs正文与仓库快照逐字节/SHA256一致；原v0.12规范与快照不变。新增obs/仓库相对链接检查通过，PUB-AC-01—10均有票覆盖。Obsidian CLI可用；全vault `unresolved total`回334，该值是全库既存汇总，不宣称整个vault零未解析链接。本批新增相对链接另行逐项存在性验证通过。文档变更仅运行适度校验，未跑计费/部署/供应商测试。
+
+2026-11-17技术修正：正式来源升v1.3，PUB-AC-02编号保持但原文已修正。rc50空message错误envelope可能test_results success、无可用所选价格。发布侧严格success===true/data/所选字段校验；valid H必须全选择/全值精确匹配，空message负例不得改为仅带message。#19尚未关闭，不能将失败尝试称H验收通过。见[正式来源登记](../requirements/publication-sources.json)。

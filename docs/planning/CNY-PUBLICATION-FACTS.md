@@ -16,7 +16,7 @@
 以下全部以只读 `git show f2aa91232ed3e5878a614762ace6736a2b74257f:<path>` 查询，不能用工作目录f36c460…冒充rc50：
 
 - `controller/ratio_sync.go`的FetchUpstreamRatios：req.Upstreams可指定http BaseURL，Endpoint支持绝对http(s)URL或相对路径；空Endpoint默认/api/pricing。请求体原生Upstreams模式不必新增采购channel。内置官方preset仍硬编码basellm来源，不会自动变为组织CNY源。实际UI自定义入口可见性尚未复验，运营草稿以原生管理API能力为界，不宣称已有专用按钮。
-- 同文件pricingSyncFields包括billing_mode/billing_expr等模型价字段，不包括plugin_billing_expr/工具。HTTP响应先解success/data，success=false或缺失即拒绝；上限10MiB、默认超时10s，交付需覆盖包体积及下载失败。
+- 同文件pricingSyncFields包括billing_mode/billing_expr等模型价字段，不包括plugin_billing_expr/工具。HTTP响应先解success/data，success=false或缺失时提前返回Err=Message；空Message可能随后被聚合为success但无可用所选价格（v1.3修正）；上限10MiB、默认超时10s，交付需覆盖包体积及下载失败。
 - 当前生成器ratio_config输出只有data，没有success:true。**不能直接把现有该文件托管就声称rc50源URL已兼容**。发布侧需生成标准success:true/data封装并绑定新输出hash/releaseId，不改原artifact身份。旧公开生成出口也须按实际格式区分，不能把配置保存I通过当URL fetch通过。
 - 当前build-official-cny产物：artifact/catalog/coverage/diagnostics/status/semantic-diff/ratio_config/plugin_prices/tool_prices及报告。插件管理需要每model的plugin→expression对象，经原生model_pricing版本化接口保存；工具是独立tool_price_setting.prices全表字符串、单价每千次，无CAS需独占。源URL不能一键覆盖三分区。
 - 原版model_pricing接口支持fresh expected_version、完整草稿合并、unset/继承；本地动态恢复QA已通过，但不扩展为新的源URL抓取测试或真实消费。
@@ -42,3 +42,5 @@ Pages已开通、稳定URL已存在、token可部署、域名/中国访问SLA；
 2026-11-17后续：PUB-D2已确认允许符合资料完整、原版可表达且经用户确认条件的模型子集分批发布；全136参考和未发布原因、partial/complete=false、141差5保留。见[决定记录（#15）](https://github.com/naoshengyun/llm-metadata/issues/15)。具体首发名单与真实发布未批准；D3后续已确认（#16），原待答状态已被替代。
 
 2026-11-17最新：PUB-D3已确认人工核价PR→审阅固定候选→手动发布指定版本，无定时/代码提交自动发布，上游同步分开；实际发布版本另确认。[决定记录（#16）](https://github.com/naoshengyun/llm-metadata/issues/16)。长期SLA、精确名单、权限启用或部署未获批准；剩余审批见[三票/S-H及D4表](CNY-PUBLICATION-APPROVAL.md)。
+
+2026-11-17技术修正：正式来源升v1.3，PUB-AC-02编号保持但原文已修正。rc50空message错误envelope可能test_results success、无可用所选价格。发布侧严格success===true/data/所选字段校验；valid H必须全选择/全值精确匹配，空message负例不得改为仅带message。#19尚未关闭，不能将失败尝试称H验收通过。见[正式来源登记](../requirements/publication-sources.json)。
