@@ -6,4 +6,4 @@ Status: draft-awaiting-user
 
 **Blocked by:** PUB-T01。
 
-关闭条件：PUB-AC-01/03/04/08/10；本地静态服务器完整包下载与负例、拒覆写通过；manifest绑定所有实际输出、候选/选择/适配器，非秘密信息only；运营示例分别说明模型URL、插件对象、工具千次/独占、CNY预检与实例确认。保留完整参考和excluded，full模式拒incomplete。TDD+独立审查；不接生产目标、不发布公网、不调用供应商。
+关闭条件：PUB-AC-01、PUB-AC-03、PUB-AC-04、PUB-AC-08、PUB-AC-10；本地静态服务器完整包下载与负例、拒覆写通过；manifest绑定所有实际输出、候选/选择/适配器，非秘密信息only；运营示例分别说明模型URL、插件对象、工具千次/独占、CNY预检与实例确认。保留完整参考和excluded，full模式拒incomplete。TDD+独立审查；不接生产目标、不发布公网、不调用供应商。
