@@ -111,7 +111,8 @@ export function adaptPrice(provider, model) {
   if (!built.expr || built.warnings.length)
     return {
       status: 'unsupported',
-      reason: built.warnings.join('; ') || 'not-expressible',
+      reason:
+        built.warnings.map((w) => w.replace(/\$(?=\d)/g, 'CNY ')).join('; ') || 'not-expressible',
       sourceCurrency,
       cost: cny,
     };

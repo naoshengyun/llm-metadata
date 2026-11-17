@@ -150,3 +150,10 @@ test('unknown object/string charges and ambiguous domestic prices fail closed', 
   assert.equal(a.selected.collision, undefined);
   assert.ok(a.exclusions.every((r) => r.reason === 'ambiguous-regional-prices'));
 });
+test('native generator diagnostics describe normalized money as CNY, not dollars', () => {
+  const p = adaptPrice({ id: 'perplexity' }, { cost: { input: 1, output: 8, reasoning: 3 } });
+  assert.equal(p.status, 'unsupported');
+  assert.match(p.reason, /CNY 21/);
+  assert.match(p.reason, /CNY 56/);
+  assert.doesNotMatch(p.reason, /\$/);
+});
