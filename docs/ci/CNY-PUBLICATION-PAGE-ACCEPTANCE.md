@@ -1,23 +1,35 @@
-# PUB-T02 页面验收矩阵（开发开始登记）
+# PUB-T02 页面验收矩阵
 
 规范：[Spec #18](https://github.com/naoshengyun/llm-metadata/issues/18)、[PUB-T02 #20](https://github.com/naoshengyun/llm-metadata/issues/20)，正式v1.3。用户已接受每次粘贴完整URL、刷新/关闭后重填，保留固定原版页面；不新增持久化源或后台。
 
-当前仅登记，不代表运行通过。独立UI目标尚未准备，不能使用旧I夹具。目标应为单独的固定rc50 f2aa912/image096feb…隔离实例，记录容器完整ID/origin/tmpfs/身份/基线、明确test selection与固定包hash；初始化与只读验证在开发范围内，任何价格/单位保存前须向Planner提交具体动作并取得实际执行意图。
+2026-11-17 已在独立临时目标完成下列只读页面步骤。目标、固定包、基线及下一步具体写入提案见[应用意图材料](CNY-PUBLICATION-UI-INTENT.md)。没有使用旧I夹具；没有点击确认更改或保存单位/模型/工具价格。包级独立审查通过不代替本表保存及读回验收。
 
 | 阶段 | 通过证据 | 当前状态 |
 |---|---|---|
-| Root/SUPER_ADMIN页面访问 | 实际原版页面及受控身份，版本/目标记录 | 未验 |
-| 输入固定模型URL/核对来源 | UI输入完整Endpoint，实际URL与固定包一致；原预设名称/Official徽标限制呈现 | 未验 |
-| 拉取 | 页面发起请求，全部所选模型和值齐全；不可只看success/“无差异” | 未验 |
-| 逐模型选择/差异预览 | 选择集合和差异与固定包精确一致 | 未验 |
-| 刷新/关闭重填 | 原版URL内存行为如实观察，用户已接受；不是需求待定 | 未验 |
+| Root/SUPER_ADMIN页面访问 | 原版rc50页面；个人资料为cnyui、超级管理员、用户ID1 | 已验，只读 |
+| 输入固定模型URL/核对来源 | 完整URL替换原官方行Endpoint；名称/Official徽标不变，实际URL单独核对 | 已验，只读 |
+| 拉取 | 原版页面请求 `/api/ratio_sync/fetch`；Claude/Kimi全部mode/expr与固定包一致 | 已验，只读 |
+| 逐模型选择/差异预览 | 两行分别选择后2/2；应用同步仅打开预览，两条完整表达式匹配；确认更改未点击 | 已验至预览 |
+| 刷新/关闭重填 | 刷新回原默认Endpoint；模型metadata同步外窗关闭再开也回默认；内层选择器取消重开但外窗未关闭时暂保留 | 已验，已重新粘贴拉取 |
 | Confirm Changes真实保存 | 同目标/selection/基线diff明确批准后，仅从原版页面操作 | 未授权、未执行 |
 | 应用后核对 | 页面刷新/结果与获准选择一致，未选字段/倍率/配额保持 | 未验，依赖获准保存 |
-| 插件独立页面 | 模型编辑/插件表达式对象入口真实可见，与模型源独立 | 未验 |
-| 工具独立页面 | 工具visual/JSON入口真实可见；全表无CAS/独占限制明确 | 未验 |
+| 插件独立页面 | 既有sora-2 → 编辑 → Sora → 单独设置草稿 → 表达式编辑器；未保存并导航丢弃 | 通用入口已验；本候选doubao插件未应用 |
+| 工具独立页面 | visual/JSON入口、每千次单位及独立保存按钮真实可见；未编辑/保存 | 入口已验，未应用 |
 
 模型候选路径为原版 `/system-settings/billing/model-pricing` → Upstream price sync，或 `/models/metadata` → Sync pricing，来源选择中的既有custom字段；页面实测前不把源码路径当通过。插件/工具分别验证已有入口，不假设一个模型URL已导入它们。
 
 UI登录若需用户本人交接，保留目标、已完成的包验证和可审操作，不绕过登录墙或把API/CLI代替实际页面。不操作Confirm Changes、单位/组/工具Save按钮，除非已有对应明确授权。任何不可满足能力回Planner，不改new-api核心/升级/新增代理应用器。
+
+## 本轮现场与证据界限
+
+用户完成登录后，标准受控snapshot返回200并显示已登录页面；历史handoff pending不是当前锁证据，没有再要求用户找卡片、截图或重登，没有绕过宿主控制。后续仅使用标准snapshot/ref/导航。两个“应用同步/同步价格”按钮含糊命名曾被自动审查拒绝；核对固定原版源码证明仅打开内存预览后，同一标准操作获准，实际保存按钮未触发。
+
+现场价格页仍显示USD，货币页美元汇率为7.3。配置I应用前的USDExchangeRate=1尚未满足，不能把当前预览当已生效CNY价格。保留来源价格，不点击乘除汇率按钮。
+
+插件入口以原版既有sora-2/Sora演示，只切换未保存的本地草稿。当前279项基线没有doubao-seedance-2-0-fast-260128对应entry/variant；新增同名模型草稿也未出现插件tab。不能宣称本候选doubao插件已从UI配置，也不安装插件或伪造变体。通用入口证明与具体插件接入条件分开记录。
+
+工具JSON界面接受工具键→数字的平铺map；tool_prices.json外层 `tool_price_setting.prices` 是配置分区标识，不能把整个wrapper直接粘贴到该编辑器。应提取内层所选map，与fresh全表基线合并并另行确认；页面展示的默认工具值不是已写入override（现场配置仍为 `{}`）。本次没有工具写入。
+
+脱敏证据保存在 `/tmp/cny-pub-t02-evidence/ui20-*.json` 与 `ui-price-preview.jpg`，包括来源输入/拉取/逐行选择/预览/刷新/关闭/身份/插件/工具/单位页面。只读结束snapshot-1794903426395.json的完整pricing hash为 `b89dbb0d98f4226b04f61cdd9d0bb6f0f8ca9fb749c02fb85acbe30f1c2cefb6`，规范化options hash为 `83f452792752b553d3b44380b4474873ab8e71158c8d795aebd898a4f73a7cbb`，与初始化完全一致。原279项、USD7.3、Quota500000及Group保持，priceWrites=0。辅助GET用于保全配置证据，不代替页面操作。
 
 旧I、历史H和独立测试通过不外推此表。整票PUB-AC-11未完成前 #20 保持OPEN，#21不能提前开工。实际发布、Pages/权限/定时/供应商/生产及实例清理均未授权。
