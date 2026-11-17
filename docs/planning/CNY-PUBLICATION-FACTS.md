@@ -34,3 +34,7 @@ Pages已开通、稳定URL已存在、token可部署、域名/中国访问SLA；
 - 亲自核对候选 `scripts/build-official-cny.mjs` L195及 `src/cny/cli.ts` L61：ratio_config只有data，缺success。新增封装须产生独立发布输出身份，不能覆盖旧artifact。
 - 本轮再次读取组织库API：PUBLIC/default=naoshengyun；Pages查询404；Release列表为空；selected-actions仍仅checkout/setup-node/upload-artifact三固定SHA，github_owned_allowed=false、verified_allowed=false。这些是当次查询事实，不保证未来状态。
 - 直接读取地图及恢复回执：#6/#10/#11 OPEN，#5/#7/#8/#9 CLOSED。#6移入“发布规划”并保留执行禁区，语义与当前委派一致；未据Dev修改反推业务批准。本次未查询或更改运行中fixture。
+
+## PUB-D1后续决定（2026-11-17）
+
+用户经原Planner线程正式选择现有组织仓库GitHub Pages；本次宿主核实转交明确只授权规划方向。见[决定记录（#14）](https://github.com/naoshengyun/llm-metadata/issues/14)。这更新的是决策状态，不更新上文API核对时点：没有因选择而开通站点、发布端点或改变权限。
