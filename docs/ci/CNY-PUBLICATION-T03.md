@@ -7,8 +7,8 @@
 `src/cny/publication-promotion.ts`复用T02整包验证，不复制旧artifact或重算官方核价日期。
 
 1. `preparePublicationTransition(current, files, identity, action)`重新核验当前全部历史固定包和目标包，生成完整部署快照、旧revision/旧release身份、目标身份、模型/插件/工具语义diff和planId。rollback只能选已保留版本；历史文件拒变更。仅有插件/工具而未选模型的包不能提升为原生稳定模型源。
-2. `executePublicationTransition(platform, plan, confirmation)`要求显式confirmed、确认者、批准引用和精确planId；验证快照/目标/diff一致，重建期望计划并检查旧revision。平台仅有read/权限/原子claim/整快照CAS-submit，接口没有网关应用能力。
-3. operationId绑定planId、确认者及批准引用。平台在提交前持久记住它；同一不明操作再次进入只读核验，不盲重发。新的尝试须新的明确批准引用；既有成功结果返回already-applied。claim不是用户授权，它只是防重机制。
+2. `executePublicationTransition(platform, plan, confirmation)`要求显式confirmed、确认者、批准引用和精确planId；入口私有复制固定输入，异步read/权限/claim等待后拒绝绑定变化，给submit独立payload副本，不以被适配器改写的对象作为期望值。验证快照/目标/diff一致，重建期望计划并检查旧revision。平台仅有read/既有attempt只读查询/权限/原子claim/整快照CAS-submit，接口没有网关应用能力。
+3. operationId绑定planId、确认者及批准引用。平台在提交前持久记住它；先只读查询既有操作，再判断是否允许新提交。既有不明操作的核验独立于当前写权限，权限撤销、journal不可读或初始read失败都不能把旧unknown误改failed；精确目标读回才解除不确定。同一不明操作不盲重发，新的尝试须新的明确批准引用；既有成功结果返回already-applied。claim不是用户授权，它只是防重机制。
 4. 提交前确定拒绝返回failed且旧入口保持；只有平台能证明未受理时才用PublicationNotSubmittedError。提交异常先记unknown并读回：精确匹配目标可确定applied，同时保留submission=unknown；旧版、其他版本或读失败保留unknown。禁止把所有超时都说成未提升。
 5. `downloadStablePublication(base, expectedIdentity)`核对发现指针、固定版本整包及稳定模型字节；缓存混版时拒绝并提示固定URL/hash。它是维护者读取验证接口，不改原版网关协议、不充当代理。
 
@@ -26,7 +26,7 @@ node scripts/publication-transition.mjs verify state-dir expected-revision
 node scripts/publication-transition.mjs export state-dir new-site-dir expected-revision
 ```
 
-确认记录为 `{confirmed:true, actor:"明确确认者", approvalRef:"实际批准记录", planId:"精确计划ID"}`。本地测试只使用明确test批准引用，不伪装首发批准。输出plan/receipt/目录拒覆写；有receipt先读而不是盲重跑。failed/unknown的apply命令以非零退出并保留JSON回执；receipt的status和submission均须查看，零退出也不代表真实Pages已部署。LocalPublicationPlatform对本地state文件使用独占锁和rename整快照，检查旧revision，attempt记录保留在本地状态目录，不进公开快照；它不证明真实Pages支持全局CAS。
+确认记录为 `{confirmed:true, actor:"明确确认者", approvalRef:"实际批准记录", planId:"精确计划ID"}`。本地测试只使用明确test批准引用，不伪装首发批准。输出plan/receipt/目录拒覆写；有receipt先读而不是盲重跑。apply在提交前独占预留receipt目的地，父目录须已存在，receipt必须在state-dir之外，不能与state/journal/锁混用；可预见的目的地错误先失败而不改源。failed/unknown非零退出并保留JSON；若结果已取得而后续回执持久化失败，stdout保留该结构化结果及receiptPersisted=false并非零退出，不能把报告失败误当未提升。status/submission均须查看，零退出也不代表真实Pages已部署。LocalPublicationPlatform对本地state使用独占锁和rename整快照，检查旧revision；attempt记录保留在本地目录，不进公开快照，不证明真实Pages支持全局CAS。
 
 附加 `candidate` 参数的verify/export拒绝当前或任何保留历史版本purpose=test，避免把本地测试固定URL一起公开。真实候选状态须与开发演练状态分开；只有明确人工核价/首发选择与对应candidate包能进入未来真实发布候选，现有四项/53项或本票A/B测试不自动获选。
 
@@ -44,6 +44,12 @@ node scripts/publication-transition.mjs export state-dir new-site-dir expected-r
 | PUB-AC-07 | 确认与权限mock、防重/CAS、只手动非启用模板、完整SHA/部署job权限分离 |
 | PUB-AC-09 | 原publication-record/artifact全部字节保留，构建/提升/回退不更新核价日期 |
 | PUB-AC-10 | 回执instanceConfiguration=not-written，源回退不解释为配置/消费/可售通过 |
+
+独立QA在首版5564f991f发现PROM-F1（异步可变确认）、PROM-S1（旧unknown遇权限变化误失败/初始read异常）、PROM-S2（提交后才发现回执路径错误）；原不通过报告 `qa-evidence/pr25-5564f99/REVIEW.md` / SHA256 `8a9c606c577ecc75385927c8ee7a0810acd3f34c0ee395214daa3c54aeab97b8` 保留。修复按同票S seam逐项红绿并重新提交固定head，独立结论须另取得；正向H或原96/98测试不能替代这些反例关闭。
+
+## 后续运营政策的来源区别
+
+Spec/Tickets/design冻结v1.3仍是本票AC来源。Planner维护的ops正文末尾随后追加“工具分区对客统一零价”，当前obs文件SHA256 `a15caaff37713a133f53430fd144163d1ab90f3743ac85344e05ec3efea60876`，不等于旧冻结v1.3 ops hash，不能笼统说四源均未变。其已记录语义是非零工具报价只作成本参考，不能直接作为脑生云对客应用值；实际工具配置须全目标键显式0并遵守fresh全表/独占/读回。该补充不授权本票改不可变官方quote/artifact或写工具设置，也不改变源提升/回退AC。实际首发选择及运营接入须纳入此后续政策；来源登记/规范版本由Planner维护，不能把历史非零工具包直接当当前客户收费配置。
 
 ## 非启用Pages候选与真实执行前缺项
 

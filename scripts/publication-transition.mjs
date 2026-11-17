@@ -14,7 +14,7 @@ import {
   unlinkSync,
   existsSync,
 } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import {
@@ -72,6 +72,17 @@ export class LocalPublicationPlatform {
       return true;
     } catch (error) {
       if (error.code === 'EEXIST') return false;
+      throw error;
+    }
+  }
+  async hasAttempt(operationId) {
+    if (!/^[a-f0-9]{64}$/.test(operationId)) throw new Error('invalid operation identity');
+    try {
+      const record = json(join(this.root, '.publication-attempt-' + operationId + '.json'));
+      if (record.operationId !== operationId) throw new Error('invalid durable operation record');
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') return false;
       throw error;
     }
   }
@@ -138,13 +149,46 @@ export async function runPublicationCommand(args) {
   if (command === 'apply' && paths.length === 4) {
     if (existsSync(paths[3]))
       throw new Error('receipt output already exists; read it before retrying');
-    const result = await executePublicationTransition(
-      new LocalPublicationPlatform(paths[0]),
-      json(paths[1]),
-      json(paths[2]),
-    );
-    save(paths[3], result);
-    return result;
+    const platform = new LocalPublicationPlatform(paths[0]),
+      plan = json(paths[1]),
+      confirmation = json(paths[2]);
+    const requested = resolve(paths[3]),
+      receiptPath = join(directory(dirname(requested)), basename(requested));
+    if (receiptPath === platform.root || receiptPath.startsWith(platform.root + '/'))
+      throw new Error('receipt must be outside the publication state directory');
+    const fd = openSync(receiptPath, 'wx', 0o600);
+    let result;
+    try {
+      result = await executePublicationTransition(platform, plan, confirmation);
+      writeFileSync(fd, JSON.stringify(result, null, 2) + '\n');
+      return result;
+    } catch (error) {
+      if (result) error.publicationResult = { ...result, receiptPersisted: false };
+      else {
+        try {
+          writeFileSync(
+            fd,
+            JSON.stringify({
+              schema: 'publication-cli-preflight-error/v1',
+              status: 'failed',
+              submission: 'not-attempted',
+              planId: plan.id,
+              reason: error.message,
+            }) + '\n',
+          );
+        } catch {
+          /* Retain the original error; never retry publication to repair a receipt. */
+        }
+      }
+      throw error;
+    } finally {
+      try {
+        closeSync(fd);
+      } catch (error) {
+        if (result) error.publicationResult = { ...result, receiptPersisted: false };
+        throw error;
+      }
+    }
   }
   if (['verify', 'export'].includes(command)) {
     const required = command === 'verify' ? 2 : 3;
@@ -187,6 +231,7 @@ if (
     console.log(JSON.stringify(result));
     if (result.status === 'failed' || result.status === 'unknown') process.exitCode = 1;
   } catch (error) {
+    if (error.publicationResult) console.log(JSON.stringify(error.publicationResult));
     console.error(error.message);
     process.exitCode = 1;
   }

@@ -51,6 +51,44 @@ test('S: an operator can prepare, confirm, locally apply and export a bound publ
     let run = cli('prepare', request, planFile);
     assert.equal(run.status, 0, run.stderr);
     const plan = JSON.parse(readFileSync(planFile));
+    const outputFailureConfirmation = save('output-failure-confirmation.json', {
+      confirmed: true,
+      actor: 'local-test-operator',
+      approvalRef: 'test-output-preflight',
+      planId: plan.id,
+    });
+    run = cli(
+      'apply',
+      state,
+      planFile,
+      outputFailureConfirmation,
+      join(root, 'absent-directory/receipt.json'),
+    );
+    assert.notEqual(run.status, 0);
+    const afterOutputFailure = cli('verify', state, plan.snapshot.revision);
+    assert.notEqual(
+      afterOutputFailure.status,
+      0,
+      'an unusable receipt output must be rejected before changing the stable state',
+    );
+    run = cli(
+      'apply',
+      state,
+      planFile,
+      outputFailureConfirmation,
+      join(state, 'publication-state.json'),
+    );
+    assert.notEqual(run.status, 0);
+    const prepareAfterInternalOutput = cli(
+      'prepare',
+      request,
+      join(root, 'after-internal-output-plan.json'),
+    );
+    assert.equal(
+      prepareAfterInternalOutput.status,
+      0,
+      'receipt reservation must not corrupt publication state or internal journals',
+    );
     const rejectedConfirmation = save('rejected-confirmation.json', {
       confirmed: true,
       actor: 'local-test-operator',

@@ -88,7 +88,7 @@ jobs:
           assert.equal(plan.id,e.PLAN_ID);assert.equal(plan.snapshot.revision,e.EXPECTED_REVISION);
           assert.equal(plan.identity.releaseId,e.RELEASE_ID);assert.equal(plan.identity.manifestSha256,e.MANIFEST_SHA256);
           assert.equal(confirmation.approvalRef,e.APPROVAL_REF);
-          const receipt=await executePublicationTransition({read:async()=>verified.snapshot,canSubmit:async()=>false,claim:async()=>false,submit:async()=>{throw Error('verification cannot submit');}},plan,confirmation);
+          const receipt=await executePublicationTransition({read:async()=>verified.snapshot,canSubmit:async()=>false,hasAttempt:async()=>false,claim:async()=>false,submit:async()=>{throw Error('verification cannot submit');}},plan,confirmation);
           assert.equal(receipt.status,'already-applied');
           const output=join(e.RUNNER_TEMP,'cny-pages-site');
           await runPublicationCommand(['export',state,output,e.EXPECTED_REVISION,'candidate']);

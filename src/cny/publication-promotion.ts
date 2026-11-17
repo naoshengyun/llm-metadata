@@ -13,6 +13,8 @@ export interface PublicationSnapshot {
 export interface PublicationPlatform {
   read(): Promise<PublicationSnapshot | null>;
   canSubmit(): Promise<boolean>;
+  /** Read-only durable lookup; reconciliation must not require new write permission. */
+  hasAttempt(operationId: string): Promise<boolean>;
   /** Atomically remember an operation before submission; false means readback only. */
   claim(operationId: string): Promise<boolean>;
   /** One complete snapshot; reject if expectedRevision no longer matches. */
@@ -158,9 +160,16 @@ export type PublicationPlan = ReturnType<typeof preparePublicationTransition>;
 /** Publication only: this interface has no gateway/instance configuration operation. */
 export async function executePublicationTransition(
   platform: PublicationPlatform,
-  plan: PublicationPlan,
-  confirmation: PublicationConfirmation,
+  inputPlan: PublicationPlan,
+  inputConfirmation: PublicationConfirmation,
 ) {
+  const plan = structuredClone(inputPlan),
+    confirmation = structuredClone(inputConfirmation);
+  const binding = hash({ plan, confirmation });
+  const assertUnchanged = () => {
+    if (hash({ plan: inputPlan, confirmation: inputConfirmation }) !== binding)
+      throw new Error('publication plan or confirmation changed during operation');
+  };
   const { id, ...content } = plan;
   if (
     hash(content) !== id ||
@@ -220,18 +229,6 @@ export async function executePublicationTransition(
     };
     return { ...receipt, id: hash(receipt) };
   };
-  const current = await platform.read();
-  if (current) verifyPublicationSnapshot(current);
-  if (current?.revision === plan.snapshot.revision) {
-    return makeReceipt('already-applied', 'not-attempted', current.revision);
-  }
-  if ((current?.revision ?? null) !== plan.fromRevision)
-    throw new Error('previous publication revision conflict');
-  if (preparePublicationTransition(current, target.files, plan.identity, plan.action).id !== id)
-    throw new Error('inconsistent publication plan or semantic diff');
-  if (!(await platform.canSubmit())) {
-    return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
-  }
   const readRevision = async () => {
     try {
       const observed = await platform.read();
@@ -244,12 +241,45 @@ export async function executePublicationTransition(
     }
     return null;
   };
+  let existed: boolean | undefined;
+  try {
+    existed = await platform.hasAttempt(operationId);
+  } catch {
+    /* Unknown journal state must not be treated as a new attempt. */
+  }
+  assertUnchanged();
+  let current: PublicationSnapshot | null;
+  try {
+    current = await platform.read();
+    if (current) verifyPublicationSnapshot(current);
+  } catch {
+    return makeReceipt(
+      existed === false ? 'failed' : 'unknown',
+      existed === false ? 'not-attempted' : 'unknown',
+      null,
+    );
+  }
+  assertUnchanged();
+  if (current?.revision === plan.snapshot.revision) {
+    return makeReceipt('already-applied', 'not-attempted', current.revision);
+  }
+  if (existed !== false) return makeReceipt('unknown', 'unknown', current?.revision ?? null);
+  if ((current?.revision ?? null) !== plan.fromRevision)
+    throw new Error('previous publication revision conflict');
+  if (preparePublicationTransition(current, target.files, plan.identity, plan.action).id !== id)
+    throw new Error('inconsistent publication plan or semantic diff');
+  const permitted = await platform.canSubmit();
+  assertUnchanged();
+  if (!permitted) {
+    return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
+  }
   let claimed: boolean;
   try {
     claimed = await platform.claim(operationId);
   } catch {
     return makeReceipt('failed', 'not-attempted', current?.revision ?? null);
   }
+  assertUnchanged();
   if (!claimed) {
     const observed = await readRevision();
     return makeReceipt(
@@ -260,7 +290,7 @@ export async function executePublicationTransition(
   }
   let submission: PublicationSubmission = 'acknowledged';
   try {
-    await platform.submit(plan.snapshot, plan.fromRevision);
+    await platform.submit(structuredClone(plan.snapshot), plan.fromRevision);
   } catch (error) {
     if (error instanceof PublicationNotSubmittedError) {
       return makeReceipt('failed', 'rejected-before-commit', current?.revision ?? null);

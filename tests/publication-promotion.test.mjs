@@ -90,6 +90,9 @@ class Platform {
   current = null;
   permitted = true;
   attempts = new Set();
+  async hasAttempt(operationId) {
+    return this.attempts.has(operationId);
+  }
   async claim(operationId) {
     if (this.attempts.has(operationId)) return false;
     this.attempts.add(operationId);
@@ -370,4 +373,69 @@ test('S: explicit native model names do not inherit object properties in the sem
       },
     },
   ]);
+});
+test('S: changing plan or confirmation during permission or claim waits rejects before submission', async () => {
+  const a = pack(),
+    b = pack(['kimi-k3.1-pro', 'claude-sonnet-4-5']);
+  for (const boundary of ['canSubmit', 'claim'])
+    for (const changeConfirmation of [false, true]) {
+      const platform = new Platform(),
+        plan = preparePublicationTransition(null, a.files, a, 'promote'),
+        approval = confirm(plan);
+      const original = platform[boundary].bind(platform);
+      platform[boundary] = async (...args) => {
+        const result = await original(...args);
+        if (changeConfirmation) {
+          approval.confirmed = false;
+          approval.approvalRef = 'changed-during-await';
+        } else {
+          const replacement = preparePublicationTransition(null, b.files, b, 'promote');
+          plan.snapshot = replacement.snapshot;
+          plan.identity = replacement.identity;
+          plan.diff = replacement.diff;
+        }
+        return result;
+      };
+      await assert.rejects(
+        executePublicationTransition(platform, plan, approval),
+        /changed|confirmation/,
+      );
+      assert.equal(await platform.read(), null);
+    }
+});
+test('S: a platform mutating its submitted payload cannot make a different release pass exact readback', async () => {
+  const a = pack(),
+    b = pack(['kimi-k3.1-pro', 'claude-sonnet-4-5']),
+    platform = new Platform();
+  const plan = preparePublicationTransition(null, a.files, a, 'promote'),
+    wrong = preparePublicationTransition(null, b.files, b, 'promote');
+  platform.submit = async (snapshot) => {
+    Object.assign(snapshot, structuredClone(wrong.snapshot));
+    platform.current = structuredClone(snapshot);
+  };
+  const result = await executePublicationTransition(platform, plan, confirm(plan));
+  assert.equal(result.status, 'unknown');
+  assert.equal(result.target.releaseId, a.releaseId);
+  assert.equal(JSON.parse((await platform.read()).files['current.json']).releaseId, b.releaseId);
+});
+test('S: existing unknown operations remain unknown after permission loss or an initial read failure', async () => {
+  const p = pack();
+  for (const readFails of [false, true]) {
+    const platform = new Platform(),
+      plan = preparePublicationTransition(null, p.files, p, 'promote');
+    platform.submit = async () => {
+      throw new Error('ambiguous timeout');
+    };
+    const first = await executePublicationTransition(platform, plan, confirm(plan));
+    assert.equal(first.status, 'unknown');
+    assert.equal(await platform.hasAttempt(first.operationId), true);
+    platform.permitted = false;
+    if (readFails)
+      platform.read = async () => {
+        throw new Error('initial reconciliation read failed');
+      };
+    const result = await executePublicationTransition(platform, plan, confirm(plan));
+    assert.equal(result.status, 'unknown');
+    assert.equal(result.submission, 'unknown');
+  }
 });

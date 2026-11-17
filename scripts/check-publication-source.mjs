@@ -242,6 +242,7 @@ try {
     const b = buildPublicationPackage(originalBytes, { ...selection, plugins: {}, tools: [] });
     const attempts = new Set();
     const platform = {
+      hasAttempt: async (id) => attempts.has(id),
       claim: async (id) => {
         if (attempts.has(id)) return false;
         attempts.add(id);
