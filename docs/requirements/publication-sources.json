@@ -7,42 +7,42 @@
   "sources": [
     {
       "id": "spec",
-      "version": "1.1",
+      "version": "1.2",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布增量Spec.md",
-      "sha256": "22c44ce4af764131be7efa67b609f19078bb0685c937a173e752825544fba725",
-      "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布增量Spec.md",
-      "status": "development-approved-ui-acceptance-open"
+      "sha256": "346640aaa5a27828396768c1a369791878256859b47e0820104268a3a54c18a2",
+      "snapshot": "snapshots/publication-v1.2/2026-11-17-脑生云CNY价格源发布增量Spec.md",
+      "status": "development-ready-runtime-acceptance-open"
     },
     {
       "id": "tickets",
-      "version": "1.1",
+      "version": "1.2",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布任务拆解.md",
-      "sha256": "b3f6b893f8b007ee8f5389d5ed8c7faec4d55ec4886235938d37028b5ff9213b",
-      "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布任务拆解.md",
-      "status": "development-approved-ui-acceptance-open"
+      "sha256": "507b611afdab7154a4029d8e63642616ed3667b3f1e9c77ba1b78ec3cd5d3099",
+      "snapshot": "snapshots/publication-v1.2/2026-11-17-脑生云CNY价格源发布任务拆解.md",
+      "status": "development-ready-runtime-acceptance-open"
     },
     {
       "id": "design",
-      "version": "1.1",
+      "version": "1.2",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
-      "sha256": "4bbf98a042c8a383c38be34c531b894f09aa3948151f292a09f9c948ec5288cb",
-      "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
-      "status": "development-approved-ui-acceptance-open"
+      "sha256": "8681e4b3d5d3e7470bc1aff55b37b05f8d7d84fdfd5d75e1ec448807bb1b1f1b",
+      "snapshot": "snapshots/publication-v1.2/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
+      "status": "development-ready-runtime-acceptance-open"
     },
     {
       "id": "operations",
-      "version": "1.1",
+      "version": "1.2",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布运营接入.md",
-      "sha256": "464245881987bc39e408644cfd07d57c905a63ef5209c8804db8ad227c3f0232",
-      "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布运营接入.md",
-      "status": "development-approved-ui-acceptance-open"
+      "sha256": "0cbd050e29a974d590f641d9b64f4161a4e9283ad289d68fc4522d225f69b8a6",
+      "snapshot": "snapshots/publication-v1.2/2026-11-17-脑生云CNY价格源发布运营接入.md",
+      "status": "development-ready-runtime-acceptance-open"
     },
     {
       "id": "ui-evidence",
       "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
-      "version": "1.1",
-      "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
-      "sha256": "dc331c9bc78a491354833600fa6ca90dbc09802c186a647c1ca6580a1f87b846",
+      "version": "1.2",
+      "snapshot": "snapshots/publication-v1.2/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
+      "sha256": "8af148db98b5581921959aa3969c58c6d8551f3f419d1c8dcc65012d4acd149b",
       "status": "static-evidence-runtime-unverified"
     }
   ],
@@ -66,7 +66,7 @@
         "blockedBy": [
           19
         ],
-        "readiness": "needs-info"
+        "readiness": "ready-for-agent"
       },
       {
         "id": "PUB-T03",
@@ -118,8 +118,55 @@
           "status": "development-approved-not-deployed"
         }
       ]
+    },
+    {
+      "version": "1.1",
+      "snapshotCommit": "4155dc256a53caf14daddc67514b5cb2198eb498",
+      "sources": [
+        {
+          "id": "spec",
+          "version": "1.1",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布增量Spec.md",
+          "sha256": "22c44ce4af764131be7efa67b609f19078bb0685c937a173e752825544fba725",
+          "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布增量Spec.md",
+          "status": "development-approved-ui-acceptance-open"
+        },
+        {
+          "id": "tickets",
+          "version": "1.1",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布任务拆解.md",
+          "sha256": "b3f6b893f8b007ee8f5389d5ed8c7faec4d55ec4886235938d37028b5ff9213b",
+          "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布任务拆解.md",
+          "status": "development-approved-ui-acceptance-open"
+        },
+        {
+          "id": "design",
+          "version": "1.1",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
+          "sha256": "4bbf98a042c8a383c38be34c531b894f09aa3948151f292a09f9c948ec5288cb",
+          "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布设计与开发授权.md",
+          "status": "development-approved-ui-acceptance-open"
+        },
+        {
+          "id": "operations",
+          "version": "1.1",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源发布运营接入.md",
+          "sha256": "464245881987bc39e408644cfd07d57c905a63ef5209c8804db8ad227c3f0232",
+          "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源发布运营接入.md",
+          "status": "development-approved-ui-acceptance-open"
+        },
+        {
+          "id": "ui-evidence",
+          "sourcePath": "/Users/kohr/baymax_work/obs/outputs/qa/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
+          "version": "1.1",
+          "snapshot": "snapshots/publication-v1.1/2026-11-17-脑生云CNY价格源原版页面能力核查.md",
+          "sha256": "dc331c9bc78a491354833600fa6ca90dbc09802c186a647c1ca6580a1f87b846",
+          "status": "static-evidence-runtime-unverified"
+        }
+      ]
     }
   ],
-  "version": "1.1",
-  "uiRequirementRecord": "https://github.com/naoshengyun/llm-metadata/issues/22"
+  "version": "1.2",
+  "uiRequirementRecord": "https://github.com/naoshengyun/llm-metadata/issues/22",
+  "uiDecisionRecord": "https://github.com/naoshengyun/llm-metadata/issues/22#issuecomment-6938923921"
 }
