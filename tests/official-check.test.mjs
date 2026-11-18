@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -65,6 +65,31 @@ test('official Kimi HTML verifies exact domestic quotes against the fixed candid
     assert.ok(report.results.some(({ status }) => status === 'not-registered'));
     assert.deepEqual(report.changes, []);
   }
+});
+
+test('a removed and formally withdrawn target does not interrupt official checks', async () => {
+  const withdrawn = join(directory, 'withdrawn');
+  const paths = [policyPath, catalogPath, selectionPath].map((file, i) => {
+    const output = join(directory, 'withdrawn-input-' + i + '.json');
+    const value = JSON.parse(readFileSync(file));
+    if (i === 0)
+      value.lifecycle['kimi-k3.1-pro'] = [
+        {
+          state: 'withdrawn',
+          quoteId: pro,
+          at: '2026-11-17T09:00:00+08:00',
+          evidence: { url, checkedAt: '2026-11-17', sha256: 'b'.repeat(64) },
+        },
+      ];
+    if (i === 1) value.records = value.records.filter(({ id }) => id !== pro);
+    if (i === 2) delete value.selection['kimi-k3.1-pro'];
+    writeFileSync(output, JSON.stringify(value));
+    return output;
+  });
+  execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', withdrawn, ...paths]);
+  const report = await check(current, { baseline: withdrawn });
+  assert.equal(report.results.find(({ quoteId }) => quoteId === pro)?.status, 'withdrawn');
+  assert.equal(report.results.filter(({ status }) => status === 'unchanged').length, 5);
 });
 
 function mutate(from, to) {

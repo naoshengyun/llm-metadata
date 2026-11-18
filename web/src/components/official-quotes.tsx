@@ -17,7 +17,10 @@ const messages = {
     reference: 'Reference only',
     hasPrice: 'Official price documented',
     expressible: 'Eligible for the native expression',
-    saved: 'Save and read-back in the isolated rc.50 acceptance test',
+    saved: 'Save and read-back awaiting verification for this candidate',
+    conditions: 'Charging conditions',
+    freeQuantity: (quantity: number, usageKey: string) =>
+      `First ${quantity}${usageKey === 'input_images' ? ' images' : ''} free`,
     usage: 'Actual billing awaiting verification',
     seedanceImport: 'Model expression import evidence',
     seedanceUsage: 'Target deployment billing still pending for both 4K cases',
@@ -40,7 +43,10 @@ const messages = {
     reference: '仅供参考',
     hasPrice: '官方价格有据可查',
     expressible: '可完整表达并纳入原生同步',
-    saved: '隔离 rc.50 原生配置保存与读回验收',
+    saved: '当前候选的原生配置保存与读回待验证',
+    conditions: '收费条件',
+    freeQuantity: (quantity: number, usageKey: string) =>
+      `前 ${quantity} ${usageKey === 'input_images' ? '张图片' : '个用量单位'}免费`,
     usage: '实际计费待验证',
     seedanceImport: '模型表达式导入已有证据',
     seedanceUsage: '目标部署的两种 4K 实际计费均待验证',
@@ -63,7 +69,10 @@ const messages = {
     reference: '参考のみ',
     hasPrice: '公式料金の資料あり',
     expressible: 'ネイティブ課金式で表現・同期可能',
-    saved: '隔離 rc.50 のネイティブ設定の保存・読戻し検証',
+    saved: 'この候補のネイティブ設定の保存・読み戻しは検証待ち',
+    conditions: '課金条件',
+    freeQuantity: (quantity: number, usageKey: string) =>
+      `最初の ${quantity} ${usageKey === 'input_images' ? '枚' : '単位'}は無料`,
     usage: '実際の課金は検証待ち',
     seedanceImport: 'モデル料金式の取り込み実績あり',
     seedanceUsage: '対象環境での 4K 二条件の実課金は検証待ち',
@@ -125,28 +134,36 @@ function VideoReferenceRates({ price }: { price: unknown }) {
   );
 }
 
-function taskCharges(tiers: TaskTier[]) {
+function taskCharges(
+  tiers: TaskTier[],
+  formatFreeQuantity: (quantity: number, usageKey: string) => string,
+) {
   return tiers.flatMap(({ name, when, charges }) => {
     const condition = Object.entries(when ?? {})
       .map(([key, value]) => `${key}=${value}`)
       .join(', ');
-    return charges.map(({ usageKey, amount, unit, currency }) => ({
+    return charges.map(({ usageKey, amount, unit, currency, freeQuantity }) => ({
       label: `${name}${condition ? ' · ' + condition : ''} · ${usageKey}`,
       value: `${currency} ${amount} / ${unit.replace(/^per_/, '').replaceAll('_', ' ')}`,
+      free: freeQuantity ? formatFreeQuantity(freeQuantity, usageKey) : null,
     }));
   });
 }
 
 export function TaskPriceSummary({ model }: { model: Model }) {
+  const { locale } = useI18n();
   const quote = model.cnyPrice?.quotes?.find(({ syncable }) => syncable);
   if (!quote?.cnyTaskTiers) return null;
   return (
     <ul className="text-muted-foreground space-y-0.5 text-xs whitespace-normal">
-      {taskCharges(quote.cnyTaskTiers).map(({ label, value }) => (
-        <li key={label}>
-          {label} · {value}
-        </li>
-      ))}
+      {taskCharges(quote.cnyTaskTiers, messages[locale].freeQuantity).map(
+        ({ label, value, free }) => (
+          <li key={label}>
+            {label} · {value}
+            {free && ` · ${free}`}
+          </li>
+        ),
+      )}
     </ul>
   );
 }
@@ -157,6 +174,7 @@ function Quote({ quote }: { quote: PriceQuote }) {
   const labelled = quote.source.checkedAt
     ? [msg.evidence, quote.source.checkedAt]
     : [msg.snapshot, quote.source.snapshotAt];
+  const sourceUnit = quote.originalQuote?.unit ?? quote.sourceUnit;
   return (
     <article className="space-y-2 rounded-lg border p-3 text-sm break-words">
       <h3 className="font-semibold">{quote.priceList}</h3>
@@ -191,13 +209,7 @@ function Quote({ quote }: { quote: PriceQuote }) {
             <li>{msg.hasPrice}</li>
           )}
           {quote.syncable && <li>{msg.expressible}</li>}
-          {quote.syncable && (
-            <li>
-              <a className="underline" href="https://github.com/naoshengyun/llm-metadata/issues/40">
-                {msg.saved}
-              </a>
-            </li>
-          )}
+          {quote.syncable && <li>{msg.saved}</li>}
           {quote.syncable && <li>{msg.usage}</li>}
           {quote.verification && (
             <>
@@ -220,12 +232,16 @@ function Quote({ quote }: { quote: PriceQuote }) {
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
           <PriceFields
-            label={`${quote.originalCurrencyEligible === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${quote.sourceUnit ? ' · ' + quote.sourceUnit : ''}`}
+            label={`${quote.originalCurrencyEligible === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${sourceUnit ? ' · ' + sourceUnit : ''}`}
             price={quote.sourcePrice}
           />
           <PriceFields label={msg.cny} price={quote.cnyTaskTiers ?? quote.cnyCost} />
         </div>
       )}
+      <PriceFields
+        label={msg.conditions}
+        price={quote.originalQuote?.conditions ?? quote.conditions}
+      />
     </article>
   );
 }

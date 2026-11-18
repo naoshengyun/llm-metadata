@@ -169,10 +169,13 @@ try {
       );
     await page.getByRole('heading', { name: 'Official tariffs' }).scrollIntoViewIfNeeded();
     await snapshot(page, viewport.width, 'detail');
-    await expectVisible(
-      page.getByText('Save and read-back in the isolated rc.50 acceptance test').first(),
-    );
-    await expectVisible(page.getByText('Actual billing awaiting verification').first());
+    if (display.cnyPrice.exported) {
+      await expectVisible(page.getByText('Eligible for the native expression').first());
+      await expectVisible(
+        page.getByText('Save and read-back awaiting verification for this candidate').first(),
+      );
+      await expectVisible(page.getByText('Actual billing awaiting verification').first());
+    }
 
     await page.getByRole('button', { name: 'View details for Moonshot AI', exact: true }).click();
     if (display.cnyPrice.exported)
@@ -196,6 +199,29 @@ try {
       assert.ok(
         !(await page.getByRole('textbox', { name: 'Filter providers or models…' }).isVisible()),
       );
+
+    const glm = english.zhipuai.models['glm-4.5-air'];
+    const glmConditions = glm.cnyPrice.quotes.find(({ originalQuote }) => originalQuote?.conditions)
+      ?.originalQuote.conditions;
+    if (glmConditions) {
+      await goto(select('zhipuai', 'glm-4.5-air'));
+      await expectVisible(page.getByRole('heading', { name: 'Charging conditions' }).first());
+      await expectVisible(
+        page
+          .locator('pre')
+          .filter({ hasText: JSON.stringify(glmConditions, null, 2) })
+          .first(),
+      );
+    }
+
+    if (english['minimax-cn'].models['MiniMax-H3'].cnyPrice.exported) {
+      await goto(select('minimax-cn'));
+      await page.getByRole('button', { name: 'Card view' }).click();
+      const h3 = page.locator('article').filter({
+        has: page.getByRole('button', { name: 'View details for MiniMax-H3', exact: true }),
+      });
+      await expectVisible(h3.getByText(/input_images.*First 5 images free/).first());
+    }
 
     await goto(select('volcengine', 'doubao-seedance-2-5-260628'));
     for (const name of [

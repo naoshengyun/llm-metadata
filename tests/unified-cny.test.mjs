@@ -213,6 +213,36 @@ test('a changed selected quote cannot drop required prices, currencies or native
   );
 });
 
+test('an existing selected quote cannot lose official charging conditions', (t) => {
+  const { catalog, build } = fixture(t);
+  const quote = catalog.records.find(({ id }) => id === 'cn-moonshot-kimi-k3.1-pro-standard');
+  quote.conditions = { cacheStorage: 'limited-time-free' };
+  build('baseline');
+  delete quote.conditions;
+  assert.throws(
+    () => build('missing-conditions', 'baseline'),
+    /Selected quote dropped charge or condition.*conditions\.cacheStorage/,
+  );
+});
+
+test('a default cache TTL change appears in the price diff even with the same expression', (t) => {
+  const { catalog, build } = fixture(t);
+  const quote = catalog.records.find(({ id }) => id === 'cn-moonshot-kimi-k3.1-pro-standard');
+  quote.conditions = { defaultCacheTtlSeconds: 300 };
+  build('baseline');
+  quote.source.checkedAt = '2026-11-18';
+  quote.source.sha256 = 'b'.repeat(64);
+  assert.deepEqual(build('evidence-only', 'baseline')('price-diff.json').changes, []);
+  quote.conditions.defaultCacheTtlSeconds = 3600;
+  const report = build('changed-ttl', 'baseline')('price-diff.json');
+  assert.equal(report.changes.length, 1);
+  const { nativeKey, before, after } = report.changes[0];
+  assert.equal(nativeKey, 'kimi-k3.1-pro');
+  assert.equal(before.billing_expr, after.billing_expr);
+  assert.equal(before.conditions.defaultCacheTtlSeconds, 300);
+  assert.equal(after.conditions.defaultCacheTtlSeconds, 3600);
+});
+
 test('candidate reports the published wrong-currency keys and produces deterministic bytes', (t) => {
   const { build } = fixture(t);
   const first = build('first');

@@ -1,3 +1,4 @@
+import { groupBy } from '../group-by.mjs';
 import { markdown, requireText } from '../official-source-helpers/markdown-table.mjs';
 
 const models = [
@@ -94,7 +95,7 @@ function parse({ body, supplemental }) {
   const response = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
   if (!Array.isArray(response.data) || !response.data.length)
     throw Error('Missing Morph model list');
-  const byModel = Map.groupBy(response.data, (row) => row?.id);
+  const byModel = groupBy(response.data, (row) => row?.id);
   return new Map(
     adapter.targets.map(({ quoteId, modelId }) => {
       try {

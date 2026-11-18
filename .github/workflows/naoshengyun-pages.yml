@@ -17,10 +17,15 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      deployments: read
+      statuses: read
       pull-requests: read
     outputs:
       prior_pointer_hash: ${{ steps.seal.outputs.prior_pointer_hash }}
+      pointer_hash: ${{ steps.seal.outputs.pointer_hash }}
+      prior_source: ${{ steps.predecessor.outputs.source }}
+      prior_site_hash: ${{ steps.predecessor.outputs.site_hash }}
+      pages_artifact: ${{ steps.seal.outputs.pages_artifact }}
+      restore_artifact: ${{ steps.seal.outputs.restore_artifact }}
       site_hash: ${{ steps.seal.outputs.site_hash }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -55,43 +60,54 @@ jobs:
               group_by(.user.login) | map(max_by(.id)) |
               any(.[]; .state == "APPROVED" and .commit_id == $head)
             '
-      - name: Resolve the last successful Pages deployment
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Resolve the last independently verified public release
         id: predecessor
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          while read -r id source; do
-            state="$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --jq '.[0].state')"
-            case "$state" in
-              success)
-                if [ "$source" = "$GITHUB_SHA" ]; then
-                  echo "::error::This merge commit already has a successful Pages deployment. Verify its original receipt."
-                  exit 1
-                fi
-                git merge-base --is-ancestor "$source" "$GITHUB_SHA"
-                printf 'source=%s\n' "$source" >> "$GITHUB_OUTPUT"
-                exit 0
-                ;;
-              error|failure|inactive) ;;
-              *) echo "::error::Prior deployment is unresolved"; exit 1 ;;
-            esac
-          done < <(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=30" --jq '.[] | [.id,.sha] | @tsv')
-          echo "::error::Cannot identify a verified preceding deployment"
-          exit 1
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '22'
+          bootstrap="$(node scripts/cny-pages-release.mjs bootstrap)"
+          source="$(jq -er .sourceSha <<< "$bootstrap")"
+          site_hash="$(jq -er .siteManifestSha256 <<< "$bootstrap")"
+          git merge-base --is-ancestor "$source" "$GITHUB_SHA"
+          git rev-list --first-parent "$GITHUB_SHA" "^$source" > "$RUNNER_TEMP/publication-ancestors"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/"
+          while read -r sha; do
+            gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/commits/$sha/statuses?per_page=100" > "$RUNNER_TEMP/commit-statuses.json"
+            verified="$(jq -r --arg run_url "$run_url" '
+              add | map(select(.context == "cny-pages/verified" and .state == "success" and
+                .creator.login == "github-actions[bot]" and .creator.type == "Bot" and
+                ((.description // "") | test("^[0-9a-f]{64}$")) and
+                ((.target_url // "") | startswith($run_url) and
+                  (ltrimstr($run_url) | test("^[0-9]+/attempts/[0-9]+$"))))) |
+              .[0].description // empty
+            ' "$RUNNER_TEMP/commit-statuses.json")"
+            if [ -n "$verified" ]; then
+              test "$sha" != "$GITHUB_SHA"
+              source="$sha"
+              site_hash="$verified"
+              break
+            fi
+          done < "$RUNNER_TEMP/publication-ancestors"
+          printf 'source=%s\nsite_hash=%s\n' "$source" "$site_hash" >> "$GITHUB_OUTPUT"
       - name: Reject a future review cutoff
         run: node scripts/check-cny-effective-time.mjs
       - name: Install the locked dependencies
         run: |
           npm ci --ignore-scripts
           npm --prefix web ci --ignore-scripts
-      - name: Read the last successful public snapshot for immutable retention
+      - name: Verify and preserve every file in the previous public snapshot
         env:
           PRIOR_SHA: ${{ steps.predecessor.outputs.source }}
-        run: node scripts/cny-pages-release.mjs snapshot "$PAGES_ORIGIN" "$RUNNER_TEMP/prior" "$PRIOR_SHA" retain
+          PRIOR_SITE_HASH: ${{ steps.predecessor.outputs.site_hash }}
+        run: |
+          set -euo pipefail
+          node scripts/cny-pages-release.mjs snapshot "$PAGES_ORIGIN" "$RUNNER_TEMP/prior" "$PRIOR_SHA" backup "$PRIOR_SITE_HASH"
+          mkdir "$RUNNER_TEMP/recovery-artifact"
+          tar --directory "$RUNNER_TEMP/prior" -cf "$RUNNER_TEMP/recovery-artifact/artifact.tar" .
       - name: Build and regression-test the exact merge commit
         run: |
           set -euo pipefail
@@ -106,12 +122,19 @@ jobs:
           set -euo pipefail
           node scripts/cny-pages-release.mjs seal "$RUNNER_TEMP/site" "$RUNNER_TEMP/prior" > "$RUNNER_TEMP/publication-receipt.json"
           test "$(jq -er .sourceSha "$RUNNER_TEMP/publication-receipt.json")" = "$GITHUB_SHA"
-          jq -r '"site_hash=\(.siteManifestSha256)", "prior_pointer_hash=\(.previousPointerSha256)"' "$RUNNER_TEMP/publication-receipt.json" >> "$GITHUB_OUTPUT"
+          jq -r '"site_hash=\(.siteManifestSha256)", "prior_pointer_hash=\(.previousPointerSha256)", "pointer_hash=\(.pointerSha256)"' "$RUNNER_TEMP/publication-receipt.json" >> "$GITHUB_OUTPUT"
+          printf 'pages_artifact=github-pages-%s-%s\nrestore_artifact=cny-pages-restore-%s-%s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
           tar --directory "$RUNNER_TEMP/site" -cf "$RUNNER_TEMP/artifact.tar" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ steps.seal.outputs.pages_artifact }}
           path: ${{ runner.temp }}/artifact.tar
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.seal.outputs.restore_artifact }}
+          path: ${{ runner.temp }}/recovery-artifact/artifact.tar
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -148,12 +171,17 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
         with:
-          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact_name: ${{ needs.build.outputs.pages_artifact }}
   verify-publication:
     if: always() && github.repository == 'naoshengyun/llm-metadata'
     needs: [build, deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      statuses: write
+    outputs:
+      public_readback: ${{ steps.http-verification.outputs.result }}
     steps:
       - name: Record a failed or unconfirmed publication
         env:
@@ -172,6 +200,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verify the Pages inventory, page, pointer, and all fixed and stable files
+        id: http-verification
         env:
           SITE_HASH: ${{ needs.build.outputs.site_hash }}
         run: |
@@ -179,9 +208,91 @@ jobs:
           for attempt in {1..10}; do
             if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH")"; then
               printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+              printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
+              echo "result=verified" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             sleep 45
           done
           echo "Publication unconfirmed for $GITHUB_SHA. Public read-back never matched the exact artifact." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+      - continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-verified-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/verified-release.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Record the verified public inventory on the exact source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          site_hash="$(jq -er '.siteManifestSha256 | select(test("^[0-9a-f]{64}$"))' "$RUNNER_TEMP/verified-release.json")"
+          test "$(jq -er .sourceSha "$RUNNER_TEMP/verified-release.json")" = "$GITHUB_SHA"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success -f context=cny-pages/verified -f description="$site_hash" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT"
+  restore:
+    if: >-
+      always() && needs.deploy.result == 'success' &&
+      needs.verify-publication.result == 'failure' &&
+      needs.verify-publication.outputs.public_readback != 'verified'
+    needs: [build, deploy, verify-publication]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    env:
+      PRIOR_SHA: ${{ needs.build.outputs.prior_source }}
+      PRIOR_SITE_HASH: ${{ needs.build.outputs.prior_site_hash }}
+      PRIOR_POINTER_HASH: ${{ needs.build.outputs.prior_pointer_hash }}
+      FAILED_POINTER_HASH: ${{ needs.build.outputs.pointer_hash }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.build.outputs.restore_artifact }}
+          path: ${{ runner.temp }}/restore
+      - name: Validate the recovery bytes and reject a newer or unknown release
+        id: recovery
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/recover-site"
+          tar -xf "$RUNNER_TEMP/restore/artifact.tar" -C "$RUNNER_TEMP/recover-site"
+          node scripts/cny-pages-release.mjs verify-local "$RUNNER_TEMP/recover-site" "$PRIOR_SHA" "$PRIOR_SITE_HASH"
+          state="$(node scripts/cny-pages-release.mjs guard-restore "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH" "$PRIOR_POINTER_HASH" "$FAILED_POINTER_HASH")"
+          printf 'state=%s\n' "$state" >> "$GITHUB_OUTPUT"
+          if [ "$state" = already-verified ]; then
+            echo "The previous Pages release still verifies. No recovery deployment was needed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Restore the last verified Pages release
+        if: steps.recovery.outputs.state == 'restore'
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          artifact_name: ${{ needs.build.outputs.restore_artifact }}
+      - name: Verify every restored public file
+        if: steps.recovery.outputs.state == 'restore'
+        run: |
+          set -euo pipefail
+          for attempt in {1..10}; do
+            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH")"; then
+              printf 'Restored and verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 45
+          done
+          exit 1
+      - name: Record unresolved public recovery
+        if: failure()
+        run: echo "Public recovery failed or was blocked. Use the verified recovery artifact and diagnostics from this run." >> "$GITHUB_STEP_SUMMARY"

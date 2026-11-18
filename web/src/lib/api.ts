@@ -15,7 +15,13 @@ export interface ReasoningOption {
 export interface TaskTier {
   name: string;
   when?: Record<string, string | boolean>;
-  charges: { usageKey: string; amount: number; unit: string; currency: string }[];
+  charges: {
+    usageKey: string;
+    amount: number;
+    unit: string;
+    currency: string;
+    freeQuantity?: number;
+  }[];
   notApplicable?: Record<string, string>;
 }
 
@@ -32,7 +38,8 @@ export interface PriceQuote {
   cnyTaskTiers?: TaskTier[];
   usagePlugin?: string;
   source: { url?: string | null; checkedAt?: string | null; snapshotAt?: string };
-  originalQuote?: { description?: string };
+  originalQuote?: { description?: string; conditions?: unknown; unit?: string };
+  conditions?: unknown;
   status: string;
   reason?: string | null;
   syncable: boolean;

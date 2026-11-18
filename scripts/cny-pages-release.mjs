@@ -8,10 +8,10 @@ const bootstrap = {
   sourceSha: '19af68518c9bbe5551093e961f081d6c411dacf4',
   releaseId: 'a4776c8de605e06c980dd11031d5f9827cf650a8d3d490f89c655f2592417e3f',
   manifestSha256: 'e375efa1357b42fc898d5078816d00ab2e40dd9261a201dbe1be2e3b99ea2853',
+  siteManifestSha256: 'defa7176f40b9bef26463d5b0ba4579d2725305eaf049406dddf6e0f1ce9fd1d',
 };
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const digest = /^[0-9a-f]{64}$/;
-const nonce = randomUUID();
 const read = (root, path) => readFileSync(join(root, path));
 const json = (value) => JSON.stringify(value, null, 2) + '\n';
 const validPath = (path) =>
@@ -23,7 +23,7 @@ async function remote(origin, path) {
   assert.ok(validPath(path), 'Invalid site path: ' + path);
   const url = new URL(path, origin);
   assert.ok(url.protocol === 'https:' || url.hostname === '127.0.0.1', 'Use HTTPS for Pages');
-  url.searchParams.set('cny-release-check', nonce);
+  url.searchParams.set('cny-release-check', randomUUID());
   const response = await fetch(url, {
     cache: 'no-store',
     redirect: 'error',
@@ -78,10 +78,13 @@ function verifyPredecessor(pointer, source, releaseId) {
   );
 }
 
-async function publicSnapshot(origin, expectedSource) {
-  const manifestBytes = await remote(origin, 'site-manifest.json');
+async function siteSnapshot(readPath, expectedSource) {
+  const manifestBytes = await readPath('site-manifest.json');
   const manifest = decode(manifestBytes);
-  const load = async (path) => checked(await remote(origin, path), manifest.files[path], path);
+  const load = async (path) => {
+    assert.ok(validPath(path), 'Invalid site path: ' + path);
+    return checked(await readPath(path), manifest.files[path], path);
+  };
   const pointerBytes = await load('current.json');
   const pointer = decode(pointerBytes);
   validatePointer(pointer);
@@ -100,14 +103,29 @@ async function publicSnapshot(origin, expectedSource) {
   assert.equal(fixedManifest.candidateId ?? fixedManifest.releaseId, pointer.releaseId);
   assert.equal(sha(await load('api/newapi/ratio_config.json')), pointer.modelSourceSha256);
   assert.equal(sha(await load(pointer.modelSource)), pointer.modelSourceSha256);
-  return { manifest, manifestBytes, pointer, pointerBytes, fixedManifest, load };
+  if (pointer.schemaVersion === 3) assert.equal(fixedManifest.sourceSha, pointer.sourceSha);
+  return { manifest, manifestBytes, pointer, pointerBytes, load };
 }
 
-async function snapshot(origin, destination, source, mode) {
-  assert.ok(['review', 'retain'].includes(mode));
-  const previous = await publicSnapshot(origin, source);
-  const { pointer, pointerBytes, fixedManifest, manifest, load } = previous;
+const publicSnapshot = (origin, source) => siteSnapshot((path) => remote(origin, path), source);
+
+async function snapshot(origin, destination, source, mode, expectedHash) {
+  assert.ok(['review', 'retain', 'backup'].includes(mode));
+  const { pointer, pointerBytes, manifest, manifestBytes, load } = await publicSnapshot(
+    origin,
+    source,
+  );
+  if (mode === 'backup') {
+    assert.match(expectedHash, digest);
+    assert.equal(sha(manifestBytes), expectedHash, 'Public site inventory hash');
+  }
   mkdirSync(destination);
+  if (mode === 'backup') {
+    await collect(manifest.files, async (path) => write(destination, path, await load(path)));
+    write(destination, 'site-manifest.json', manifestBytes);
+    console.log(JSON.stringify(pointer));
+    return;
+  }
   if (mode === 'retain') {
     const versions = Object.fromEntries(
       Object.entries(manifest.files).filter(([path]) => /^versions\/[0-9a-f]{64}\//.test(path)),
@@ -126,7 +144,6 @@ async function snapshot(origin, destination, source, mode) {
       write(destination, path, await load(path));
     }
   }
-  if (pointer.schemaVersion === 3) assert.equal(fixedManifest.sourceSha, pointer.sourceSha);
   write(destination, 'current.json', pointerBytes);
   console.log(JSON.stringify(pointer));
 }
@@ -163,24 +180,63 @@ function seal(site, previous) {
       siteManifestSha256: sha(manifestBytes),
       previousRelease: old.releaseId,
       previousPointerSha256: sha(oldPointerBytes),
+      pointerSha256: sha(pointerBytes),
     }),
   );
 }
 
-async function verify(origin, source, expectedHash) {
+async function verify(readPath, source, expectedHash) {
   assert.match(expectedHash, digest);
-  const { manifest, manifestBytes, pointer, load } = await publicSnapshot(origin, source);
+  const { manifest, manifestBytes, pointer, pointerBytes, load } = await siteSnapshot(
+    readPath,
+    source,
+  );
   assert.equal(sha(manifestBytes), expectedHash, 'Public site inventory hash');
   await collect(manifest.files, load);
+  assert.ok(
+    (await load('current.json')).equals(pointerBytes),
+    'Site pointer changed during verification',
+  );
   return { sourceSha: source, releaseId: pointer.releaseId, siteManifestSha256: expectedHash };
+}
+
+async function guardRestore(origin, source, siteHash, previousPointerHash, failedPointerHash) {
+  assert.match(previousPointerHash, digest);
+  assert.match(failedPointerHash, digest);
+  const readPath = (path) => remote(origin, path);
+  const pointerHash = sha(await readPath('current.json'));
+  assert.ok(
+    pointerHash === previousPointerHash || pointerHash === failedPointerHash,
+    'Refusing to restore over a newer or unknown publication',
+  );
+  if (pointerHash === previousPointerHash) {
+    try {
+      await verify(readPath, source, siteHash);
+      return 'already-verified';
+    } catch (error) {
+      console.error('Previous pointer is present but its site did not verify:', error.message);
+    }
+  }
+  assert.equal(
+    sha(await readPath('current.json')),
+    pointerHash,
+    'Public pointer changed during recovery check',
+  );
+  return 'restore';
 }
 
 const [command, ...args] = process.argv.slice(2);
 if (command === 'snapshot') await snapshot(...args);
 else if (command === 'seal') seal(...args);
+else if (command === 'bootstrap') console.log(JSON.stringify(bootstrap));
 else if (command === 'guard') {
   const [origin, source, release] = args;
   verifyPredecessor(decode(await remote(origin, 'current.json')), source, release);
-} else if (command === 'verify') {
-  console.log(JSON.stringify(await verify(...args)));
-} else throw Error('Use snapshot, seal, guard, or verify');
+} else if (command === 'guard-restore') {
+  console.log(await guardRestore(...args));
+} else if (command === 'verify' || command === 'verify-local') {
+  const [location, source, siteHash] = args;
+  const readPath =
+    command === 'verify' ? (path) => remote(location, path) : (path) => read(location, path);
+  console.log(JSON.stringify(await verify(readPath, source, siteHash)));
+} else throw Error('Use snapshot, seal, bootstrap, guard, guard-restore, verify, or verify-local');

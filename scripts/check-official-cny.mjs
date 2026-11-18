@@ -1,3 +1,4 @@
+import { groupBy } from './group-by.mjs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -52,6 +53,7 @@ function readBaseline(directory) {
     },
     coverage: read('coverage.json'),
     selection: read('selection.json'),
+    policy: read('policy.json'),
   };
 }
 
@@ -191,21 +193,20 @@ function registeredTargets(adapters, entries) {
         throw Error('Invalid or duplicate official quote registration: ' + target.quoteId);
       }
       const entry = available.get(target.quoteId);
-      if (!entry)
-        throw Error('Official registration does not match unified coverage: ' + target.quoteId);
       const { providerId, endpoint, modelId, priceList, currency } = target;
       const identity = { providerId, endpoint, modelId, priceList, currency };
       const baselineIdentity = { ...identity, ...target.baselineIdentity };
-      const publishedIdentity = identityOf(entry.quote);
+      const publishedIdentity = entry && identityOf(entry.quote);
 
       if (
         fields(identity).some((key) => typeof identity[key] !== 'string' || !identity[key]) ||
-        !equal(publishedIdentity, baselineIdentity) ||
-        currency !== (entry.domestic ? 'CNY' : 'USD')
+        (entry &&
+          (!equal(publishedIdentity, baselineIdentity) ||
+            currency !== (entry.domestic ? 'CNY' : 'USD')))
       ) {
         throw Error('Official registration identity or currency mismatch: ' + target.quoteId);
       }
-      registered.set(target.quoteId, { source, target, identity });
+      registered.set(target.quoteId, { source, target, identity, missing: !entry });
     }
   }
   return registered;
@@ -447,7 +448,7 @@ export async function checkOfficialPrices({
   onResponse = () => {},
 }) {
   timestamp(attemptedAt);
-  const { baseline, coverage, selection } = readBaseline(directory);
+  const { baseline, coverage, selection, policy } = readBaseline(directory);
   const old = previousResults(previous, baseline, attemptedAt);
   const entries = coverageEntries(coverage, selection);
   const registered = registeredTargets(adapters ?? (await loadAdapters()), entries);
@@ -486,8 +487,32 @@ export async function checkOfficialPrices({
     }
   }
 
+  for (const [id, { missing, identity }] of registered) {
+    if (!missing) continue;
+    const event = policy.lifecycle[identity.modelId]?.at(-1);
+    const withdrawn = event?.state === 'withdrawn' && event.quoteId === id;
+    const reason = withdrawn
+      ? 'official-price-withdrawn'
+      : 'official-registration-missing-from-unified-coverage';
+    results.push({
+      id,
+      quoteId: id,
+      nativeKey: identity.modelId,
+      identity,
+      coverageStatus: withdrawn ? 'withdrawn' : null,
+      coverageReason: reason,
+      selected: false,
+      publishedEvidence: null,
+      latestAttemptedAt: withdrawn ? null : attemptedAt,
+      latestSuccessfulAt: old.get(id)?.latestSuccessfulAt ?? null,
+      status: withdrawn ? 'withdrawn' : 'failed',
+      reason,
+      ...(withdrawn && { evidence: event.evidence }),
+    });
+  }
+
   await Promise.all(
-    [...Map.groupBy(staged, ({ registration }) => registration.source).entries()].map(
+    [...groupBy(staged, ({ registration }) => registration.source).entries()].map(
       async ([source, items]) => {
         let evidence;
         let body;
@@ -565,7 +590,7 @@ export async function checkOfficialPrices({
           }
         }
 
-        const groups = Map.groupBy(items, ({ registration }) => registration.target.group);
+        const groups = groupBy(items, ({ registration }) => registration.target.group);
         for (const group of groups.values()) {
           const invalid = group.find(
             ({ entry, result }) => entry.selected && result.status === 'failed',
@@ -610,7 +635,7 @@ export async function checkOfficialPrices({
     publishedVersion: baseline,
     attemptedAt,
     summary: Object.fromEntries(
-      [...Map.groupBy(results, ({ status }) => status)].map(([status, items]) => [
+      [...groupBy(results, ({ status }) => status)].map(([status, items]) => [
         status,
         items.length,
       ]),

@@ -1,9 +1,10 @@
 /** Offline #34 candidate. Builds the page data and the model sync endpoint together. */
+import { groupBy } from './group-by.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
+import { canonical, generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders, sha } from './upstream-cny.mjs';
 import { makeSnapshot } from './upstream-snapshot.mjs';
 import { verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
@@ -286,6 +287,8 @@ function upstreamRows(providers, policy, source) {
 
 function requiredShape(quote) {
   const fees = new Set(quote.required ?? []);
+  addConditionFields(quote.conditions, 'conditions');
+
   for (const tier of quote.task?.tiers ?? []) {
     fees.add('task.tiers.' + tier.name);
     for (const key of Object.keys(tier.when ?? {}))
@@ -297,6 +300,15 @@ function requiredShape(quote) {
     }
   }
   return fees;
+
+  function addConditionFields(value, path) {
+    if (value == null || value === '') return;
+    if (typeof value !== 'object') {
+      fees.add(path);
+      return;
+    }
+    for (const [key, field] of Object.entries(value)) addConditionFields(field, path + '.' + key);
+  }
 }
 
 function officialRows(official, selection, policy, records, providers, lifecycle, previousQuotes) {
@@ -508,7 +520,7 @@ function addHeldModel(official, policy, records, quotes) {
 }
 
 function selectPrices(records, quotes, selection, policy, lifecycle) {
-  const groups = Map.groupBy(records.values(), (row) => row.modelId);
+  const groups = groupBy(records.values(), (row) => row.modelId);
   const selected = Object.create(null);
   for (const [modelId, group] of groups) {
     const current = group.filter(({ status }) => status !== 'subscription');
@@ -692,6 +704,19 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
   }
 }
 
+function quoteTerms(quote) {
+  if (!quote) return undefined;
+  return {
+    sourcePrice: quote.sourcePrice,
+    sourceCurrency: quote.sourceCurrency,
+    sourceUnit: quote.originalQuote?.unit ?? quote.sourceUnit,
+    sourceUrl: quote.source?.url,
+    conditions: quote.originalQuote?.conditions ?? quote.conditions,
+    description: quote.originalQuote?.description,
+    cnyPrice: quote.cnyTaskTiers ?? quote.cnyCost,
+  };
+}
+
 function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate) {
   const baseline = previousCandidate
     ? { candidateId: previousCandidate.candidateId }
@@ -708,9 +733,12 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
       .filter(({ syncable }) => syncable)
       .map((row) => [row.nativeKey, row]),
   );
+  const formerQuotes = new Map(
+    (previousCandidate?.coverage.quotes ?? []).map((quote) => [quote.quoteId, quote]),
+  );
   const keys = [...new Set([...Object.keys(previous), ...Object.keys(selected)])].sort();
   const changes = [];
-  const byKey = Map.groupBy(models, (row) => row.nativeKey);
+  const byKey = groupBy(models, (row) => row.nativeKey);
   for (const key of keys) {
     const before = previous[key];
     const after = selected[key];
@@ -723,7 +751,13 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
         (previousCandidate
           ? previousCandidate.selected[key]
           : underlying.find((row) => row.providerId === former.providerId)?.upstreamPrice?.quoteId);
-    if (before === after?.billing_expr && !changedIdentity) continue;
+    const formerQuoteId = previousCandidate?.selected[key];
+    const formerQuote = formerQuotes.get(formerQuoteId) ?? former?.upstreamPrice;
+    const beforeTerms = quoteTerms(formerQuote);
+    const afterTerms = quoteTerms(after);
+    const changedTerms =
+      beforeTerms && afterTerms && canonical(beforeTerms) !== canonical(afterTerms);
+    if (before === after?.billing_expr && !changedIdentity && !changedTerms) continue;
     const correction = policy.ineligibleUpstream[key];
     const event = lifecycle.state.get(key);
     const capability = policy.nativeCapabilityExclusions?.[key];
@@ -748,7 +782,13 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
           (capability && { ...capability.source, detail: capability.reason }) ??
           (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
       before: before
-        ? { providerId: former.providerId, billing_mode: 'tiered_expr', billing_expr: before }
+        ? {
+            quoteId: formerQuoteId,
+            providerId: former.providerId,
+            billing_mode: 'tiered_expr',
+            billing_expr: before,
+            ...beforeTerms,
+          }
         : null,
       after: after
         ? {
@@ -756,6 +796,7 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
             providerId: after.providerId,
             billing_mode: 'tiered_expr',
             billing_expr: after.billing_expr,
+            ...afterTerms,
           }
         : null,
     });
@@ -846,10 +887,7 @@ function buildCandidate({
       apiModels: Object.keys(billing_expr).length,
       officialQuotes: official.records.length,
       statuses: Object.fromEntries(
-        Object.entries(Object.groupBy(models, (row) => row.status)).map(([status, rows]) => [
-          status,
-          rows.length,
-        ]),
+        [...groupBy(models, (row) => row.status)].map(([status, rows]) => [status, rows.length]),
       ),
     },
     files: Object.fromEntries(

@@ -1,3 +1,4 @@
+import { groupBy } from '../group-by.mjs';
 import ts from 'typescript';
 import {
   array,
@@ -111,7 +112,7 @@ function parse({ body, supplemental }) {
   const { sectionTables, paragraphs } = mintlifyTables(body);
   requireText(paragraphs.join('\n'), '1 MTok = 1,000,000 tokens.');
   const results = new Map();
-  for (const [group, targets] of Map.groupBy(adapter.targets, (target) => target.group)) {
+  for (const [group, targets] of groupBy(adapter.targets, (target) => target.group)) {
     try {
       const { charges, conditions, rows } = chargeTable(sectionTables, paragraphs, group);
       for (const { quoteId, modelId } of targets) {
