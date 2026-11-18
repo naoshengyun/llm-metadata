@@ -41,6 +41,15 @@ const fixtures = {
   'alibaba-international--singapore': 'alibaba-sg-endpoint',
   'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
+  'mistral-standard--archive-medium': 'm-model-mistral-medium-3-5-26-04',
+  'mistral-standard--archive-largex': 'm-model-mistral-large-3-25-12',
+  'mistral-standard--archive-devstral': 'm-model-devstral-2-25-12',
+  'mistral-standard--alias-embed': 'm-model-mistral-embed-23-12',
+  'mistral-standard--alias-small': 'm-model-mistral-small-4-0-26-03',
+  'mistral-standard--alias-large': 'm-model-mistral-large-4-0',
+  'mistral-standard--alias-ministral8': 'm-model-ministral-3-8b-25-12',
+  'mistral-standard--alias-ministral3': 'm-model-ministral-3-3b-25-12',
+  'mistral-standard--alias-codestral': 'm-model-codestral-25-08',
   'mistral-standard--api-ids': 'mistral-md',
   'zai-international': 'zai',
   'cohere-api': 'co-pricing',
@@ -220,7 +229,11 @@ test('Mistral binds active global USD rates to exact API IDs, and reports older 
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'mistral-standard');
   assert.equal(rows.length, 34);
-  assert.equal(rows.filter(({ status }) => status === 'unchanged').length, 9);
+  assert.equal(rows.filter(({ status }) => status === 'unchanged').length, 14);
+  assert.equal(
+    rows.find(({ nativeKey }) => nativeKey === 'mistral-embed').observed.sourcePrice.cache_read,
+    0.01,
+  );
   const row = rows.find(({ nativeKey }) => nativeKey === 'ministral-3b-2512');
   assert.equal(row.observed.sourcePrice.cache_read, 0.01);
   assert.equal(row.observed.cnyCost.cache_read, 0.07);
@@ -253,6 +266,8 @@ test('Google Developer API preserves Standard modality prices, context tiers and
   assert.equal(pro.observed.sourcePrice.tiers[0].tier.size, 200000);
   assert.equal(pro.observed.conditions.explicitCacheStorage.amount, 4.5);
   assert.equal(get('gemini-3.1-flash-image').observed.sourcePrice.output_image, 60);
+  assert.equal(get('gemini-3.1-flash-lite-image').observed.sourcePrice.output_image, 30);
+  assert.equal(get('gemini-3.5-live-translate-preview').observed.sourcePrice.output_audio, 21);
   assert.match(get('gemini-2.5-flash').reason, /audio cache rate.*native/);
   assert.equal(
     report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,

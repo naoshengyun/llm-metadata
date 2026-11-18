@@ -48,10 +48,45 @@ const models = [
   'zai-glm-5-3-flash',
 ];
 
+const modelCards = {
+  'alias-codestral': ['codestral-25-08', 'codestral-2508', ['codestral-latest']],
+  'alias-ministral3': ['ministral-3-3b-25-12', 'ministral-3b-2512', ['ministral-3b-latest']],
+  'alias-ministral8': ['ministral-3-8b-25-12', 'ministral-8b-2512', ['ministral-8b-latest']],
+  'alias-large': [
+    'mistral-large-4-0',
+    'mistral-large-4',
+    ['mistral-large-latest', 'mistral-large-4-0-8'],
+  ],
+  'alias-small': ['mistral-small-4-0-26-03', 'mistral-small-2603', ['mistral-small-latest']],
+  'alias-embed': ['mistral-embed-23-12', 'mistral-embed-2312', ['mistral-embed']],
+  'archive-devstral': [
+    'devstral-2-25-12',
+    'devstral-2512',
+    ['devstral-2512', 'devstral-latest', 'devstral-medium-latest'],
+  ],
+  'archive-largex': ['mistral-large-3-25-12', 'mistral-large-2512', ['mistral-large-2512']],
+  'archive-medium': [
+    'mistral-medium-3-5-26-04',
+    'mistral-medium-3-5',
+    ['mistral-medium-2604', 'mistral-medium-latest'],
+  ],
+};
+const aliases = new Map(
+  Object.entries(modelCards).flatMap(([id, [, primary, names]]) =>
+    names.map((name) => [name, { id, primary }]),
+  ),
+);
+
 export const adapter = {
   id: 'mistral-standard',
   url: 'https://docs.mistral.ai/inference/pricing',
-  supplemental: [{ id: 'api-ids', url: 'https://docs.mistral.ai/inference/pricing.md' }],
+  supplemental: [
+    { id: 'api-ids', url: 'https://docs.mistral.ai/inference/pricing.md' },
+    ...Object.entries(modelCards).map(([id, [slug]]) => ({
+      id,
+      url: 'https://docs.mistral.ai/models/' + slug + '.md',
+    })),
+  ],
   targets: models.map((modelId) => ({
     quoteId: 'upstream:mistral:' + modelId + ':USD',
     providerId,
@@ -65,7 +100,7 @@ export const adapter = {
   parse,
 };
 
-function parse({ body, supplemental }) {
+function parse({ body, supplemental, evidence }) {
   const html = markdown(body);
   requireText(html, 'aria-pressed="true">USD</button>');
   requireText(html, 'aria-pressed="true">Standard</button>');
@@ -82,11 +117,24 @@ function parse({ body, supplemental }) {
   return new Map(
     adapter.targets.map(({ quoteId, modelId }) => {
       try {
-        const matches = idRows.filter((match) => match[2] === modelId);
+        const routing = aliases.get(modelId);
+        const embedding = modelId === 'mistral-embed';
+        if (routing) {
+          const card = markdown(supplemental.get(routing.id).body);
+          const names = /^- API names: (.+)$/m.exec(card)?.[1] ?? '';
+          requireText(names, '`' + modelId + '`');
+          requireText(names, '`' + routing.primary + '`');
+          const retirement = /^- Retirement date: (\d{4}-\d{2}-\d{2})$/m.exec(card)?.[1];
+          if (retirement && retirement <= evidence.obtainedAt.slice(0, 10))
+            throw Error('Mistral model card lists a past retirement date: ' + retirement);
+          if (embedding) requireText(card, '- Output: embeddings');
+        }
+        const matches = idRows.filter((match) => match[2] === (routing?.primary ?? modelId));
         if (matches.length !== 1)
           throw Error('Exact Mistral API ID absent from current global price list: ' + modelId);
         const [, link, , markdownPrice] = matches[0];
         if (
+          !embedding &&
           !/^Input \$\d+(?:\.\d+)? \/M Tokens(?:<br>Cached input \$\d+(?:\.\d+)? \/M Tokens)?<br>Output \$\d+(?:\.\d+)? \/M Tokens$/.test(
             markdownPrice,
           )
@@ -100,7 +148,12 @@ function parse({ body, supplemental }) {
           4,
         );
         const sourcePrice = Object.fromEntries(
-          columns.map((key, index) => [key, usd(row[index + 1].text)]),
+          columns.map((key, index) => [
+            key,
+            embedding && key === 'output' && row[index + 1].text === '—'
+              ? 0
+              : usd(row[index + 1].text),
+          ]),
         );
         const shownRates = [
           ...markdownPrice.matchAll(/(Input|Cached input|Output) \$(\d+(?:\.\d+)?) /g),

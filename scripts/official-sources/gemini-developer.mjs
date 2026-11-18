@@ -164,6 +164,35 @@ function stripEquivalents(text) {
 function plainPrices(rows, modelId, checkedAt) {
   const result = { sourcePrice: {}, high: {}, conditions: {} };
   const { sourcePrice, conditions } = result;
+  if (modelId === 'gemini-3.5-live-translate-preview') {
+    function audioRate(label) {
+      const cell = rowCost(rows, label);
+      const tokens =
+        /^(\$\d+(?:\.\d+)?) or \$\d+(?:\.\d+)?\/min\{% sup %\}\*\{% \/sup %\} \(audio\)$/.exec(
+          cell ?? '',
+        );
+      if (!tokens) throw Error('Missing Gemini live translation audio-token or time equivalence');
+      return usd(tokens[1]);
+    }
+    const input = audioRate(/^Input price$/);
+    const output = audioRate(/^Output price \(including thinking tokens\)$/);
+    const sourcePrice = { input, input_audio: input, output, output_audio: output };
+    return {
+      sourcePrice,
+      required: Object.keys(sourcePrice),
+      conditions: { modalities: 'audio-only' },
+    };
+  }
+  if (modelId === 'gemini-3.1-flash-live-preview') {
+    throw Error(
+      'Gemini Live Standard has distinct audio and video input rates; native video input meter unavailable',
+    );
+  }
+  if (modelId === 'gemini-2.5-flash-image') {
+    throw Error(
+      'Gemini Standard publishes token input and per-image output; native model quote cannot combine both units',
+    );
+  }
   const read = (text, key) => listedRate(text, key, result, modelId, checkedAt);
   const input = stripEquivalents(rowCost(rows, /^Input price(?: \(text, image, video\))?$/));
   if (!input)
@@ -176,7 +205,7 @@ function plainPrices(rows, modelId, checkedAt) {
     read(pair[2], 'input_audio');
   } else {
     read(
-      input.replace(/ \((?:text(?: ?\/ ?image(?: \/ video(?: \/ audio)?)?)?|audio)\)$/, ''),
+      input.replace(/ \((?:text(?: ?\/ ?image(?: ?\/ ?video(?: ?\/ ?audio)?)?)?|audio)\)$/, ''),
       'input',
     );
     if (uniformAudio.has(modelId)) sourcePrice.input_audio = sourcePrice.input;
