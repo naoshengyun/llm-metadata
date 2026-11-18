@@ -53,7 +53,7 @@ export function canonical(value: unknown): string {
 export function hash(value: unknown): string {
   return createHash('sha256').update(canonical(value)).digest('hex');
 }
-const PRICE_KEYS = new Set([
+export const PRICE_KEYS: ReadonlySet<string> = new Set([
   'input',
   'output',
   'cache_read',
