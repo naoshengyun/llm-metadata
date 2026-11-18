@@ -139,21 +139,17 @@ try {
 
     await goto(select('moonshotai-cn'));
     await page.getByRole('button', { name: 'Card view' }).click();
-    const kimi = page
-      .locator('article')
-      .filter({
-        has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
-      });
+    const kimi = page.locator('article').filter({
+      has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
+    });
     await expectVisible(kimi.getByText('CNY base price · included in API'));
     assert.match(await kimi.innerText(), /¥13/);
     assert.match(await kimi.innerText(), /¥68/);
     await snapshot(page, viewport.width, 'cards');
     await page.getByRole('button', { name: 'Table view' }).click();
-    const row = page
-      .getByRole('row')
-      .filter({
-        has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
-      });
+    const row = page.getByRole('row').filter({
+      has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
+    });
     await expectVisible(row.getByText('CNY base price · included in API'));
     assert.match(await row.innerText(), /¥13/);
     assert.match(await row.innerText(), /¥68/);
@@ -186,6 +182,10 @@ try {
       select('openai', 'gpt-image-2.5-sunburst').split('/')[1],
     );
     await expectVisible(page.getByText('Selected for sync', { exact: true }).first());
+    if (mobile)
+      assert.ok(
+        !(await page.getByRole('textbox', { name: 'Filter providers or models…' }).isVisible()),
+      );
 
     await goto(select('volcengine', 'doubao-seedance-2-5-260628'));
     for (const name of [

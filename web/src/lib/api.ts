@@ -27,7 +27,7 @@ export interface PriceQuote {
   sourceCurrency?: string | null;
   sourceUnit?: string | null;
   sourcePrice?: unknown;
-  originalPriceVerified?: boolean;
+  originalCurrencyEligible?: boolean;
   cnyCost?: ModelCost;
   cnyTaskTiers?: TaskTier[];
   usagePlugin?: string;

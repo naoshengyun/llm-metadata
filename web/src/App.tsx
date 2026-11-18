@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, LayoutGrid, List, Search, TriangleAlert } from 'lucide-react';
 
@@ -217,6 +217,7 @@ function Workspace({
   const [error, setError] = useState<string | null>(null);
   const [modelQuery, setModelQuery] = useState('');
   const [view, setView] = useState<ViewMode>(readStoredViewMode);
+  const mobileSearch = useRef<HTMLDetailsElement>(null);
   // 重试令牌：selectedId 不变时也能重新触发加载 effect
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -278,6 +279,7 @@ function Workspace({
   }, [locale, selectedId, reloadKey, catalogBase]);
 
   const handleSelect = useCallback((id: string) => {
+    if (mobileSearch.current) mobileSearch.current.open = false;
     setSelectedId(id);
     setSelectedModelId(null);
     setModelQuery('');
@@ -297,6 +299,7 @@ function Workspace({
   // 全局搜索跳转：切换供应商并直接打开模型详情（跨供应商时清空列表内搜索）
   const handleOpenModelIn = useCallback(
     (providerId: string, modelId: string) => {
+      if (mobileSearch.current) mobileSearch.current.open = false;
       setSelectedId(providerId);
       setSelectedModelId(modelId);
       if (providerId !== selectedId) setModelQuery('');
@@ -400,7 +403,7 @@ function Workspace({
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 pb-6">
           {providers && (
-            <details className="shrink-0 rounded border p-2 md:hidden">
+            <details ref={mobileSearch} className="shrink-0 rounded border p-2 md:hidden">
               <summary>
                 {
                   {

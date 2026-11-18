@@ -136,7 +136,7 @@ function Quote({ quote }: { quote: PriceQuote }) {
       {quote.usagePlugin && <p>Plugin · {quote.usagePlugin}</p>}
       {(quote.sourcePrice != null || quote.syncable || quote.verification) && (
         <ul className="list-disc pl-5">
-          {quote.sourcePrice != null && quote.originalPriceVerified !== false && (
+          {quote.sourcePrice != null && quote.originalCurrencyEligible !== false && (
             <li>{msg.hasPrice}</li>
           )}
           {quote.syncable && <li>{msg.expressible}</li>}
@@ -166,7 +166,7 @@ function Quote({ quote }: { quote: PriceQuote }) {
       )}
       <div className="grid gap-2 sm:grid-cols-2">
         <PriceFields
-          label={`${quote.originalPriceVerified === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${quote.sourceUnit ? ' · ' + quote.sourceUnit : ''}`}
+          label={`${quote.originalCurrencyEligible === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${quote.sourceUnit ? ' · ' + quote.sourceUnit : ''}`}
           price={quote.sourcePrice}
         />
         <PriceFields

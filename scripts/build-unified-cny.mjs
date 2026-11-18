@@ -203,7 +203,7 @@ function upstreamRows(providers, policy, source) {
         priceList: 'fixed upstream primary or original CNY sheet',
         endpoint: provider.api ?? null,
         sourceCurrency,
-        originalPriceVerified: Boolean(
+        originalCurrencyEligible: Boolean(
           amount && price.sourceCurrency && !corrected && evidence !== 'source-currency',
         ),
         sourcePrice: corrected || evidence === 'source-currency' ? null : amount,

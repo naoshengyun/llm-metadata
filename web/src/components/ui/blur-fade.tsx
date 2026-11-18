@@ -1,5 +1,11 @@
 import { useRef, type ReactNode } from 'react';
-import { motion, useInView, type MotionProps, type UseInViewOptions } from 'motion/react';
+import {
+  motion,
+  useInView,
+  useReducedMotion,
+  type MotionProps,
+  type UseInViewOptions,
+} from 'motion/react';
 
 /**
  * Magic UI `BlurFade`：模糊 + 位移 + 透明度的渐入容器，可在进入视口时再开始。
@@ -34,6 +40,7 @@ export function BlurFade({
 }: BlurFadeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inViewResult = useInView(ref, { once: true, margin: inViewMargin });
+  const reducedMotion = useReducedMotion();
   const isInView = !inView || inViewResult;
   const axis = direction === 'left' || direction === 'right' ? 'x' : 'y';
   const from = direction === 'right' || direction === 'down' ? -offset : offset;
@@ -41,8 +48,8 @@ export function BlurFade({
   return (
     <motion.div
       ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      initial={reducedMotion ? false : 'hidden'}
+      animate={reducedMotion || isInView ? 'visible' : 'hidden'}
       variants={{
         hidden: { [axis]: from, opacity: 0, filter: `blur(${blur})` },
         visible: { [axis]: 0, opacity: 1, filter: 'blur(0px)' },
