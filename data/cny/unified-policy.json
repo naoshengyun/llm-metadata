@@ -278,6 +278,164 @@
         "checkedAt": "2026-11-18"
       },
       "reason": "Native weekly schedules cannot express mainland China legal-holiday off-peak pricing"
+    },
+    "doubao-seed-2-0-lite-260428": {
+      "providerId": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.6,
+        "output": 3.6,
+        "cache_read": 0.12,
+        "audio": {
+          "input": 9,
+          "cache_read": 1.8
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.9,
+            "output": 5.4,
+            "cache_read": 0.18,
+            "audio": {
+              "input": 13.5,
+              "cache_read": 2.7
+            }
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 1.8,
+            "output": 10.8,
+            "cache_read": 0.36,
+            "audio": {
+              "input": 27,
+              "cache_read": 5.4
+            }
+          }
+        ]
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "source": {
+        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
+        "sha256": "0bd8cd59d24e4aaf70680794409ad0f8b72ebc2b6a78d43eb494094f37e26ce4",
+        "checkedAt": "2026-11-18",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "b0ec41d9fe8e4beb28013e139d6c9da72bcc6c73486d89080c636f1f812e41f4",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "reason": "Native audio usage has no separate audio-cache read meter for the official tariff"
+    },
+    "doubao-seed-2-0-mini-260428": {
+      "providerId": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.2,
+        "output": 2,
+        "cache_read": 0.04,
+        "audio": {
+          "input": 3,
+          "cache_read": 0.6
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.4,
+            "output": 4,
+            "cache_read": 0.08,
+            "audio": {
+              "input": 6,
+              "cache_read": 1.2
+            }
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.8,
+            "output": 8,
+            "cache_read": 0.16,
+            "audio": {
+              "input": 12,
+              "cache_read": 2.4
+            }
+          }
+        ]
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "source": {
+        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
+        "sha256": "0bd8cd59d24e4aaf70680794409ad0f8b72ebc2b6a78d43eb494094f37e26ce4",
+        "checkedAt": "2026-11-18",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "b0ec41d9fe8e4beb28013e139d6c9da72bcc6c73486d89080c636f1f812e41f4",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "reason": "Native audio usage has no separate audio-cache read meter for the official tariff"
     }
   },
   "ineligibleUpstream": {

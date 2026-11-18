@@ -29,6 +29,7 @@ function check(sourceName, transform = (body) => body, status = 200) {
         'alibaba-cn--thinking': 'alibaba-thinking',
         'alibaba-cn--omni': 'alibaba-omni',
         'alibaba-cn--character': 'alibaba-character',
+        'volcengine-cn--model-list': 'volcengine-models',
         'stepfun-cn--audio': 'stepfun-audio',
         'minimax-cn--cache': 'minimax-cache',
         'minimax-cn--video': 'minimax-video',
@@ -411,4 +412,31 @@ test('Bailian Character preserves the native session-cache rate and header condi
   assert.equal(result?.status, 'unchanged', result?.reason);
   assert.deepEqual(result.observed.sourcePrice, { input: 0.8, output: 2, cache_read: 0.16 });
   assert.equal(result.observed.conditions.sessionCacheRequestHeader, 'x-dashscope-aca-session');
+});
+
+test('Ark model IDs bind evolving text, character tariffs and the published Seedream alias', async () => {
+  const report = await check('volcengine');
+  const evolving = resultFor(report, 'upstream:volcengine:doubao-seed-evolving:CNY');
+  assert.equal(evolving.status, 'changed', evolving.reason);
+  assert.equal(evolving.observed.sourcePrice.input, 6);
+  const character = resultFor(report, 'upstream:volcengine:doubao-seed-character-260628:CNY');
+  assert.equal(character.status, 'changed', character.reason);
+  assert.equal(character.observed.sourcePrice.tiers[0].output, 6);
+  const image = resultFor(
+    report,
+    'volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original',
+  );
+  assert.equal(image.status, 'changed', image.reason);
+  assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.22);
+  assert.equal(image.observed.conditions.publicPriceName, 'doubao-seedream-5-0-lite');
+});
+
+test('Ark audio-cache amounts remain readable without exporting the incomplete old token expression', async () => {
+  const report = await check('volcengine');
+  const audio = resultFor(report, 'upstream:volcengine:doubao-seed-2-0-lite-260428:CNY');
+  assert.equal(audio?.status, 'unsupported', audio?.reason);
+  assert.deepEqual(audio.observed.sourcePrice.audio, { input: 9, cache_read: 1.8 });
+  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.equal(data.billing_expr['doubao-seed-2-0-lite-260428'], undefined);
+  assert.equal(data.billing_expr['doubao-seed-2-0-mini-260428'], undefined);
 });

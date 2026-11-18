@@ -17,6 +17,10 @@ const textModels = {
   'doubao-seed-2-0-pro-260215': 'doubao-seed-2.0-pro',
   'doubao-seed-2-1-pro-260628': 'doubao-seed-2.1-pro',
   'doubao-seed-2-1-turbo-260628': 'doubao-seed-2.1-turbo',
+  'doubao-seed-character-260628': 'doubao-seed-character',
+  'doubao-seed-evolving': 'doubao-seed-evolving',
+  'doubao-seed-2-0-lite-260428': 'doubao-seed-2.0-lite',
+  'doubao-seed-2-0-mini-260428': 'doubao-seed-2.0-mini',
 };
 const videoModels = {
   'doubao-seedance-1-0-pro-250528': 'Seedance 1.0 pro',
@@ -27,6 +31,8 @@ const videoModels = {
 const imageModels = {
   'doubao-seedream-5-0-flash-260915': ['doubao-seedream-5-0-flash', true],
   'doubao-seedream-5-0-lite-260128': ['doubao-seedream-5-0-lite', false],
+  'doubao-seedream-5-0-260128': ['doubao-seedream-5-0-lite', false],
+
   'doubao-seedream-4-5-251128': ['doubao-seedream-4-5', false],
   'doubao-seedream-4-0-250828': ['doubao-seedream-4-0', true],
 };
@@ -44,7 +50,21 @@ function targets(models, priceList) {
   );
 }
 
-const textTargets = targets(textModels, implicitList);
+const textTargets = targets(textModels, implicitList).map((target) => {
+  if (!/evolving|character|2-0-(?:lite|mini)/.test(target.modelId)) return target;
+  return {
+    ...target,
+    quoteId: 'upstream:volcengine:' + target.modelId + ':CNY',
+    priceList: 'fixed upstream primary or original CNY sheet',
+    group: target.modelId,
+    ...(target.modelId.includes('lite') || target.modelId.includes('mini')
+      ? {
+          referenceOnlyReason:
+            'Native audio usage has no separate audio-cache read meter for the official tariff',
+        }
+      : {}),
+  };
+});
 const imageTargets = targets(imageModels, taskList).map((target) => ({
   ...target,
   group: 'images',
@@ -72,8 +92,9 @@ function textTariff(table, target) {
       range[1] !== (i === 0 ? '[' : '(') ||
       Number(range[2]) * 1000 !== last ||
       Number(range[3]) * 1000 <= last ||
-      audio !== '-' ||
-      audioHit !== '-'
+      (target.referenceOnlyReason
+        ? audio === '-' || audioHit === '-'
+        : audio !== '-' || audioHit !== '-')
     )
       throw Error('Unexpected Ark threshold or input modality for ' + family);
     const lower = last;
@@ -82,7 +103,14 @@ function textTariff(table, target) {
       lower,
       upper: last,
       storage: number(storage),
-      charges: { input: number(input), output: number(output), cache_read: number(hit) },
+      charges: {
+        input: number(input),
+        output: number(output),
+        cache_read: number(hit),
+        ...(target.referenceOnlyReason && {
+          audio: { input: number(audio), cache_read: number(audioHit) },
+        }),
+      },
     };
   });
   const charges = bands[0].charges;
@@ -106,10 +134,14 @@ function textTariff(table, target) {
       },
     },
   );
-  result.required = Object.keys(charges).concat(
-    bands
-      .slice(1)
-      .flatMap(({ charges }, i) => Object.keys(charges).map((key) => `tiers.${i}.${key}`)),
+  const chargePaths = [
+    'input',
+    'output',
+    'cache_read',
+    ...(target.referenceOnlyReason ? ['audio.input', 'audio.cache_read'] : []),
+  ];
+  result.required = chargePaths.concat(
+    bands.slice(1).flatMap((_, i) => chargePaths.map((key) => `tiers.${i}.${key}`)),
   );
   return result;
 }
@@ -129,7 +161,16 @@ function imageTariff(table, target) {
     ['input_images', 0],
   ];
   return {
-    ...tariff(target, {}, { inputImages: 'free', outputUnit: 'per_image' }, 'per-charge'),
+    ...tariff(
+      target,
+      {},
+      {
+        inputImages: 'free',
+        outputUnit: 'per_image',
+        ...(target.modelId === 'doubao-seedream-5-0-260128' && { publicPriceName: family }),
+      },
+      'per-charge',
+    ),
     sourcePrice: [
       {
         name: 'all-supported-images',
@@ -214,9 +255,19 @@ function videoTariff({ current, legacy, text }, target) {
 export const adapter = {
   id: 'volcengine-cn',
   url: 'https://docs.volcengine.com/docs/ark/model-pricing?lang=zh',
+  supplemental: [
+    { id: 'model-list', url: 'https://docs.volcengine.com/docs/ark/model-list?lang=zh' },
+  ],
   targets: [...textTargets, ...imageTargets, ...videoTargets],
-  parse({ body }) {
+  parse({ body, supplemental }) {
     const html = decode(body);
+    const modelList = htmlText(
+      decode(supplemental.get('model-list').body).replace(/<script\b[^]*?<\/script>/g, ''),
+    );
+    const exactModelIds = new Set(modelList.match(/doubao-[a-z0-9-]+/g));
+    const imageAlias = modelList.includes(
+      'doubao-seedream-5-0-260128 （同时支持：doubao-seedream-5-0-lite-260128）',
+    );
     const all = tables(html);
     const textTable = only(
       withHeader(all, [
@@ -262,6 +313,18 @@ export const adapter = {
     return new Map(
       candidates.map(([target, table, parse]) => {
         try {
+          if (
+            [
+              'doubao-seed-character-260628',
+              'doubao-seed-evolving',
+              'doubao-seed-2-0-lite-260428',
+              'doubao-seed-2-0-mini-260428',
+            ].includes(target.modelId) &&
+            !exactModelIds.has(target.modelId)
+          )
+            throw Error('Missing Ark exact model ID in model list');
+          if (target.modelId === 'doubao-seedream-5-0-260128' && !imageAlias)
+            throw Error('Missing Ark explicit Seedream Lite alias relationship');
           return [target.quoteId, parse(table, target)];
         } catch (error) {
           return [target.quoteId, { error: error.message }];
