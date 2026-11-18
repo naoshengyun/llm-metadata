@@ -103,7 +103,7 @@ export function useNewApi(): NewApiContextValue {
 /** 单个模型在给定部署下的表达式、系数计价单位及其采用的官方价目货币 */
 export interface ModelExpr {
   expr: string;
-  unit: BillingExprUnit;
+  unit: BillingExprUnit | 'task';
   sheetCurrency: Currency;
 }
 
@@ -117,8 +117,8 @@ export function modelExpr(
     return {
       expr: cost.publication_expr,
       unit:
-        typeof cost.publication_unit === 'string' && cost.publication_unit === 'image'
-          ? 'image'
+        cost.publication_unit === 'image' || cost.publication_unit === 'task'
+          ? cost.publication_unit
           : 'token',
       sheetCurrency: 'CNY',
     };

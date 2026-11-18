@@ -12,13 +12,48 @@ export interface ReasoningOption {
   values?: unknown[];
 }
 
+export interface TaskTier {
+  name: string;
+  when?: Record<string, string | boolean>;
+  charges: { usageKey: string; amount: number; unit: string; currency: string }[];
+  notApplicable?: Record<string, string>;
+}
+
+export interface PriceQuote {
+  quoteId: string;
+  priceList: string;
+  endpoint?: string | null;
+  nativeKey: string | null;
+  sourceCurrency?: string | null;
+  sourceUnit?: string | null;
+  sourcePrice?: unknown;
+  originalCurrencyEligible?: boolean;
+  cnyCost?: ModelCost;
+  cnyTaskTiers?: TaskTier[];
+  usagePlugin?: string;
+  source: { url?: string | null; checkedAt?: string | null; snapshotAt?: string };
+  originalQuote?: { description?: string };
+  status: string;
+  reason?: string | null;
+  syncable: boolean;
+  verification?: {
+    decision: string;
+    officialPrice: boolean;
+    modelExpressionImportEvidence: string;
+    actual4kBillingVerified: boolean;
+  };
+}
+
 export interface Model {
   cnyPrice?: {
     status: string;
-    reason?: string;
-    sourceCurrency?: string;
+    reason?: string | null;
+    sourceCurrency?: string | null;
     exported?: boolean;
     exportReason?: string;
+    outputKind?: string;
+    selectedQuoteId?: string | null;
+    quotes?: PriceQuote[];
   };
   sourceCost?: ModelCost;
   publication?: {
@@ -88,8 +123,8 @@ export interface ModelIndexItem {
 
 const API_BASE = './api';
 
-async function fetchJSON<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}/${path}`, { headers: { accept: 'application/json' } });
+async function fetchJSON<T>(path: string, base = API_BASE): Promise<T> {
+  const response = await fetch(`${base}/${path}`, { headers: { accept: 'application/json' } });
   if (!response.ok) {
     throw new Error(`Failed to load ${path} (${response.status})`);
   }
@@ -111,40 +146,48 @@ function localePath(locale: Locale, path: string): string {
   return locale === 'en' ? path : `i18n/${locale}/${path}`;
 }
 
-export function fetchProviders(locale: Locale): Promise<{ providers: ProviderIndexItem[] }> {
-  return fetchJSON(localePath(locale, 'providers.json'));
+export function fetchProviders(
+  locale: Locale,
+  base?: string,
+): Promise<{ providers: ProviderIndexItem[] }> {
+  return fetchJSON(localePath(locale, 'providers.json'), base);
 }
 
 const providerCache = new Map<string, Promise<Provider>>();
 
 /** 按需加载单个供应商（含全部模型），按语言维度内存缓存 */
-export function fetchProvider(locale: Locale, id: string): Promise<Provider> {
-  const cacheKey = `${locale}:${id}`;
+export function fetchProvider(locale: Locale, id: string, base?: string): Promise<Provider> {
+  const cacheKey = JSON.stringify([base, locale, id]);
   let cached = providerCache.get(cacheKey);
   if (!cached) {
-    cached = fetchJSON<Provider>(localePath(locale, `providers/${sanitizeFileSegment(id)}.json`));
+    cached = fetchJSON<Provider>(
+      localePath(locale, `providers/${sanitizeFileSegment(id)}.json`),
+      base,
+    );
     cached.catch(() => providerCache.delete(cacheKey));
     providerCache.set(cacheKey, cached);
   }
   return cached;
 }
 
-const modelIndexCache = new Map<Locale, Promise<ModelIndexItem[]>>();
+const modelIndexCache = new Map<string, Promise<ModelIndexItem[]>>();
 
 /** 全部模型的轻量索引，仅在用户发起全局搜索时按语言懒加载 */
-export function fetchModelIndex(locale: Locale): Promise<ModelIndexItem[]> {
-  let cached = modelIndexCache.get(locale);
+export function fetchModelIndex(locale: Locale, base?: string): Promise<ModelIndexItem[]> {
+  const cacheKey = JSON.stringify([base, locale]);
+  let cached = modelIndexCache.get(cacheKey);
   if (!cached) {
-    cached = fetchJSON<{ models: ModelIndexItem[] }>(localePath(locale, 'index.json')).then(
+    cached = fetchJSON<{ models: ModelIndexItem[] }>(localePath(locale, 'index.json'), base).then(
       (index) => index.models,
     );
-    cached.catch(() => modelIndexCache.delete(locale));
-    modelIndexCache.set(locale, cached);
+    cached.catch(() => modelIndexCache.delete(cacheKey));
+    modelIndexCache.set(cacheKey, cached);
   }
   return cached;
 }
 
 export interface Manifest {
+  candidateId?: string;
   generatedAt?: string;
   stats?: { providers?: number; models?: number };
   /** 静态 NewAPI 预设的生成假设：非美元价目换算所用汇率（每 1 USD 的货币数量） */

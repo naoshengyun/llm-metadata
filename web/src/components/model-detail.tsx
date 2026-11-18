@@ -1,3 +1,4 @@
+import { OfficialQuotes } from '@/components/official-quotes';
 import { PricingNotice } from '@/components/pricing-notice';
 import { useEffect, type ReactNode } from 'react';
 import {
@@ -310,12 +311,14 @@ export function ModelDetail({
   model,
   provider,
   providers,
+  catalogBase,
   onBack,
   onOpenModelIn,
 }: {
   model: Model;
   provider: ProviderIndexItem;
   providers: ProviderIndexItem[];
+  catalogBase?: string;
   onBack: () => void;
   onOpenModelIn: (providerId: string, modelId: string) => void;
 }) {
@@ -586,11 +589,14 @@ export function ModelDetail({
         </DetailSection>
       )}
 
+      <OfficialQuotes model={model} />
+
       {/* 其他端点（同一模型的国内 / 国际版本价格对照） */}
       <SiblingEndpoints
         modelId={model.id}
         providerId={provider.id}
         providers={providers}
+        catalogBase={catalogBase}
         onOpen={onOpenModelIn}
       />
 

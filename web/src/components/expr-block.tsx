@@ -26,14 +26,23 @@ export function ExprBlock({
   className?: string;
   codeClassName?: string;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { deployment } = useNewApi();
   return (
     <div className={className}>
       <div className="text-muted-foreground mb-1.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px]">
         <span className="font-medium tracking-wider uppercase">{t('table.expr')}</span>
         <CopyButton text={expr.expr} />
-        <span>· {t(UNIT_LABELS[expr.unit], { display: quotaUsdDisplay(deployment) })}</span>
+        <span>
+          ·{' '}
+          {expr.unit === 'task'
+            ? {
+                en: 'CNY per task, using the plugin usage schema',
+                zh: '按任务计算 CNY，使用插件用量字段',
+                ja: 'プラグインの使用量項目でタスクごとの CNY を計算',
+              }[locale]
+            : t(UNIT_LABELS[expr.unit], { display: quotaUsdDisplay(deployment) })}
+        </span>
         {expr.sheetCurrency !== primaryCurrency && (
           <span>· {t('expr.sheet', { currency: expr.sheetCurrency })}</span>
         )}
