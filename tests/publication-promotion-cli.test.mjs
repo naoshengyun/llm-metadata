@@ -1,3 +1,4 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
@@ -12,12 +13,9 @@ import {
 
 test('S: an operator can prepare, confirm, locally apply and export a bound publication snapshot', () => {
   const root = mkdtempSync(join(tmpdir(), 'cny-publication-cli-'));
-  const read = (n) => JSON.parse(readFileSync(new URL('../data/cny/' + n, import.meta.url)));
   const artifact = buildOfficialSnapshot({
     sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-    catalog: read('official-catalog.json'),
-    reference: read('coverage-reference.json'),
-    selection: read('proposed-selection.json').selection,
+    ...readHistoricalOfficialInputs(),
   }).artifact;
   const p = buildPublicationPackage(Buffer.from(JSON.stringify(artifact)), {
     models: ['kimi-k3.1-pro'],

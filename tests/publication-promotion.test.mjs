@@ -1,6 +1,7 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -19,14 +20,11 @@ import {
 import { hash } from '../.cache/cny-build/cny/generate.js';
 import { createServer } from 'node:http';
 
-const read = (name) => JSON.parse(readFileSync(new URL('../data/cny/' + name, import.meta.url)));
 const artifact = Buffer.from(
   JSON.stringify(
     buildOfficialSnapshot({
       sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-      catalog: read('official-catalog.json'),
-      reference: read('coverage-reference.json'),
-      selection: read('proposed-selection.json').selection,
+      ...readHistoricalOfficialInputs(),
     }).artifact,
   ),
 );
@@ -350,8 +348,7 @@ test('S: candidate export rejects retained test versions even when the current r
 test('S: explicit native model names do not inherit object properties in the semantic diff', () => {
   const mapped = buildOfficialSnapshot({
     sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-    catalog: read('official-catalog.json'),
-    reference: read('coverage-reference.json'),
+    ...readHistoricalOfficialInputs(),
     selection: { constructor: JSON.parse(artifact).selection['kimi-k3.1-pro'] },
   }).artifact;
   const p = buildPublicationPackage(Buffer.from(JSON.stringify(mapped)), {

@@ -7,11 +7,20 @@ import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { gunzipSync } from 'node:zlib';
 import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
+import { adapter as kimi } from '../scripts/official-sources/kimi-cn.mjs';
+import { writeHistoricalCny } from './fixtures/november-2026-cny.mjs';
 
 const directory = mkdtempSync(join(tmpdir(), 'official-check-'));
 const baseline = join(directory, 'baseline');
 after(() => rmSync(directory, { recursive: true, force: true }));
-execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
+const [policyPath, catalogPath, selectionPath] = writeHistoricalCny(directory);
+execFileSync(process.execPath, [
+  'scripts/build-unified-cny.mjs',
+  baseline,
+  policyPath,
+  catalogPath,
+  selectionPath,
+]);
 const fixture = (date) =>
   gunzipSync(
     readFileSync(new URL(`./fixtures/official-check/kimi-cn-${date}.html.gz`, import.meta.url)),
@@ -25,6 +34,7 @@ const pro = 'cn-moonshot-kimi-k3.1-pro-standard';
 function check(body = current, options = {}) {
   return checkOfficialPrices({
     baseline,
+    adapters: [kimi],
     attemptedAt,
     getResponse: async () => ({ body, url, obtainedAt: attemptedAt }),
     ...options,
@@ -77,7 +87,7 @@ test('amount changes produce a reviewable candidate that the unified builder can
   assert.equal(change.candidate.record.source.sha256, change.evidence.sha256);
 
   const { writeFileSync } = await import('node:fs');
-  const catalog = JSON.parse(readFileSync('data/cny/official-catalog.json'));
+  const catalog = JSON.parse(readFileSync(catalogPath));
   catalog.records = catalog.records.map((record) =>
     record.id === pro ? change.candidate.record : record,
   );
@@ -87,9 +97,9 @@ test('amount changes produce a reviewable candidate that the unified builder can
   execFileSync(process.execPath, [
     'scripts/build-unified-cny.mjs',
     candidate,
-    'data/cny/unified-policy.json',
+    policyPath,
     candidateCatalog,
-    'data/cny/proposed-selection.json',
+    selectionPath,
     'data/upstream/24d3f35c',
     baseline,
   ]);

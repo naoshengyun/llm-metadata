@@ -1,6 +1,6 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { buildOfficialSnapshot } from '../scripts/build-official-cny.mjs';
 import {
   buildPublicationPackage,
@@ -8,13 +8,10 @@ import {
 } from '../.cache/cny-build/cny/publication-package.js';
 import { preparePublicationTransition } from '../.cache/cny-build/cny/publication-promotion.js';
 import { buildPublicationSite } from '../.cache/cny-build/cny/publication-page.js';
-const read = (n) => JSON.parse(readFileSync(new URL('../data/cny/' + n, import.meta.url)));
 test('published page and static APIs bind one candidate and v2 explains zero tool surcharge without rewriting v1', () => {
   const a = buildOfficialSnapshot({
     sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-    catalog: read('official-catalog.json'),
-    reference: read('coverage-reference.json'),
-    selection: read('proposed-selection.json').selection,
+    ...readHistoricalOfficialInputs(),
   }).artifact;
   const selection = {
     models: ['kimi-k3.1-pro'],

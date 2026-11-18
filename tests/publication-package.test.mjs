@@ -1,3 +1,4 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -15,14 +16,11 @@ import { createServer } from 'node:http';
 import { buildArtifact } from '../.cache/cny-build/cny/artifact.js';
 
 function candidate() {
-  const read = (name) => JSON.parse(readFileSync(new URL('../data/cny/' + name, import.meta.url)));
   return Buffer.from(
     JSON.stringify(
       buildOfficialSnapshot({
         sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-        catalog: read('official-catalog.json'),
-        reference: read('coverage-reference.json'),
-        selection: read('proposed-selection.json').selection,
+        ...readHistoricalOfficialInputs(),
       }).artifact,
     ),
   );

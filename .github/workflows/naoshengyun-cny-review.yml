@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+      - name: Reject a future review cutoff
+        run: node scripts/check-cny-effective-time.mjs
       - name: Install the locked dependencies
         run: |
           npm ci --ignore-scripts
