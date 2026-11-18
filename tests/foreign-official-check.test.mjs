@@ -16,6 +16,9 @@ const fixtures = {
   'anthropic-global': 'anth',
   'morph-list': 'morph',
   'kimi-global': 'kimi-global',
+  'mistral-standard': 'mistral',
+  'mistral-standard--api-ids': 'mistral-md',
+  'zai-international': 'zai',
   'cohere-api': 'co-pricing',
   'cohere-api--command-a': 'co-a',
   'cohere-api--command-r': 'co-r',
@@ -180,4 +183,28 @@ test('xAI global long context starts at exactly 200,000 tokens', async () => {
   const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
   assert.equal(old.status, 'failed');
   assert.match(old.reason, /Exact xAI text price row/);
+});
+
+test('Mistral binds active global USD rates to exact API IDs, and reports older missing IDs', async () => {
+  const report = await run();
+  const rows = report.results.filter(({ sourceId }) => sourceId === 'mistral-standard');
+  assert.equal(rows.length, 34);
+  assert.equal(rows.filter(({ status }) => status === 'unchanged').length, 9);
+  const row = rows.find(({ nativeKey }) => nativeKey === 'ministral-3b-2512');
+  assert.equal(row.observed.sourcePrice.cache_read, 0.01);
+  assert.equal(row.observed.cnyCost.cache_read, 0.07);
+  assert.equal(rows.find(({ nativeKey }) => nativeKey === 'mistral-medium-2505').status, 'failed');
+});
+test('Z.AI explicit Free rows are distinct from limited-time free storage and missing Turbo IDs', async () => {
+  const report = await run();
+  const rows = report.results.filter(({ sourceId }) => sourceId === 'zai-international');
+  assert.equal(rows.length, 18);
+  const flash = rows.find(({ nativeKey }) => nativeKey === 'glm-4.5-flash');
+  assert.equal(flash.status, 'unchanged');
+  assert.equal(flash.observed.sourcePrice.cache_read, 0);
+  assert.match(
+    rows.find(({ nativeKey }) => nativeKey === 'glm-5.3').reason,
+    /limited-time free storage/,
+  );
+  assert.match(rows.find(({ nativeKey }) => nativeKey === 'glm-5-turbo').reason, /Exact price row/);
 });
