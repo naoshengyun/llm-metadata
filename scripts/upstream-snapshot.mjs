@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { adaptCatalog, sha } from './upstream-cny.mjs';
 const json = (v) => JSON.stringify(v, null, 2) + '\n';
-export function makeSnapshot() {
-  const root = 'data/upstream/b755761bf/';
+export function makeSnapshot(repository = '.') {
+  const root = join(repository, 'data/upstream/b755761bf') + '/';
   const source = JSON.parse(readFileSync(root + 'source.json'));
   for (const [file, meta] of Object.entries(source.files))
     if (sha(readFileSync(root + file)) !== meta.sha256)

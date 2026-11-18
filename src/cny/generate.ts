@@ -70,7 +70,7 @@ const PRICE_KEYS = new Set([
 ]);
 function convert(value: unknown, factor: number, key = ''): unknown {
   if (typeof value === 'number' && PRICE_KEYS.has(key))
-    return Number((value * factor).toPrecision(15));
+    return factor === 1 ? value : Number((value * factor).toPrecision(15));
   if (Array.isArray(value)) return value.map((v) => convert(v, factor));
   if (value !== null && typeof value === 'object')
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, convert(v, factor, k)]));

@@ -1,8 +1,8 @@
 # 统一 CNY：需求、决定与证据的唯一来源
 
-先读本登记，再解释范围、AC或决定状态。需求记录：[需求记录：统一 CNY 官方价格源已批准基线与来源追溯](https://github.com/naoshengyun/llm-metadata/issues/5)；决策索引：[决策地图：统一 CNY 价格源的已确认选择与后续验收边界](https://github.com/naoshengyun/llm-metadata/issues/6)。本轮是既有批准的文档补充，不重访谈、不重造Spec、不重新派发T1—T7，也不改变业务选择。
+现行增量以 [GitHub 规范 #34](https://github.com/naoshengyun/llm-metadata/issues/34) 为准。下方 v0.12 和 #29 材料保留各自的历史适用范围。需求记录：[需求记录：统一 CNY 官方价格源已批准基线与来源追溯](https://github.com/naoshengyun/llm-metadata/issues/5)；决策索引：[决策地图：统一 CNY 价格源的已确认选择与后续验收边界](https://github.com/naoshengyun/llm-metadata/issues/6)。本轮是既有批准的文档补充，不重访谈、不重造Spec、不重新派发T1—T7，也不改变业务选择。
 
-## 唯一维护来源与优先级
+## 历史 v0.12 维护来源与优先级
 
 | 内容 | 唯一维护位置/责任 | 本仓库其他材料的用途 |
 |---|---|---|
@@ -52,3 +52,15 @@
 ## 完整上游目录与合格CNY价格增量（Spec v2.0，2026-11-17）
 
 用户已选择仅用固定上游、缺价明确标注，并同步发布全部合格价格。新规范正文/批准记录/固定b755基线及hash见[独立来源登记](catalog-publication-sources.json)，对应现有[#29](https://github.com/naoshengyun/llm-metadata/issues/29)，不另建实施任务、不为文档整理设阻塞。旧v0.12、PUB-AC和43模型首发仅保留历史，不覆盖；新CAT-AC适用本增量。目录完整50/616与合格原生API键数量分开，旧fixed永久保留。
+
+
+## 统一完整目录与自有官方价目（#34）
+
+当前需求、延期和条件放行分别由 [#34](https://github.com/naoshengyun/llm-metadata/issues/34)、[#35](https://github.com/naoshengyun/llm-metadata/issues/35) 与 [#32](https://github.com/naoshengyun/llm-metadata/issues/32) 维护。统一构建采用固定的完整上游目录和经明确选择的完整自有官方价目。上游起点、逐文件哈希、原价、选择与规则见下表。旧快照和固定发布保留原身份。
+
+| 当前输入 | 存放位置 |
+|---|---|
+| 上游版本、英文/中文/日文目录与原生配置 | [固定 24d3f35c 输入](../../data/upstream/24d3f35c/source.json) |
+| 自有官方原价与当前选价 | [原价目录](../../data/cny/official-catalog.json) · [明确选价](../../data/cny/proposed-selection.json) |
+| 上游输入指针、精确延期、币种纠错与撤价历史 | [统一构建政策](../../data/cny/unified-policy.json) |
+| 本增量构建行为与候选交接 | [ADR 0005](../adr/0005-unified-official-cny-candidate.md) |

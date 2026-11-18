@@ -19,7 +19,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "test:cny": "tsc --outDir .cache/cny-build && node --test tests/*.test.mjs",
     "cny:generate": "tsc --outDir .cache/cny-build && node .cache/cny-build/cny/cli.js",
-    "cny:official:build": "tsc --outDir .cache/cny-build && node scripts/build-official-cny.mjs"
+    "cny:official:build": "tsc --outDir .cache/cny-build && node scripts/build-official-cny.mjs",
+    "cny:unified:build": "tsc --outDir .cache/cny-build && node scripts/build-unified-cny.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
