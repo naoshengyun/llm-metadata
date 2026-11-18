@@ -92,6 +92,19 @@ test('a verified Pages backup can recover a failed publication without replacing
   );
   await run('verify-local', backup, previous.sourceSha, previous.manifestHash);
 
+  // A deployment can become visible after the deploy action times out; HTTP determines the result.
+  await assert.rejects(run('verify', origin, candidate.sourceSha, candidate.manifestHash));
+  assert.equal((await canRestore()).stdout.trim(), 'already-verified');
+  served = candidate.files;
+  const receipt = JSON.parse(
+    (await run('verify', origin, candidate.sourceSha, candidate.manifestHash)).stdout,
+  );
+  assert.deepEqual(receipt, {
+    sourceSha: candidate.sourceSha,
+    releaseId: 'b'.repeat(64),
+    siteManifestSha256: candidate.manifestHash,
+  });
+
   served = { ...candidate.files, 'app/js/site.js': 'corrupt' };
   await assert.rejects(
     run('verify', origin, candidate.sourceSha, candidate.manifestHash),

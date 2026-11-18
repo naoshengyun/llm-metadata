@@ -183,15 +183,26 @@ jobs:
     outputs:
       public_readback: ${{ steps.http-verification.outputs.result }}
     steps:
-      - name: Record a failed or unconfirmed publication
+      - name: Check for a built artifact and an attempted deployment
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
+          SITE_HASH: ${{ needs.build.outputs.site_hash }}
         run: |
-          if [ "$BUILD_RESULT" != success ] || [ "$DEPLOY_RESULT" != success ]; then
-            echo "Publication failed or unconfirmed for $GITHUB_SHA (build=$BUILD_RESULT, deploy=$DEPLOY_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          if [ "$BUILD_RESULT" != success ] || ! [[ "$SITE_HASH" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "No valid publication artifact for $GITHUB_SHA (build=$BUILD_RESULT)." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+          case "$DEPLOY_RESULT" in
+            success|failure)
+              echo "Checking the public artifact for $GITHUB_SHA (deploy=$DEPLOY_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "Publication unconfirmed for $GITHUB_SHA (deploy=$DEPLOY_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+              ;;
+          esac
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.sha }}
@@ -235,7 +246,8 @@ jobs:
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT"
   restore:
     if: >-
-      always() && needs.deploy.result == 'success' &&
+      always() && needs.build.result == 'success' &&
+      (needs.deploy.result == 'success' || needs.deploy.result == 'failure') &&
       needs.verify-publication.result == 'failure' &&
       needs.verify-publication.outputs.public_readback != 'verified'
     needs: [build, deploy, verify-publication]
