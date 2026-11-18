@@ -440,3 +440,22 @@ test('Ark audio-cache amounts remain readable without exporting the incomplete o
   assert.equal(data.billing_expr['doubao-seed-2-0-lite-260428'], undefined);
   assert.equal(data.billing_expr['doubao-seed-2-0-mini-260428'], undefined);
 });
+
+test('Ark official Markdown and rendered HTML produce the same selected rates', async () => {
+  const markdown = gunzipSync(
+    readFileSync(
+      new URL(
+        './fixtures/official-check/domestic/volcengine-markdown-2026-11-18.gz',
+        import.meta.url,
+      ),
+    ),
+  );
+  const json = (report) =>
+    report.results
+      .filter((result) => result.sourceId === 'volcengine-cn')
+      .map(({ id, status, observed }) => ({ id, status, observed }));
+  assert.deepEqual(
+    json(await check('volcengine', () => markdown)),
+    json(await check('volcengine')),
+  );
+});

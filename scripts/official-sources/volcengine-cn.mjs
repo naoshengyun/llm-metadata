@@ -252,9 +252,29 @@ function videoTariff({ current, legacy, text }, target) {
   };
 }
 
+function markdownTables(markdown) {
+  return [...markdown.matchAll(/^(?:\|[^\r\n]*(?:\r?\n|$))+/gm)].map(([table]) =>
+    table
+      .trimEnd()
+      .split(/\r?\n/)
+      .filter((line) => !/^\|(?:[ :\-]+\|)+$/.test(line))
+      .map((row) =>
+        row
+          .split('|')
+          .slice(1, -1)
+          .map((content) => ({
+            text: htmlText(content.replaceAll('\\-', '-').replace(/^\s*>\s*/, '')).replace(
+              '> P',
+              'P',
+            ),
+          })),
+      ),
+  );
+}
+
 export const adapter = {
   id: 'volcengine-cn',
-  url: 'https://docs.volcengine.com/docs/ark/model-pricing?lang=zh',
+  url: 'https://docs.volcengine.com/docs/zh/ark/model-pricing.md',
   supplemental: [
     { id: 'model-list', url: 'https://docs.volcengine.com/docs/ark/model-list?lang=zh' },
   ],
@@ -268,7 +288,8 @@ export const adapter = {
     const imageAlias = modelList.includes(
       'doubao-seedream-5-0-260128 （同时支持：doubao-seedream-5-0-lite-260128）',
     );
-    const all = tables(html);
+    const rendered = tables(html);
+    const all = rendered.length ? rendered : markdownTables(html);
     const textTable = only(
       withHeader(all, [
         '模型名称',
@@ -303,7 +324,9 @@ export const adapter = {
         ),
         'Ark legacy video token table',
       ),
-      text: htmlText(html.replace(/<script\b[^]*?<\/script>/g, '')),
+      text: htmlText(html.replace(/<script\b[^]*?<\/script>/g, ''))
+        .replaceAll('**', ' ')
+        .replace(/\s+/g, ' '),
     };
     const candidates = [
       ...textTargets.map((target) => [target, textTable, textTariff]),
