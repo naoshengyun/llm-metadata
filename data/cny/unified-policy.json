@@ -102,6 +102,184 @@
       ]
     }
   },
+  "nativeCapabilityExclusions": {
+    "deepseek-flash": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.02,
+        "schedule": {
+          "timezone": "Asia/Shanghai",
+          "fallback": "off_peak",
+          "windows": [
+            {
+              "name": "peak",
+              "weekdays": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "hours": [
+                "09:00-12:00",
+                "14:00-18:00"
+              ],
+              "input": 2,
+              "output": 8,
+              "cache_read": 0.04
+            }
+          ]
+        }
+      },
+      "conditions": {
+        "chineseLegalHolidays": "off_peak"
+      },
+      "source": {
+        "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+        "sha256": "9b51529c603fe5ab6216f0d8e96bdac1941f045ca578197a92bbb1830ae9ab68",
+        "checkedAt": "2026-11-18"
+      },
+      "reason": "Native weekly schedules cannot express mainland China legal-holiday off-peak pricing"
+    },
+    "deepseek-v4-flash": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.02,
+        "schedule": {
+          "timezone": "Asia/Shanghai",
+          "fallback": "off_peak",
+          "windows": [
+            {
+              "name": "peak",
+              "weekdays": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "hours": [
+                "09:00-12:00",
+                "14:00-18:00"
+              ],
+              "input": 2,
+              "output": 8,
+              "cache_read": 0.04
+            }
+          ]
+        }
+      },
+      "conditions": {
+        "chineseLegalHolidays": "off_peak",
+        "billedAsModel": "deepseek-flash",
+        "servingModel": "DeepSeek-V4.1-Flash-1017"
+      },
+      "source": {
+        "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+        "sha256": "9b51529c603fe5ab6216f0d8e96bdac1941f045ca578197a92bbb1830ae9ab68",
+        "checkedAt": "2026-11-18"
+      },
+      "reason": "Native weekly schedules cannot express mainland China legal-holiday off-peak pricing"
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.02,
+        "schedule": {
+          "timezone": "Asia/Shanghai",
+          "fallback": "off_peak",
+          "windows": [
+            {
+              "name": "peak",
+              "weekdays": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "hours": [
+                "09:00-12:00",
+                "14:00-18:00"
+              ],
+              "input": 2,
+              "output": 8,
+              "cache_read": 0.04
+            }
+          ]
+        }
+      },
+      "conditions": {
+        "chineseLegalHolidays": "off_peak",
+        "billedAsModel": "deepseek-flash",
+        "servingModel": "DeepSeek-V4.1-Flash-1017"
+      },
+      "source": {
+        "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+        "sha256": "9b51529c603fe5ab6216f0d8e96bdac1941f045ca578197a92bbb1830ae9ab68",
+        "checkedAt": "2026-11-18"
+      },
+      "reason": "Native weekly schedules cannot express mainland China legal-holiday off-peak pricing"
+    },
+    "deepseek-v4-pro": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "currency": "CNY",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 4.5,
+        "output": 13.5,
+        "cache_read": 0.15,
+        "schedule": {
+          "timezone": "Asia/Shanghai",
+          "fallback": "off_peak",
+          "windows": [
+            {
+              "name": "peak",
+              "weekdays": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "hours": [
+                "09:00-12:00",
+                "14:00-18:00"
+              ],
+              "input": 9,
+              "output": 27,
+              "cache_read": 0.3
+            }
+          ]
+        }
+      },
+      "conditions": {
+        "chineseLegalHolidays": "off_peak"
+      },
+      "source": {
+        "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+        "sha256": "9b51529c603fe5ab6216f0d8e96bdac1941f045ca578197a92bbb1830ae9ab68",
+        "checkedAt": "2026-11-18"
+      },
+      "reason": "Native weekly schedules cannot express mainland China legal-holiday off-peak pricing"
+    }
+  },
   "ineligibleUpstream": {
     "sarvam-105b": {
       "providerId": "sarvam",

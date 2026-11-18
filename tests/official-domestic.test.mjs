@@ -284,3 +284,27 @@ test('a malformed Xiaomi field rejects the tariff, while an exact change builds 
   assert.equal(data.billing_expr['mimo-v2.6-pro'], 'tier("standard", p * 3 + cr * 0.026 + c * 6)');
   assert.equal(data.billing_expr['doubao-seedance-2-5-260628'], undefined);
 });
+
+test('a native capability exclusion keeps DeepSeek official evidence and prevents fallback pricing', async () => {
+  const read = (name) => JSON.parse(readFileSync(join(baseline, name)));
+  const { data } = read('api/newapi/ratio_config.json');
+  const { models } = read('coverage.json');
+  const keys = [
+    'deepseek-flash',
+    'deepseek-v4-flash',
+    'deepseek-v4-flash-vision-exp',
+    'deepseek-v4-pro',
+  ];
+  for (const modelId of keys) {
+    const model = models.find((row) => row.providerId === 'deepseek' && row.modelId === modelId);
+    assert.equal(data.billing_expr[modelId], undefined, modelId);
+    assert.equal(model.status, 'unsupported');
+    assert.equal(model.upstreamPrice.sourceCurrency, 'CNY');
+    assert.equal(model.upstreamPrice.conditions.chineseLegalHolidays, 'off_peak');
+    assert.equal(
+      model.upstreamPrice.source.url,
+      'https://api-docs.deepseek.com/zh-cn/quick_start/pricing/',
+    );
+    assert.match(model.upstreamPrice.source.sha256, /^[0-9a-f]{64}$/);
+  }
+});

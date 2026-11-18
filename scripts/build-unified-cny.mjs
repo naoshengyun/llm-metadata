@@ -175,25 +175,50 @@ function upstreamRows(providers, policy, source) {
         ? deferredEvidence.criterion
         : null;
       const correction = policy.ineligibleUpstream[modelId];
+      const exclusion = policy.nativeCapabilityExclusions?.[modelId];
+      const incapable = exclusion?.providerId === providerId && exclusion.endpoint === provider.api;
       const corrected = correction?.providerId === providerId;
+      if (
+        incapable &&
+        (corrected ||
+          deferred ||
+          evidence ||
+          provider.subscription ||
+          exclusion.currency !== 'CNY' ||
+          !exclusion.sourceUnit ||
+          !exclusion.sourcePrice ||
+          !exclusion.conditions ||
+          !exclusion.reason ||
+          !exclusion.source?.url?.startsWith('https://') ||
+          !/^[0-9a-f]{64}$/.test(exclusion.source?.sha256 ?? '') ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(exclusion.source?.checkedAt ?? ''))
+      ) {
+        throw Error('Invalid native capability exclusion evidence: ' + modelId);
+      }
       const sourceCurrency = corrected
         ? correction.sourceCurrency
-        : evidence === 'source-currency'
-          ? null
-          : (price.sourceCurrency ?? model.cost?.currency ?? (model.cost ? 'USD' : null));
+        : incapable
+          ? exclusion.currency
+          : evidence === 'source-currency'
+            ? null
+            : (price.sourceCurrency ?? model.cost?.currency ?? (model.cost ? 'USD' : null));
       const status =
         deferred || evidence
           ? 'deferred'
           : corrected || price.reason?.startsWith('unsupported-source-currency:')
             ? 'excluded'
-            : price.status;
+            : incapable
+              ? 'unsupported'
+              : price.status;
       const reason = deferred
         ? 'approved-deferred-model'
         : evidence
           ? 'approved-deferred-evidence:complete-tariff-requires-' + evidence
           : corrected
             ? correction.reason
-            : (price.reason ?? null);
+            : incapable
+              ? exclusion.reason
+              : (price.reason ?? null);
       const amount = originalPrice(model, sourceCurrency);
       const upstreamPrice = {
         quoteId: 'upstream:' + providerId + ':' + modelId + ':' + (sourceCurrency ?? 'unknown'),
@@ -204,29 +229,43 @@ function upstreamRows(providers, policy, source) {
         endpoint: provider.api ?? null,
         sourceCurrency,
         originalCurrencyEligible: Boolean(
-          amount && price.sourceCurrency && !corrected && evidence !== 'source-currency',
+          (incapable && exclusion.sourcePrice) ||
+            (amount && price.sourceCurrency && !corrected && evidence !== 'source-currency'),
         ),
-        sourcePrice: corrected || evidence === 'source-currency' ? null : amount,
+        sourcePrice:
+          corrected || evidence === 'source-currency'
+            ? null
+            : incapable
+              ? exclusion.sourcePrice
+              : amount,
+        ...(incapable && { conditions: exclusion.conditions }),
         upstreamReportedCost: model.cost ?? null,
-        sourceUnit:
-          price.unit === 'image'
+        sourceUnit: incapable
+          ? exclusion.sourceUnit
+          : price.unit === 'image'
             ? 'per_image'
             : price.unit === 'token'
               ? 'per_million_tokens'
               : null,
-        source: {
-          url: corrected ? correction.source : (provider.doc ?? null),
-          upstreamSha: source.upstreamSha,
-          snapshotAt: source.snapshotAt,
-          checkedAt: null,
-          sha256: amount ? hash({ amount, sourceCurrency }) : null,
-        },
+        source: incapable
+          ? exclusion.source
+          : {
+              url: corrected ? correction.source : (provider.doc ?? null),
+              upstreamSha: source.upstreamSha,
+              snapshotAt: source.snapshotAt,
+              checkedAt: null,
+              sha256: amount ? hash({ amount, sourceCurrency }) : null,
+            },
         status,
         reason,
         selected: false,
         syncable: false,
         outputKind: provider.subscription ? 'subscription' : 'model',
-        cnyCost: corrected || deferred || evidence ? undefined : price.cost,
+        cnyCost: incapable
+          ? exclusion.sourcePrice
+          : corrected || deferred || evidence
+            ? undefined
+            : price.cost,
         unit: price.unit,
         billing_expr: status === 'eligible' ? price.expr : undefined,
       };
@@ -474,6 +513,24 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
       }
       continue;
     }
+    const exclusion = policy.nativeCapabilityExclusions?.[modelId];
+    if (exclusion) {
+      const identity = current.find(
+        (row) =>
+          row.providerId === exclusion.providerId &&
+          row.upstreamPrice?.endpoint === exclusion.endpoint &&
+          row.status === 'unsupported',
+      );
+      if (current.some((row) => row.providerId === exclusion.providerId) && !identity)
+        throw Error('Native capability exclusion identity changed: ' + modelId);
+      if (official || Object.hasOwn(policy.upstreamSelection, modelId))
+        throw Error('Native capability exclusion blocks price selection: ' + modelId);
+      for (const row of current) {
+        row.status = 'unsupported';
+        row.reason = exclusion.reason;
+      }
+      continue;
+    }
     if (official && official.outputKind !== 'tool-reference') {
       const record = records.get(providerModel(official.providerId, modelId));
       if (['subscription', 'deferred'].includes(record.status))
@@ -658,15 +715,18 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
     if (before === after?.billing_expr && !changedIdentity) continue;
     const correction = policy.ineligibleUpstream[key];
     const event = lifecycle.state.get(key);
+    const capability = policy.nativeCapabilityExclusions?.[key];
     const priorRow = underlying.find((row) => row.providerId === former?.providerId);
     const reason =
       event?.state === 'withdrawn'
         ? 'formal-withdrawal'
         : correction && former?.providerId === correction.providerId
           ? 'source-currency-correction'
-          : after
-            ? 'candidate-selection'
-            : (priorRow?.reason ?? 'no-eligible-price-identity');
+          : capability && former?.providerId === capability.providerId
+            ? 'native-capability-exclusion'
+            : after
+              ? 'candidate-selection'
+              : (priorRow?.reason ?? 'no-eligible-price-identity');
     changes.push({
       nativeKey: key,
       type: before && after ? 'changed' : before ? 'removed' : 'added',
@@ -674,6 +734,7 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
       evidence: correction
         ? { url: correction.source, detail: correction.reason }
         : (event?.evidence ??
+          (capability && { ...capability.source, detail: capability.reason }) ??
           (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
       before: before
         ? { providerId: former.providerId, billing_mode: 'tiered_expr', billing_expr: before }
