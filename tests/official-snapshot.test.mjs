@@ -1,3 +1,4 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOfficialSnapshot } from '../scripts/build-official-cny.mjs';
@@ -93,12 +94,7 @@ test('S: separately observed optional tool fees remain explicit exclusions, not 
 });
 
 test('S: maintained first-party snapshot keeps original CNY, single USD conversion and direct-image output meter', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const read = async (name) =>
-    JSON.parse(await readFile(new URL('../data/cny/' + name, import.meta.url), 'utf8'));
-  const catalog = await read('official-catalog.json'),
-    reference = await read('coverage-reference.json');
-  const selection = (await read('proposed-selection.json')).selection;
+  const { catalog, reference, selection } = readHistoricalOfficialInputs();
   const r = buildOfficialSnapshot({ sourceSha: 'a'.repeat(40), catalog, reference, selection });
   assert.equal(r.coverage.length, 136);
   assert.deepEqual(
@@ -142,15 +138,9 @@ test('S: a ready quote for a different exact model cannot satisfy the reference 
 });
 
 test('S: known Kimi and MiniMax tool tariffs are preserved inside the fixed candidate exclusions', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const read = async (name) =>
-    JSON.parse(await readFile(new URL('../data/cny/' + name, import.meta.url), 'utf8'));
-  const catalog = await read('official-catalog.json');
   const r = buildOfficialSnapshot({
     sourceSha: 'a'.repeat(40),
-    catalog,
-    reference: await read('coverage-reference.json'),
-    selection: (await read('proposed-selection.json')).selection,
+    ...readHistoricalOfficialInputs(),
   });
   const groups = r.artifact.exclusions.filter((x) => x.kind === 'optional-tool-fees');
   assert.equal(groups.find((x) => x.raw.provider === 'moonshotai-cn').raw.fees.Pro, 0.015);
