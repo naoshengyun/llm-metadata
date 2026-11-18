@@ -94,7 +94,7 @@ try {
     'SQLITE_PATH=/data/new-api.db',
     // The isolated fixture makes repeated profile writes to exercise each task's inheritance.
     '--env',
-    'CRITICAL_RATE_LIMIT=1000',
+    'GLOBAL_API_RATE_LIMIT=1000',
     '--env',
     'SESSION_SECRET',
     image,
