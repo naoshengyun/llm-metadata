@@ -32,6 +32,10 @@ jobs:
           npm --prefix web ci --ignore-scripts
       - name: Run price and publication regressions
         run: npm run test:cny
+      - name: Read the preceding immutable price candidate
+        if: github.repository == 'naoshengyun/llm-metadata'
+        run: |
+          node scripts/cny-pages-release.mjs snapshot https://naoshengyun.github.io/llm-metadata/ "$RUNNER_TEMP/prior" "" review
       - name: Build the simulated merge and fixed candidate
         run: node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP"
       - name: Install the browser test driver
