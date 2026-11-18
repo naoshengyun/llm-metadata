@@ -1,5 +1,6 @@
 # 海外直连价格来源：B 组
 
+后续证据见 [海外疑难来源续查](foreign-source-followup.md)、[结构化来源续查](structured-source-followup.md) 与 [任务模型续查](plugin-price-followup.md)。本文件保留早期调查状态，相关缺口以续查结果为准。
 调查日：2026-11-18。对应 [#37](https://github.com/naoshengyun/llm-metadata/issues/37) 的来源清单；端点身份取自上游 `24d3f35cc82f21bdc2a049888c71af5fb4f4d7b4:dist/api/all.json`。本轮验证页面可读性和计费结构，不代表已核对全部模型价格。`公开可读` 指本轮实际打开取得正文/JSON；未登录、未调用付费推理。未列明的 TTL、币种或地区不能补猜。
 
 | endpoint | 官方价格来源与实际读取 | 原币 / 地区边界 | 抽取形态、限制与待补证据 |

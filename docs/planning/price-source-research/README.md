@@ -55,6 +55,19 @@
 | zhipuai | 17 | 17 | 3 | 3 | [domestic.md](domestic.md) |
 | zhipuai-coding-plan | 4 | 4 | 0 | 0 | [subscriptions.md](subscriptions.md) |
 
+## 2026-11-18 逐型号续查
+
+在原始 630 条清单上，本轮细查 136 条非订阅 provider/model 记录，未修改清单、报价或线上配置。
+
+| 范围 | 记录数 | 报告 |
+| --- | ---: | --- |
+| 国内 7 个端点 | 31 | [国内来源续查](domestic-source-followup.md) |
+| 海外 6 个端点 | 33 | [海外来源续查](foreign-source-followup.md) |
+| Thinking Machines、Morph、Meta、Inception、Upstage | 66 | [结构化价源续查](structured-source-followup.md) · [逐行机器证据](structured-source-evidence.json) |
+| H3 国内/国际、Grok 3 个、Omni 1 个 | 6 | [任务模型续查](plugin-price-followup.md) · [原生验证结果](plugin-price-validation.json) |
+
+136 是本轮检查范围，包含未取得基础价、平台适用性待证和附条件价的条目，不能当作 136 条已可发布。任务模型为 5 个唯一 ID，H3 国内/国际分开计数；Omni 的 Vertex 算例仅作可表达性验证，不替换 google 目录来源。Kimi 空 Markdown 已找到 HTML 读取路径；余下事实缺项见 [更新后的结论](findings.md)。早期报告保留为历史观察，后续报告修正相应结论。
+
 ## 数量核对
 
 | 项目 | 数量 |
@@ -79,4 +92,4 @@
 
 历史供应商 dashscope 与上游 alibaba-cn 的对应基于已维护北京端点价目，列为显式映射提案，实施时必须验证端点一致。原始价目身份保留。
 
-订阅记录保留在可视化目录。独立工具价 search_std 单列在 officialQuotes，不计入模型记录总数。Seedance 2.5 记录了点名增补及开放决定。
+订阅记录保留在可视化目录。独立工具价 search_std 单列在 officialQuotes，不计入模型记录总数。Seedance 2.5 记录了点名增补；#32 已确定 B，4K 两种输入条件完成目标部署结算验证前，整模型不进入公开同步 JSON。

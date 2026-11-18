@@ -1,0 +1,811 @@
+{
+  "checkedAt": "2026-11-18",
+  "inventorySha": "24d3f35cc82f21bdc2a049888c71af5fb4f4d7b4",
+  "purpose": "Research snapshot, not production quote catalog",
+  "rows": [
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3-8B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.195",
+        "cacheRead": "0.039",
+        "output": "0.60"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-35B-A3B-Base",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.54",
+        "cacheRead": "0.108",
+        "output": "1.335"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-397B-A17B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.65",
+        "cacheRead": "0.33",
+        "output": "7.50"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-397B-A17B:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.65",
+        "cacheRead": "0.33",
+        "output": "7.50"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-4B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.33",
+        "cacheRead": "0.066",
+        "output": "1.005"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-4B:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.33",
+        "cacheRead": "0.066",
+        "output": "1.005"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-9B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.30",
+        "cacheRead": "0.06",
+        "output": "0.807"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.5-9B-Base",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.30",
+        "cacheRead": "0.06",
+        "output": "0.807"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.6-27B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.86",
+        "cacheRead": "0.372",
+        "output": "5.595"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.6-35B-A3B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.45",
+        "cacheRead": "0.09",
+        "output": "1.335"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.6-35B-A3B:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.45",
+        "cacheRead": "0.09",
+        "output": "1.335"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.8-27B",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.6975",
+        "cacheRead": "0.1395",
+        "output": "5.595"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "Qwen/Qwen3.8-27B:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.6975",
+        "cacheRead": "0.1395",
+        "output": "5.595"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "deepseek-ai/DeepSeek-V3.1",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.695",
+        "cacheRead": "0.339",
+        "output": "4.215"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "deepseek-ai/DeepSeek-V4.1-Flash-1017:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.60",
+        "cacheRead": "0.12",
+        "output": "3.60"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "deepseek-ai/DeepSeek-V4.1-Flash:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.60",
+        "cacheRead": "0.12",
+        "output": "3.60"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "moonshotai/Kimi-K2.6",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "2.205",
+        "cacheRead": "0.441",
+        "output": "5.49"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "moonshotai/Kimi-K2.6:peft:131072",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "2.205",
+        "cacheRead": "0.441",
+        "output": "5.49"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.195",
+        "cacheRead": "0.039",
+        "output": "0.495"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.14",
+        "cacheRead": "0.228",
+        "output": "2.88"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.14",
+        "cacheRead": "0.228",
+        "output": "2.88"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "3.60",
+        "cacheRead": "0.72",
+        "output": "12.45"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "3.60",
+        "cacheRead": "0.72",
+        "output": "12.45"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.368",
+        "cacheRead": "0.0736",
+        "output": "0.99"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.368",
+        "cacheRead": "0.0736",
+        "output": "0.99"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.14",
+        "cacheRead": "0.228",
+        "output": "2.88"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.14",
+        "cacheRead": "0.228",
+        "output": "2.88"
+      },
+      "usesOriginalFields": true,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "openai/gpt-oss-120b",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.33",
+        "cacheRead": "0.066",
+        "output": "0.84"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "openai/gpt-oss-120b:peft:131072",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.33",
+        "cacheRead": "0.066",
+        "output": "0.84"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "openai/gpt-oss-20b",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.18",
+        "cacheRead": "0.036",
+        "output": "0.45"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.87",
+        "cacheRead": "0.374",
+        "output": "4.68"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling-Small",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.58",
+        "cacheRead": "0.116",
+        "output": "1.44"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling-Small:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.58",
+        "cacheRead": "0.116",
+        "output": "1.44"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling-Small:peft:262144:sampling-nvfp4",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/serverless.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.30",
+        "cacheRead": "0.06",
+        "output": "1.20"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.87",
+        "cacheRead": "0.374",
+        "output": "4.68"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "thinkingmachines/Inkling:peft:262144:sampling-nvfp4",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/serverless.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "1.00",
+        "cacheRead": "0.17",
+        "output": "4.05"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "zai-org/GLM-5.3-Flash:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "0.84",
+        "cacheRead": "0.168",
+        "output": "2.11"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "thinkingmachines",
+      "modelId": "zai-org/GLM-5.3:peft:262144",
+      "source": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "listedSymbol": "$",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "input": "3.78",
+        "cacheRead": "0.756",
+        "output": "12.15"
+      },
+      "usesOriginalFields": false,
+      "endpointCaveat": "Anthropic-compatible docs say prompt cache_control ignored and cache usage null"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "auto",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {},
+      "status": "no-price-row",
+      "note": "auto documented routing, independent official rate missing"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-dsv41flash",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.12000000",
+        "cached_prompt": "0.008000000",
+        "cache_write": "0",
+        "completion": "0.8000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-dsv41flash-1017",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.12000000",
+        "cached_prompt": "0.008000000",
+        "cache_write": "0",
+        "completion": "0.8000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-dsv4flash",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.141953125000000",
+        "cached_prompt": "0.0359375000000",
+        "cache_write": "0",
+        "completion": "0.399625000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-glm52-744b",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "1.19000000",
+        "cached_prompt": "0.1955000000",
+        "cache_write": "0",
+        "completion": "6.000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-glm53-744b",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "1.19000000",
+        "cached_prompt": "0.1955000000",
+        "cache_write": "0",
+        "completion": "6.000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-glm53flash",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.2000000",
+        "cached_prompt": "0.04000000",
+        "cache_write": "0",
+        "completion": "0.7000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-kimik3",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "2.5000000",
+        "cached_prompt": "0.29000000",
+        "cache_write": "0",
+        "completion": "14.000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-kimik3-fast",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "6.000000",
+        "cached_prompt": "0.6000000",
+        "cache_write": "0",
+        "completion": "22.5000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-kimik31",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "2.5000000",
+        "cached_prompt": "0.29000000",
+        "cache_write": "0",
+        "completion": "14.000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-v3-fast",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.8000000",
+        "completion": "1.2000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    },
+    {
+      "providerId": "morph",
+      "modelId": "morph-v3-large",
+      "source": "https://www.morphllm.com/api/models/json?prices=list",
+      "currency": "USD",
+      "unit": "per_million_tokens",
+      "basePrices": {
+        "prompt": "0.9000000",
+        "completion": "1.9000000"
+      },
+      "status": "exact-source-row",
+      "note": "cache_write 0 in source is surcharge semantics, not permission to make uncached prompt free"
+    }
+  ],
+  "httpEvidence": [
+    {
+      "name": "thinking-models",
+      "url": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "finalUrl": "https://tinker-docs.thinkingmachines.ai/tinker/models.json",
+      "httpStatus": 200,
+      "bytes": 17968,
+      "sha256": "6ee9db5093484004a194a08633d206eb96d2d1c05b4e03b0012b0476bd9c9736"
+    },
+    {
+      "name": "thinking-serverless",
+      "url": "https://tinker-docs.thinkingmachines.ai/tinker/serverless.json",
+      "finalUrl": "https://tinker-docs.thinkingmachines.ai/tinker/serverless.json",
+      "httpStatus": 200,
+      "bytes": 816,
+      "sha256": "c734012adb74442882112340197237ec0df1c4353dd9f8abc6859e1b082e9553"
+    },
+    {
+      "name": "thinking-pricing",
+      "url": "https://tinker-docs.thinkingmachines.ai/tinker/models/models_and_pricing/",
+      "finalUrl": "https://tinker-docs.thinkingmachines.ai/tinker/models/models_and_pricing/",
+      "httpStatus": 200,
+      "bytes": 280972,
+      "sha256": "cec9e34d5af4023861f0780f33090d16df61d14dceeaddaec9a77a4114feb7f9"
+    },
+    {
+      "name": "thinking-anthropic",
+      "url": "https://tinker-docs.thinkingmachines.ai/inference/anthropic/",
+      "finalUrl": "https://tinker-docs.thinkingmachines.ai/inference/anthropic/",
+      "httpStatus": 200,
+      "bytes": 234389,
+      "sha256": "2f32c14ec200beb43c3b71e95b598137edebb716074d18b4c12505c32829a9a3"
+    },
+    {
+      "name": "inception",
+      "url": "https://docs.inceptionlabs.ai/get-started/models.md",
+      "finalUrl": "https://docs.inceptionlabs.ai/get-started/models.md",
+      "httpStatus": 200,
+      "bytes": 14208,
+      "sha256": "142cb02f6549a9388979ef791ada1b8721984940e2962f9da4b7152809a2773a"
+    },
+    {
+      "name": "meta",
+      "url": "https://dev.meta.ai/docs/pricing-rate-limits",
+      "finalUrl": "https://dev.meta.ai/docs/pricing-rate-limits",
+      "httpStatus": 200,
+      "bytes": 297564,
+      "sha256": "77f1b0bed34b4354d5dda829c34fa431cacad0dd05bf18155e91fdcb0abf73cd"
+    },
+    {
+      "name": "morph",
+      "url": "https://www.morphllm.com/pricing",
+      "finalUrl": "https://www.morphllm.com/pricing",
+      "httpStatus": 200,
+      "bytes": 159109,
+      "sha256": "66cf8543de0e91c1becb94162362339468e1921d40335031a0980cab90be1e16"
+    },
+    {
+      "name": "upstage",
+      "url": "https://www.upstage.ai/pricing/api",
+      "finalUrl": "https://www.upstage.ai/pricing/api",
+      "httpStatus": 200,
+      "bytes": 178960,
+      "sha256": "7ff062961d52a3183dd821824d56ed58b5c440b6e7993ec49985f2f5b41461d0"
+    },
+    {
+      "name": "morph-json",
+      "url": "https://www.morphllm.com/api/models/json?prices=list",
+      "finalUrl": "https://www.morphllm.com/api/models/json?prices=list",
+      "sha256": "b149bb512ffa54ac998dc93a638619b942a18f94cacc920b22403e0ea107ac0f",
+      "bytes": 19734
+    },
+    {
+      "name": "morph-docs",
+      "url": "https://docs.morphllm.com/llms.txt",
+      "finalUrl": "https://docs.morphllm.com/llms.txt",
+      "sha256": "80d74473a17d30995bbd498740c38f28b92a51c7ba9ea4aff8865a9f2789bfe5",
+      "bytes": 24620
+    },
+    {
+      "name": "upstage-history",
+      "url": "https://console.upstage.ai/docs/models/history",
+      "finalUrl": "https://console.upstage.ai/docs/models/history",
+      "sha256": "48c6166bd95f96a49d5149dde2faa547b704a2e419b28d6566d931014d2f6d30",
+      "bytes": 715751
+    },
+    {
+      "name": "upstage-mini4",
+      "url": "https://console.upstage.ai/docs/models/solar-mini-4",
+      "finalUrl": "https://console.upstage.ai/docs/models/solar-mini-4",
+      "sha256": "12935cc9feba8b452d9be3c329f80a988ffc71e2fdeb93269d13912c90887a29",
+      "bytes": 260361
+    },
+    {
+      "name": "morph-terms",
+      "url": "https://www.morphllm.com/privacy/tos",
+      "finalUrl": "https://www.morphllm.com/privacy/tos",
+      "sha256": "b2a4d0ddeb3456df45818ec550484d6e3ca488b841e73bf2a1befa6af30c1df3",
+      "bytes": 215017
+    }
+  ]
+}

@@ -1,0 +1,1022 @@
+{
+  "retrieved": "2026-11-18",
+  "revision": "f2aa91232ed3e5878a614762ace6736a2b74257f",
+  "currency": "CNY",
+  "normalization": "USD * 7; domestic CNY unchanged",
+  "cases": [
+    {
+      "provider": "minimax-cn",
+      "model": "MiniMax-H3",
+      "plugin": "hailuo",
+      "endpoint": "https://api.minimax.cn/v2/video_generation",
+      "source": "https://platform.minimax.cn/docs/pricing/overview",
+      "expression": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.8 : 0.5) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.2 : 0))",
+      "vectors": [
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 0,
+            "input_video_seconds": 0
+          },
+          "expected": 2.5
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 5,
+            "input_video_seconds": 0
+          },
+          "expected": 2.5
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 6,
+            "input_video_seconds": 0
+          },
+          "expected": 2.7
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 9,
+            "input_video_seconds": 2.5
+          },
+          "expected": 4.55
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 0,
+            "input_video_seconds": 0
+          },
+          "expected": 4.0
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 5,
+            "input_video_seconds": 0
+          },
+          "expected": 4.0
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 6,
+            "input_video_seconds": 0
+          },
+          "expected": 4.2
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 9,
+            "input_video_seconds": 2.5
+          },
+          "expected": 6.8
+        }
+      ]
+    },
+    {
+      "provider": "minimax",
+      "model": "MiniMax-H3",
+      "plugin": "hailuo",
+      "endpoint": "https://api.minimax.io/v2/video_generation",
+      "source": "https://platform.minimax.io/docs/pricing/overview",
+      "expression": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.91 : 0.56) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.28 : 0))",
+      "vectors": [
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 0,
+            "input_video_seconds": 0
+          },
+          "expected": 2.8
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 5,
+            "input_video_seconds": 0
+          },
+          "expected": 2.8
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 6,
+            "input_video_seconds": 0
+          },
+          "expected": 3.08
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "768P",
+            "input_images": 9,
+            "input_video_seconds": 2.5
+          },
+          "expected": 5.32
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 0,
+            "input_video_seconds": 0
+          },
+          "expected": 4.55
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 5,
+            "input_video_seconds": 0
+          },
+          "expected": 4.55
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 6,
+            "input_video_seconds": 0
+          },
+          "expected": 4.83
+        },
+        {
+          "facts": {
+            "seconds": 5,
+            "resolution": "2K",
+            "input_images": 9,
+            "input_video_seconds": 2.5
+          },
+          "expected": 7.945
+        }
+      ]
+    },
+    {
+      "provider": "xai",
+      "model": "grok-imagine-video",
+      "plugin": "xai",
+      "endpoint": "https://api.x.ai/v1/videos/generations",
+      "source": "https://docs.x.ai/developers/models/grok-imagine-video",
+      "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.35 : 0.49) + u(\"input_images\") * 0.014 + u(\"input_video_seconds\") * 0.07)",
+      "vectors": [
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 0,
+            "moderated": false,
+            "input_video_seconds": 0
+          },
+          "expected": 2.8
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": false,
+            "input_video_seconds": 0
+          },
+          "expected": 2.828
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": true,
+            "input_video_seconds": 0
+          },
+          "expected": 2.828
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 0,
+            "moderated": false,
+            "input_video_seconds": 0
+          },
+          "expected": 3.92
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": false,
+            "input_video_seconds": 0
+          },
+          "expected": 3.948
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": true,
+            "input_video_seconds": 0
+          },
+          "expected": 3.948
+        },
+        {
+          "label": "edit fractional seconds",
+          "facts": {
+            "seconds": 8.7,
+            "resolution": "720p",
+            "input_images": 0,
+            "input_video_seconds": 8.7,
+            "moderated": false
+          },
+          "expected": 4.872
+        },
+        {
+          "label": "extension generated portion only; source applicability inferred from docs",
+          "facts": {
+            "seconds": 6,
+            "resolution": "480p",
+            "input_images": 0,
+            "input_video_seconds": 8,
+            "moderated": false
+          },
+          "expected": 2.66
+        }
+      ]
+    },
+    {
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5",
+      "plugin": "xai",
+      "endpoint": "https://api.x.ai/v1/videos/generations",
+      "source": "https://docs.x.ai/developers/models/grok-imagine-video-1.5",
+      "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.56 : u(\"resolution\") == \"720p\" ? 0.98 : 1.75) + u(\"input_images\") * 0.07)",
+      "vectors": [
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 4.48
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 4.62
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 4.62
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 7.84
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 7.98
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 7.98
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 14.0
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 14.14
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 14.14
+        }
+      ]
+    },
+    {
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5-lite",
+      "plugin": "xai",
+      "endpoint": "https://api.x.ai/v1/videos/generations",
+      "source": "https://docs.x.ai/developers/models/grok-imagine-video-1.5-lite",
+      "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.14 : u(\"resolution\") == \"720p\" ? 0.21 : 0.98) + u(\"input_images\") * 0.07)",
+      "vectors": [
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 1.12
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 1.26
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "480p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 1.26
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 1.68
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 1.82
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "720p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 1.82
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 0,
+            "moderated": false
+          },
+          "expected": 7.84
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 2,
+            "moderated": false
+          },
+          "expected": 7.98
+        },
+        {
+          "facts": {
+            "seconds": 8,
+            "resolution": "1080p",
+            "input_images": 2,
+            "moderated": true
+          },
+          "expected": 7.98
+        }
+      ]
+    },
+    {
+      "provider": "vertex-ai",
+      "inventoryProvider": "google",
+      "applicability": "Vertex official old Omni price; NOT a verified current Developer API quote for google inventory",
+      "model": "gemini-omni-flash-preview",
+      "plugin": "vertex-ai",
+      "endpoint": "https://aiplatform.googleapis.com/v1beta1/projects/{project}/locations/global/interactions",
+      "source": "https://cloud.google.com/model-garden/pricing?hl=en_GB",
+      "expression": "tier(\"official-vertex-omni\", (u(\"input_tokens\") * 10.5 + u(\"output_tokens\") * 63 + u(\"video_tokens\") * 122.5) / 1000000)",
+      "vectors": [
+        {
+          "facts": {
+            "input_tokens": 1000000,
+            "output_tokens": 0,
+            "video_tokens": 0
+          },
+          "expected": 10.5
+        },
+        {
+          "facts": {
+            "input_tokens": 0,
+            "output_tokens": 1000000,
+            "video_tokens": 0
+          },
+          "expected": 63
+        },
+        {
+          "facts": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "video_tokens": 5792
+          },
+          "expected": 0.70952
+        },
+        {
+          "facts": {
+            "input_tokens": 1120,
+            "output_tokens": 100,
+            "video_tokens": 28960
+          },
+          "expected": 3.56566
+        }
+      ]
+    }
+  ],
+  "nativeValidation": {
+    "image": "calciumion/new-api@sha256:096feb95eed27a8e4f34d4b4908d7d216d019b79349e70ca9b74ba947986fdd9",
+    "revision": "f2aa91232ed3e5878a614762ace6736a2b74257f",
+    "configResults": [
+      {
+        "provider": "minimax-cn",
+        "model": "MiniMax-H3",
+        "expression": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.8 : 0.5) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.2 : 0))",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.8 : 0.5) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.2 : 0))",
+        "plugin": "hailuo"
+      },
+      {
+        "provider": "minimax",
+        "model": "MiniMax-H3",
+        "expression": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.91 : 0.56) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.28 : 0))",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-h3\", (u(\"seconds\") + u(\"input_video_seconds\")) * (u(\"resolution\") == \"2K\" ? 0.91 : 0.56) + (u(\"input_images\") > 5 ? (u(\"input_images\") - 5) * 0.28 : 0))",
+        "plugin": "hailuo"
+      },
+      {
+        "provider": "xai",
+        "model": "grok-imagine-video",
+        "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.35 : 0.49) + u(\"input_images\") * 0.014 + u(\"input_video_seconds\") * 0.07)",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.35 : 0.49) + u(\"input_images\") * 0.014 + u(\"input_video_seconds\") * 0.07)",
+        "plugin": "xai"
+      },
+      {
+        "provider": "xai",
+        "model": "grok-imagine-video-1.5",
+        "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.56 : u(\"resolution\") == \"720p\" ? 0.98 : 1.75) + u(\"input_images\") * 0.07)",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.56 : u(\"resolution\") == \"720p\" ? 0.98 : 1.75) + u(\"input_images\") * 0.07)",
+        "plugin": "xai"
+      },
+      {
+        "provider": "xai",
+        "model": "grok-imagine-video-1.5-lite",
+        "expression": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.14 : u(\"resolution\") == \"720p\" ? 0.21 : 0.98) + u(\"input_images\") * 0.07)",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-xai\", u(\"seconds\") * (u(\"resolution\") == \"480p\" ? 0.14 : u(\"resolution\") == \"720p\" ? 0.21 : 0.98) + u(\"input_images\") * 0.07)",
+        "plugin": "xai"
+      },
+      {
+        "provider": "vertex-ai",
+        "model": "gemini-omni-flash-preview",
+        "expression": "tier(\"official-vertex-omni\", (u(\"input_tokens\") * 10.5 + u(\"output_tokens\") * 63 + u(\"video_tokens\") * 122.5) / 1000000)",
+        "applicability": "Vertex official old Omni price; NOT a verified current Developer API quote for google inventory",
+        "compatible": true,
+        "inherited": true,
+        "effective": "tier(\"official-vertex-omni\", (u(\"input_tokens\") * 10.5 + u(\"output_tokens\") * 63 + u(\"video_tokens\") * 122.5) / 1000000)",
+        "plugin": "vertex-ai"
+      }
+    ],
+    "expressionResults": [
+      {
+        "cny": 2.5,
+        "index": 0,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          1250000,
+          1000000
+        ]
+      },
+      {
+        "cny": 2.5,
+        "index": 1,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          1250000,
+          1000000
+        ]
+      },
+      {
+        "cny": 2.7,
+        "index": 2,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          1350000,
+          1080000
+        ]
+      },
+      {
+        "cny": 4.55,
+        "index": 3,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          2275000,
+          1820000
+        ]
+      },
+      {
+        "cny": 4,
+        "index": 4,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          2000000,
+          1600000
+        ]
+      },
+      {
+        "cny": 4,
+        "index": 5,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          2000000,
+          1600000
+        ]
+      },
+      {
+        "cny": 4.2,
+        "index": 6,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          2100000,
+          1680000
+        ]
+      },
+      {
+        "cny": 6.8,
+        "index": 7,
+        "model": "MiniMax-H3",
+        "provider": "minimax-cn",
+        "quotas": [
+          3400000,
+          2720000
+        ]
+      },
+      {
+        "cny": 2.8000000000000003,
+        "index": 0,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          1400000,
+          1120000
+        ]
+      },
+      {
+        "cny": 2.8000000000000003,
+        "index": 1,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          1400000,
+          1120000
+        ]
+      },
+      {
+        "cny": 3.08,
+        "index": 2,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          1540000,
+          1232000
+        ]
+      },
+      {
+        "cny": 5.32,
+        "index": 3,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          2660000,
+          2128000
+        ]
+      },
+      {
+        "cny": 4.55,
+        "index": 4,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          2275000,
+          1820000
+        ]
+      },
+      {
+        "cny": 4.55,
+        "index": 5,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          2275000,
+          1820000
+        ]
+      },
+      {
+        "cny": 4.83,
+        "index": 6,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          2415000,
+          1932000
+        ]
+      },
+      {
+        "cny": 7.945,
+        "index": 7,
+        "model": "MiniMax-H3",
+        "provider": "minimax",
+        "quotas": [
+          3972500,
+          3178000
+        ]
+      },
+      {
+        "cny": 2.8,
+        "index": 0,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1400000,
+          1120000
+        ]
+      },
+      {
+        "cny": 2.828,
+        "index": 1,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1414000,
+          1131200
+        ]
+      },
+      {
+        "cny": 2.828,
+        "index": 2,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1414000,
+          1131200
+        ]
+      },
+      {
+        "cny": 3.92,
+        "index": 3,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1960000,
+          1568000
+        ]
+      },
+      {
+        "cny": 3.948,
+        "index": 4,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1974000,
+          1579200
+        ]
+      },
+      {
+        "cny": 3.948,
+        "index": 5,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1974000,
+          1579200
+        ]
+      },
+      {
+        "cny": 4.872,
+        "index": 6,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          2436000,
+          1948800
+        ]
+      },
+      {
+        "cny": 2.6599999999999997,
+        "index": 7,
+        "model": "grok-imagine-video",
+        "provider": "xai",
+        "quotas": [
+          1330000,
+          1064000
+        ]
+      },
+      {
+        "cny": 4.48,
+        "index": 0,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          2240000,
+          1792000
+        ]
+      },
+      {
+        "cny": 4.62,
+        "index": 1,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          2310000,
+          1848000
+        ]
+      },
+      {
+        "cny": 4.62,
+        "index": 2,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          2310000,
+          1848000
+        ]
+      },
+      {
+        "cny": 7.84,
+        "index": 3,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          3920000,
+          3136000
+        ]
+      },
+      {
+        "cny": 7.9799999999999995,
+        "index": 4,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          3990000,
+          3192000
+        ]
+      },
+      {
+        "cny": 7.9799999999999995,
+        "index": 5,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          3990000,
+          3192000
+        ]
+      },
+      {
+        "cny": 14,
+        "index": 6,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          7000000,
+          5600000
+        ]
+      },
+      {
+        "cny": 14.14,
+        "index": 7,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          7070000,
+          5656000
+        ]
+      },
+      {
+        "cny": 14.14,
+        "index": 8,
+        "model": "grok-imagine-video-1.5",
+        "provider": "xai",
+        "quotas": [
+          7070000,
+          5656000
+        ]
+      },
+      {
+        "cny": 1.12,
+        "index": 0,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          560000,
+          448000
+        ]
+      },
+      {
+        "cny": 1.2600000000000002,
+        "index": 1,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          630000,
+          504000
+        ]
+      },
+      {
+        "cny": 1.2600000000000002,
+        "index": 2,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          630000,
+          504000
+        ]
+      },
+      {
+        "cny": 1.68,
+        "index": 3,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          840000,
+          672000
+        ]
+      },
+      {
+        "cny": 1.8199999999999998,
+        "index": 4,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          910000,
+          728000
+        ]
+      },
+      {
+        "cny": 1.8199999999999998,
+        "index": 5,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          910000,
+          728000
+        ]
+      },
+      {
+        "cny": 7.84,
+        "index": 6,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          3920000,
+          3136000
+        ]
+      },
+      {
+        "cny": 7.9799999999999995,
+        "index": 7,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          3990000,
+          3192000
+        ]
+      },
+      {
+        "cny": 7.9799999999999995,
+        "index": 8,
+        "model": "grok-imagine-video-1.5-lite",
+        "provider": "xai",
+        "quotas": [
+          3990000,
+          3192000
+        ]
+      },
+      {
+        "cny": 10.5,
+        "index": 0,
+        "model": "gemini-omni-flash-preview",
+        "provider": "vertex-ai",
+        "quotas": [
+          5250000,
+          4200000
+        ]
+      },
+      {
+        "cny": 63,
+        "index": 1,
+        "model": "gemini-omni-flash-preview",
+        "provider": "vertex-ai",
+        "quotas": [
+          31500000,
+          25200000
+        ]
+      },
+      {
+        "cny": 0.70952,
+        "index": 2,
+        "model": "gemini-omni-flash-preview",
+        "provider": "vertex-ai",
+        "quotas": [
+          354760,
+          283808
+        ]
+      },
+      {
+        "cny": 3.56566,
+        "index": 3,
+        "model": "gemini-omni-flash-preview",
+        "provider": "vertex-ai",
+        "quotas": [
+          1782830,
+          1426264
+        ]
+      }
+    ],
+    "quotaPerUnit": 500000,
+    "groupRatios": [
+      1,
+      0.8
+    ],
+    "actualSupplierCalls": false,
+    "nativeContainerRemoved": true,
+    "auditScriptSha256": "a9f8fcaf57469eb20a91068b7c23d4ce9433aa2de77cd55c0d260153875543ae",
+    "evaluatorSha256": "b138f14fe75c841945ca744db27e5d5feda9862a11a7c7ef6fdd2dc90311e2f8"
+  }
+}

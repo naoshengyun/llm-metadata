@@ -9,15 +9,33 @@
 
 每条模型见 [完整数据](inventory.json)，按供应商浏览见 [来源索引](README.md)。当前价格源为站点现有版本，基线目录取较新的固定上游；记录明确区分两个来源，避免把上游新增当成已经上线。
 
-## 已找到的实际来源障碍
+## 2026-11-18 续查结果
 
-国内 12 个按量端点均有调查结果，其中 11 个找到可读价格入口，SenseNova 当前端点仍缺原币、单位和现价证据。Kimi 官方 Markdown 空表，但 HTML 内嵌价目可读；小米迁移到了新的官方静态 Markdown。入口找到后仍要逐模型匹配当前价目。[国内研究](domestic.md)
+本轮在固定清单中逐项检查 136 条非订阅记录。国内 31、海外疑难端点 33、结构化与其他价表 66、任务模型 6，范围没有重叠。取得报价的条目继续保留地区、端点、单位、正常基础价与历史状态，未以自部署或采购价替换官方基准。用户已确定通过 New API 倍率打折，不增加促销到期机制。
 
-海外 22 个按量端点均有调查结果。Arcee 当前价格表缺目标模型；Cohere API 模型表、Kimi 国际空表、Nova 直连价目尚需进一步采集；Poolside 仅取得限时免费说明；Perplexity 部分旧型号需核对迁移后的计价关系。[海外研究 A](foreign-a.md) · [海外研究 B](foreign-b.md)
+- Kimi 国内与国际各 6 个型号已从 HTML 内嵌表取得金额。Markdown 空表是提取问题，无需永久人工维护例外。
+- 国内补齐 LongCat 2.0 原价、小米 V2.5/Pro 历史 CNY 价、腾讯 hy3-preview 的官方计费迁移关系、阶跃 ASR 当前价与未来价的区分。[国内续查](domestic-source-followup.md)
+- Cohere 17 条拆成 5 条数字价、4 条附条件免费、5 条缺数字价、3 条精确身份/映射缺口。Arcee 找到目标模型 USD 0.25/0.80 官方发布价，缓存仍缺。[海外续查](foreign-source-followup.md)
+- Thinking Machines 38 个 ID 全匹配官方 JSON。Morph 基础价 JSON 必须带 `?prices=list`，已匹配 11/12，保留完整精度。Meta、Inception 和 Upstage 逐型号价目及缺项分别记录。[结构化续查](structured-source-followup.md)
+- H3 国内/国际、Grok 3 个、Omni Vertex 对照价共 6 份表达式均通过 rc50 原生同步、预览、保存与插件继承读回；46 组用量和倍率 1/0.8 共 92 组扣额结果通过。Omni Vertex 对照不证明 google 目录当前价适用，也没有进行供应商真实消费验收。[任务模型续查](plugin-price-followup.md) · [结果](plugin-price-validation.json)
 
-Sarvam 官方分项价目为 INR，本轮未找到可替代的官方 USD 账单价表。现有 USD 乘 7 政策无法直接用于此价目，需保留原币证据和缺口，不能擅自使用美元 benchmark 比较值定价。[Sarvam 官方价表](https://docs.sarvam.ai/api/getting-started/pricing)
+## 已落实到具体条目的剩余事实缺口
 
-Thinking Machines 提供官方 JSON，可直接读取后再按模型身份映射；多个供应商存在未来生效价格、促销和地区差价，解析器需要保留条件。[海外研究 B](foreign-b.md)
+| 范围 | 仍须补证 |
+| --- | --- |
+| 国内 | SenseNova 6.8 Flash Lite 实际金额/币种/单位；百灵 Tiny、3.2 Flash 正常基础价；LongCat 2.5 Preview 身份和基础价；MiMo V2.5 Pro UltraSpeed 正常基础价；两条 Step TTS 在 11 月 23 日前的价格 |
+| Cohere | 12 条附条件免费、缺价或 ID 不一致的记录，逐条见报告，不能一概补零 |
+| Arcee | Trinity Large Thinking 缓存完整费率与当前适用性 |
+| Nova | 两个直连型号的正式价目，不能借用未证实同价的 Bedrock 表 |
+| Poolside | 三个精确型号的常规价及免费条件适用范围 |
+| Perplexity | 四个旧 Sonar ID 到现行价格的官方映射 |
+| Morph、Upstage | `auto` 独立计价规则；旧 `solar-mini` 完整分项关系 |
+| Google | 旧 `gemini-omni-flash-preview` 的 Developer API 当前适用价源，历史索引与 Vertex 价格均不可冒充 |
+| 其他证据 | Meta、Inception 的明确币种字段依据；Thinking Machines 兼容协议下缓存用量语义；任务插件真实供应商回包与结算验证 |
+
+Sarvam 官方分项价目为 INR，沿用既定非 CNY/USD 处理规则，不以美元 benchmark 填价，也不再提出新的汇率决策。[官方价表](https://docs.sarvam.ai/api/getting-started/pricing)
+
+来源缺口、官方服务退役、停止新用户访问、官方撤价是不同事实。没有证据证明撤价时不触发 #33 的删除流程；不因官方服务退役删除本方自部署/其他供应商接入的型号。上述剩余项暂未产生必须交给用户的新业务选择，批准的人工维护例外仍为空。
 
 ## 交付状态
 
