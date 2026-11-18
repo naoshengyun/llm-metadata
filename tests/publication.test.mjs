@@ -1,3 +1,4 @@
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOfficialSnapshot } from '../scripts/build-official-cny.mjs';
@@ -130,13 +131,11 @@ test('S: source policy, original catalog date and native baseline remain explici
   assert.deepEqual(r.source.policy, { USD: 7, CNY: 1, USDExchangeRate: 1, QuotaPerUnit: 500000 });
 });
 test('S: maintained candidate keeps all136 reference rows and missing-five note for a two-model test selection', () => {
-  const read = (name) => JSON.parse(readFileSync(new URL('../data/cny/' + name, import.meta.url)));
-  const reference = read('coverage-reference.json');
+  const historical = readHistoricalOfficialInputs();
+  const { reference } = historical;
   const a = buildOfficialSnapshot({
     sourceSha: 'd5a84ca10d8599343370c1541828439a56b8dd1b',
-    catalog: read('official-catalog.json'),
-    reference,
-    selection: read('proposed-selection.json').selection,
+    ...historical,
   }).artifact;
   const selected = { ...options, models: ['kimi-k3.1-pro', 'claude-sonnet-4-5'] };
   const r = buildModelRelease(a, selected);
