@@ -21,6 +21,10 @@ const messages = {
     usage: 'Actual billing awaiting verification',
     seedanceImport: 'Model expression import evidence',
     seedanceUsage: 'Target deployment billing still pending for both 4K cases',
+    resolution: 'Resolution',
+    withoutVideo: 'Without input video',
+    withVideo: 'With input video',
+    videoTokenUnit: 'CNY per million billable video tokens',
   },
   zh: {
     title: '官方价目',
@@ -40,6 +44,10 @@ const messages = {
     usage: '实际计费待验证',
     seedanceImport: '模型表达式导入已有证据',
     seedanceUsage: '目标部署的两种 4K 实际计费均待验证',
+    resolution: '分辨率',
+    withoutVideo: '无视频输入',
+    withVideo: '有视频输入',
+    videoTokenUnit: 'CNY / 每百万计费视频 Token',
   },
   ja: {
     title: '公式料金表',
@@ -59,6 +67,10 @@ const messages = {
     usage: '実際の課金は検証待ち',
     seedanceImport: 'モデル料金式の取り込み実績あり',
     seedanceUsage: '対象環境での 4K 二条件の実課金は検証待ち',
+    resolution: '解像度',
+    withoutVideo: '入力動画なし',
+    withVideo: '入力動画あり',
+    videoTokenUnit: '100万課金対象動画トークンあたりの CNY',
   },
 } as const;
 
@@ -70,6 +82,45 @@ function PriceFields({ label, price }: { label: string; price: unknown }) {
       <pre className="mt-1 rounded border p-2 text-xs break-all whitespace-pre-wrap">
         {JSON.stringify(price, null, 2)}
       </pre>
+    </div>
+  );
+}
+
+function VideoReferenceRates({ price }: { price: unknown }) {
+  const { locale } = useI18n();
+  const msg = messages[locale];
+  if (!price || typeof price !== 'object' || !('rows' in price) || !Array.isArray(price.rows))
+    return <PriceFields label={msg.original} price={price} />;
+
+  return (
+    <div className="space-y-2">
+      <table className="w-full border-collapse text-left text-sm">
+        <caption className="mb-2 text-left font-medium">{msg.videoTokenUnit}</caption>
+        <thead className="bg-muted">
+          <tr>
+            {[msg.resolution, msg.withoutVideo, msg.withVideo].map((label) => (
+              <th key={label} scope="col" className="px-2 py-1.5">
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="font-mono tabular-nums">
+          {price.rows.map(([resolution, noInput, input]) => (
+            <tr key={resolution} className="border-b">
+              <th scope="row" className="px-2 py-1.5 text-left font-medium">
+                {resolution}
+              </th>
+              <td className="px-2 py-1.5">{noInput}</td>
+              <td className="px-2 py-1.5">{input}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {'minimumUsage' in price && typeof price.minimumUsage === 'string' && (
+        <p>{price.minimumUsage}</p>
+      )}
+      {'draft' in price && typeof price.draft === 'string' && <p>{price.draft}</p>}
     </div>
   );
 }
@@ -164,20 +215,17 @@ function Quote({ quote }: { quote: PriceQuote }) {
           )}
         </ul>
       )}
-      <div className="grid gap-2 sm:grid-cols-2">
-        <PriceFields
-          label={`${quote.originalCurrencyEligible === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${quote.sourceUnit ? ' · ' + quote.sourceUnit : ''}`}
-          price={quote.sourcePrice}
-        />
-        <PriceFields
-          label={msg.cny}
-          price={
-            quote.cnyTaskTiers ??
-            quote.cnyCost ??
-            (quote.verification ? quote.sourcePrice : undefined)
-          }
-        />
-      </div>
+      {quote.verification ? (
+        <VideoReferenceRates price={quote.sourcePrice} />
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <PriceFields
+            label={`${quote.originalCurrencyEligible === false ? msg.reported : msg.original} · ${quote.sourceCurrency ?? msg.unavailable}${quote.sourceUnit ? ' · ' + quote.sourceUnit : ''}`}
+            price={quote.sourcePrice}
+          />
+          <PriceFields label={msg.cny} price={quote.cnyTaskTiers ?? quote.cnyCost} />
+        </div>
+      )}
     </article>
   );
 }

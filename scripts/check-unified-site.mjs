@@ -195,13 +195,24 @@ try {
       'Target deployment billing still pending for both 4K cases',
     ])
       await expectVisible(page.getByText(name, { exact: false }).first());
-    const fullTariff = page.locator('pre').first();
-    const seedance = JSON.parse(await fullTariff.innerText());
-    assert.deepEqual(seedance.rows, [
-      ['480p,720p', 70, 42],
-      ['1080p', 77, 46],
-      ['4K', 31, 19],
-    ]);
+    const fullTariff = page.getByRole('table', { name: 'CNY per million billable video tokens' });
+    const rows = fullTariff.locator('tbody tr');
+    assert.deepEqual(
+      await rows.evaluateAll((entries) =>
+        entries.map((row) => [...row.cells].map((cell) => cell.textContent)),
+      ),
+      [
+        ['480p,720p', '70', '42'],
+        ['1080p', '77', '46'],
+        ['4K', '31', '19'],
+      ],
+    );
+    await expectVisible(
+      page.getByText('actual charged token usage is API usage.completion_tokens', { exact: false }),
+    );
+    await expectVisible(
+      page.getByText('Draft and final are two separately charged tasks', { exact: false }),
+    );
     await fullTariff.scrollIntoViewIfNeeded();
     await snapshot(page, viewport.width, 'seedance');
 
