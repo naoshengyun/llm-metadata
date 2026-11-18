@@ -38,7 +38,7 @@ jobs:
           node scripts/cny-pages-release.mjs snapshot https://naoshengyun.github.io/llm-metadata/ "$RUNNER_TEMP/prior" "" retain
       - name: Build the simulated merge and fixed candidate
         run: |
-          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP"
+          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP" --check-base
           if [ -f "$RUNNER_TEMP/prior/current.json" ]; then
             node scripts/cny-pages-release.mjs seal "$RUNNER_TEMP/site" "$RUNNER_TEMP/prior" > "$RUNNER_TEMP/publication-receipt.json"
           fi

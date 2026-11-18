@@ -94,7 +94,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run test:cny
-          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP"
+          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP" --check-base
           npm --prefix "$RUNNER_TEMP/browser" install --ignore-scripts --no-audit --no-fund playwright@1.56.1
           node scripts/check-unified-site.mjs "$RUNNER_TEMP/site" "$RUNNER_TEMP/browser/node_modules/playwright/index.mjs" "$RUNNER_TEMP/browser-evidence"
           test "$(git status --porcelain --untracked-files=all)" = ''

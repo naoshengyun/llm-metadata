@@ -1,10 +1,11 @@
 /** Local entry point shared by the PR check and the Pages build. */
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const [output] = process.argv.slice(2);
+const [output, option] = process.argv.slice(2);
+assert.ok(!option || option === '--check-base', 'Unknown reviewed build option');
 assert.ok(output, 'Pass an existing workspace for exclusive site and candidate outputs');
 const work = resolve(output);
 const priorPointer = resolve(work, 'prior/current.json');
@@ -14,14 +15,41 @@ const run = (script, args = []) =>
   execFileSync(process.execPath, [script, ...args], { stdio: 'inherit' });
 
 run('scripts/check-cny-effective-time.mjs');
-run('scripts/build-unified-cny.mjs', [
-  resolve(work, 'candidate'),
+const candidateArgs = (directory, baseline) => [
+  directory,
   'data/cny/unified-policy.json',
   'data/cny/official-catalog.json',
   'data/cny/proposed-selection.json',
   '',
-  ...(previous ? [resolve(previous)] : []),
-]);
+  ...(baseline ? [baseline] : []),
+];
+if (option === '--check-base') {
+  const base = execFileSync('git', ['rev-parse', 'HEAD^1'], { encoding: 'utf8' }).trim();
+  const hasUnifiedInputs =
+    spawnSync('git', ['cat-file', '-e', base + ':data/cny/unified-policy.json']).status === 0;
+  if (hasUnifiedInputs && prior?.sourceSha !== base) {
+    // The protected branch may be ahead of Pages after a suspended or failed deployment.
+    const baseRoot = resolve(work, 'base-source');
+    const baseCandidate = resolve(work, 'base-candidate');
+    execFileSync('git', ['worktree', 'add', '--detach', baseRoot, base], { stdio: 'inherit' });
+    try {
+      const fromBase = { cwd: baseRoot, stdio: 'inherit' };
+      execFileSync('npm', ['ci', '--ignore-scripts'], fromBase);
+      execFileSync(
+        'npm',
+        ['run', 'cny:unified:build', '--', ...candidateArgs(baseCandidate, previous)],
+        fromBase,
+      );
+      run(
+        'scripts/build-unified-cny.mjs',
+        candidateArgs(resolve(work, 'base-validation'), baseCandidate),
+      );
+    } finally {
+      execFileSync('git', ['worktree', 'remove', '--force', baseRoot], { stdio: 'inherit' });
+    }
+  }
+}
+run('scripts/build-unified-cny.mjs', candidateArgs(resolve(work, 'candidate'), previous));
 run('scripts/build-visual-site.mjs', [
   'data/cny/publication/upstream-release.json',
   resolve(work, 'site'),
