@@ -9,7 +9,7 @@ export type CostFamilyCells = Partial<Record<CostFamily, number>>;
 
 /** 结构化上下文阶梯条目（价格在 tier.size tokens 以上生效） */
 export interface ModelCostTier extends CostFamilyCells {
-  tier?: { size?: number; type?: string };
+  tier?: { size?: number; type?: string; comparison?: 'gte' };
 }
 
 /**

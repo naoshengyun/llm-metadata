@@ -260,10 +260,10 @@ function originalRecord(entry, parsed, evidence) {
   ) {
     throw Error('Model charge shape does not match billing unit');
   }
-  const { providerId, modelId, priceList, currency } = parsed.identity;
+  const { providerId, endpoint, modelId, priceList, currency } = parsed.identity;
   const record = {
     ...previous,
-    ...(!previous && { id: parsed.recordId ?? quote.quoteId, provider: providerId }),
+    ...(!previous && { id: parsed.recordId ?? quote.quoteId, provider: providerId, endpoint }),
     model: modelId,
     priceList,
     origin: entry.domestic ? 'domestic' : 'foreign',
