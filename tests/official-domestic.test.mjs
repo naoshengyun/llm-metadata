@@ -459,3 +459,55 @@ test('Ark official Markdown and rendered HTML produce the same selected rates', 
     json(await check('volcengine')),
   );
 });
+
+test('Kimi China Batch reads three independent, unselected official references', async () => {
+  const report = await check('kimi-batch');
+  const rows = report.results.filter((row) => row.sourceId === 'kimi-batch-cn');
+  assert.equal(rows.length, 3);
+  const pro = resultFor(report, 'cn-moonshot-kimi-k3.1-pro-batch');
+  assert.equal(pro?.status, 'changed', pro?.reason);
+  assert.equal(pro.selected, false);
+  assert.equal(
+    pro.evidence.sha256,
+    '91e1ad367a7e4d5ee19026c9347a772b412fec406db3a56ce314b3fd7ab94f9f',
+  );
+  assert.deepEqual(pro.observed.sourcePrice, {
+    input: 7.8,
+    output: 40.8,
+    cache_read: 0.78,
+    cache_write: 7.8,
+    cache_write_1h: 15.6,
+  });
+  assert.equal(pro.observed.conditions.standardPricePercent, 60);
+  assert.equal(pro.observed.conditions.cacheHit, 'best-effort');
+  const k2 = resultFor(report, 'cn-moonshot-kimi-k2.7-code-batch');
+  assert.deepEqual(k2.observed.sourcePrice, { input: 3.9, output: 16.2, cache_read: 0.78 });
+  assert.equal(Object.hasOwn(k2.observed.sourcePrice, 'cache_write'), false);
+  assert.equal(
+    rows.some(({ identity }) => identity.modelId === 'kimi-k2.6'),
+    false,
+  );
+  assert.ok(
+    report.changes.filter(({ id }) => id.endsWith('-batch')).every(({ selected }) => !selected),
+  );
+  const config = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.equal(
+    config.data.billing_expr['kimi-k3.1-pro'],
+    'tier("standard", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)',
+  );
+});
+
+test('Kimi China Batch rejects missing amount fields and an unexpected table heading', async () => {
+  const id = 'cn-moonshot-kimi-k3.1-pro-batch';
+  const missing = await check('kimi-batch', (body) =>
+    Buffer.from(body.toString().replace('`¥15.60 / MTok`', '`—`')),
+  );
+  assert.match(resultFor(missing, id).reason, /Invalid Kimi Batch CNY amount/);
+  const translated = await check('kimi-batch', (body) =>
+    Buffer.from(
+      body.toString().replace('children:`缓存写入（5min）`', 'children:`Kimi Cache Write`'),
+    ),
+  );
+  assert.equal(resultFor(translated, id).status, 'failed');
+  assert.match(resultFor(translated, id).reason, /Unexpected Kimi Batch tariff headers/);
+});
