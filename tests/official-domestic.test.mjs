@@ -308,3 +308,31 @@ test('a native capability exclusion keeps DeepSeek official evidence and prevent
     assert.match(model.upstreamPrice.source.sha256, /^[0-9a-f]{64}$/);
   }
 });
+
+test('BigModel publishes exact current and maintained legacy bands, including a free official price', async () => {
+  const report = await check('zhipu');
+  const tiered = resultFor(report, 'cn-zhipu-glm-5.1-standard');
+  assert.equal(tiered?.status, 'unchanged', tiered?.reason);
+  assert.deepEqual(tiered.observed.sourcePrice.tiers, [
+    { tier: { size: 31999 }, input: 8, output: 28, cache_read: 2 },
+  ]);
+  const free = resultFor(report, 'cn-zhipu-glm-4.6v-flash-standard');
+  assert.equal(free?.status, 'unchanged', free?.reason);
+  assert.deepEqual(free.observed.sourcePrice, { input: 0, output: 0, cache_read: 0 });
+  assert.equal(free.observed.conditions.tokenTariff, 'official-free');
+});
+
+test('BigModel input and output cross-conditions have evidence without a misleading sync expression', async () => {
+  const report = await check('zhipu');
+  const result = resultFor(report, 'upstream:zhipuai:glm-4.7:CNY');
+  assert.equal(result.status, 'unsupported');
+  assert.equal(result.observed.sourcePrice.bands[0].output, 8);
+  assert.equal(result.observed.sourcePrice.bands[1].output, 14);
+  assert.equal(
+    report.changes.some(({ id }) => id === result.id),
+    false,
+  );
+  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.equal(data.billing_expr['glm-4.7'], undefined);
+  assert.equal(data.billing_expr['glm-4.5-air'], undefined);
+});

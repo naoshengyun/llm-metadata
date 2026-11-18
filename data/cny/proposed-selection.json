@@ -68,7 +68,16 @@
     "hy4": "cn-tencent-hy4-standard",
     "hy4-preview": "cn-tencent-hy4-preview-standard",
     "MiniMax-M3": "cn-minimax-MiniMax-M3-standard",
-    "MiniMax-M3.1-Flash": "cn-minimax-MiniMax-M3.1-Flash-standard"
+    "MiniMax-M3.1-Flash": "cn-minimax-MiniMax-M3.1-Flash-standard",
+    "glm-5.3-flashx": "cn-zhipu-glm-5.3-flashx-standard",
+    "glm-5.1": "cn-zhipu-glm-5.1-standard",
+    "glm-5": "cn-zhipu-glm-5-standard",
+    "glm-5v-turbo": "cn-zhipu-glm-5v-turbo-standard",
+    "glm-4.6v": "cn-zhipu-glm-4.6v-standard",
+    "glm-4.5v": "cn-zhipu-glm-4.5v-standard",
+    "glm-4.7-flashx": "cn-zhipu-glm-4.7-flashx-standard",
+    "glm-4.7-flash": "cn-zhipu-glm-4.7-flash-standard",
+    "glm-4.6v-flash": "cn-zhipu-glm-4.6v-flash-standard"
   },
   "notProposed": [
     {

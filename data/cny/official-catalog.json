@@ -4005,6 +4005,355 @@
         "cacheMinimumInputTokens": 512,
         "cachePrefixMatch": true
       }
+    },
+    {
+      "id": "cn-zhipu-glm-5.3-flashx-standard",
+      "provider": "zhipuai",
+      "model": "glm-5.3-flashx",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 7,
+        "cache_read": 0.57
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "1M",
+        "inputModalities": [
+          "图片",
+          "视频",
+          "文件",
+          "文本"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5.1-standard",
+      "provider": "zhipuai",
+      "model": "glm-5.1",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 24,
+        "cache_read": 1.3,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 8,
+            "output": 28,
+            "cache_read": 2
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5-standard",
+      "provider": "zhipuai",
+      "model": "glm-5",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 18,
+        "cache_read": 1,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 6,
+            "output": 22,
+            "cache_read": 1.5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5v-turbo-standard",
+      "provider": "zhipuai",
+      "model": "glm-5v-turbo",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 5,
+        "output": 22,
+        "cache_read": 1.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 7,
+            "output": 26,
+            "cache_read": 1.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.6v-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.6v",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 2,
+            "output": 6,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 [32K, 128K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.5v-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.5v",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.4,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 4,
+            "output": 12,
+            "cache_read": 0.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 [32K, 64K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-flashx-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7-flashx",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "200K"
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-flash-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7-flash",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "200K",
+        "tokenTariff": "official-free"
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.6v-flash-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.6v-flash",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "—",
+        "tokenTariff": "official-free"
+      }
     }
   ],
   "coverage": [
