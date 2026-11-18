@@ -15,6 +15,7 @@ const fixtures = {
   'openai-standard': 'osm',
   'anthropic-global': 'anth',
   'morph-list': 'morph',
+  'kimi-global': 'kimi-global',
 };
 const attemptedAt = '2026-11-18T12:44:58Z';
 
@@ -70,4 +71,17 @@ test('verifies precise OpenAI Standard and direct image quotes, Claude global qu
     report.results.find(({ id }) => id === 'upstream:morph:auto:USD').status,
     'deferred',
   );
+});
+
+test('Kimi international checks both cache TTL rates on the matching USD endpoint', async () => {
+  const report = await run();
+  const results = report.results.filter((row) => row.sourceId === 'kimi-global');
+  assert.equal(results.length, 6);
+  assert.ok(results.every(({ status }) => ['unchanged', 'changed'].includes(status)));
+  const result = results.find(({ nativeKey }) => nativeKey === 'kimi-k3.1-pro');
+  assert.equal(result.selected, false);
+  assert.equal(result.observed.identity.endpoint, 'https://api.moonshot.ai/v1');
+  assert.equal(result.observed.sourcePrice.cache_write_1h, 4);
+  assert.equal(result.observed.cnyCost.cache_write_1h, 28);
+  assert.equal(result.observed.conditions.defaultCacheTtlSeconds, 300);
 });
