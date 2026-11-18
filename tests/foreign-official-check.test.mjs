@@ -12,6 +12,19 @@ const baseline = join(directory, 'baseline');
 after(() => rmSync(directory, { recursive: true, force: true }));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
 const fixtures = {
+  'openai-upstream': 'osm',
+  'openai-upstream--chatgpt-image-latest': 'o-model-chatgpt-image-latest',
+  'openai-upstream--gpt-image-1-5': 'o-model-gpt-image-1.5',
+  'openai-upstream--o4-mini': 'o-model-o4-mini',
+  'openai-upstream--o3-mini': 'o-model-o3-mini',
+  'openai-upstream--o1-pro': 'o-model-o1-pro',
+  'openai-upstream--o1': 'o-model-o1',
+  'openai-upstream--gpt-5-6': 'o-model-gpt-5.6',
+  'openai-upstream--gpt-4o': 'o-model-gpt-4o',
+  'openai-upstream--gpt-4-1-nano': 'o-model-gpt-4.1-nano',
+  'openai-upstream--gpt-4-turbo': 'o-model-gpt-4-turbo',
+  'openai-upstream--gpt-4': 'o-model-gpt-4',
+  'openai-upstream--gpt-3-5-turbo': 'o-model-gpt-3.5-turbo',
   'openai-standard': 'osm',
   'anthropic-global': 'anth',
   'morph-list': 'morph',
@@ -24,7 +37,6 @@ const fixtures = {
   'upstage-api--solar-pro4': 'up-pro4',
   'upstage-api--solar-mini4': 'up-mini4',
   'sakana-namazu': 'sakana-namazu',
-  'sakana-fugu': 'sakana-fugu',
   'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--api-ids': 'mistral-md',
@@ -283,4 +295,18 @@ test('Sakana reports a formal future Namazu rate without treating it as currentl
   assert.equal(row.observed.sourcePrice.input, 1.9);
   assert.equal(row.observed.conditions.currentTariff.input, 0.95);
   assert.equal(row.observed.cnyCost.input, 13.3);
+});
+
+test('OpenAI upstream models use the correct Standard tables and retain explicit old ID gaps', async () => {
+  const report = await run();
+  const row = (model) =>
+    report.results.find(({ id }) => id === 'upstream:openai:' + model + ':USD');
+  assert.equal(row('gpt-5').status, 'unchanged');
+  assert.equal(row('gpt-5.4').observed.sourcePrice.tiers[0].output, 22.5);
+  assert.equal(row('gpt-6.2-astra').observed.sourcePrice.cache_write_12h, 20);
+  assert.equal(row('gpt-5.6').observed.sourcePrice.cache_write_12h, 10);
+  assert.equal(row('text-embedding-3-large').observed.cnyCost.input, 0.91);
+  assert.equal(row('gpt-image-1.5').observed.sourcePrice.output_image, 32);
+  assert.match(row('gpt-4o-2024-05-13').reason, /Shut down/);
+  assert.match(row('gpt-5.3-codex-spark').reason, /Exact price row/);
 });
