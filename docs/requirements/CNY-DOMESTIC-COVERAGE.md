@@ -41,3 +41,11 @@
 验证源码 6100abab9b20bf132a657b82f99c60dfb794653d，候选 658c5fdc9ab610d0e8b02f00f0c862de9a42808900b9b2eb06c40cb15a929afd，覆盖 JSON SHA-256 20074d331015879ccfa56cceaf278839d176749fec4b084281b3e834391a449b，公开同步 JSON SHA-256 ce65e7f664688cc105493f256ffe36d78b1da8774f28ee87bb8da6aa00f6515e。
 
 固定 rc.50 原生 HTTP 预览及保存读回使用了同字节 Qwen Plus 同步表达式。以 1,000 未命中输入 Token、100 命中、25 完成 Token 为例，原版表达式结算器对应 true、false、缺省的金额（每百万 Token 价格乘用量所得的百万分之一人民币单位）分别为 1,016、866、866。测试没有调用供应商或生产实例。
+
+## Kimi 中国 Batch 补充
+
+官方 Batch 价格页的三个已有参考价目均完成自动核价。静态解析读取独立的输入、输出、命中和缓存写入价列。K3 与 K3.1 Pro 记录 5 分钟及 1 小时缓存写入。K2.7 Code 的两列写入值为破折号，原价记录省略这两个字段。官方说明 Batch 价为标准模型价的 60%，异步并行请求的缓存命中为尽力而为。三个价目保持未选，同步 JSON 与上次验收版本逐字节一致。[Kimi 中国 Batch 价格](https://platform.kimi.com/docs/pricing/batch)
+
+官方表另刊出 K2.6 Batch，每百万 Token 输入 3.90、输出 16.20、缓存命中 0.66 CNY，两列写入价均为破折号。原始夹具保存该行，现有候选未添加此价目身份。[Kimi 中国 Batch 价格](https://platform.kimi.com/docs/pricing/batch)
+
+固定和实际获取的响应 SHA-256 均为 91e1ad367a7e4d5ee19026c9347a772b412fec406db3a56ce314b3fd7ab94f9f。三条核价结果的金额与已有记录一致，结构化条件产生未选价目的审查差异。同步链路测试通过 174 项。国内已解析模型数仍为 96，国内固定价目解析数增加至 107。
