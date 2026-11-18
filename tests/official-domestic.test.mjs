@@ -28,6 +28,7 @@ function check(sourceName, transform = (body) => body, status = 200) {
         'alibaba-cn--cache': 'alibaba-cache',
         'stepfun-cn--audio': 'stepfun-audio',
         'minimax-cn--cache': 'minimax-cache',
+        'minimax-cn--video': 'minimax-video',
       };
       if (supplementNames[id] && id.startsWith(sourceName + '-cn--')) {
         return {
@@ -322,17 +323,31 @@ test('BigModel publishes exact current and maintained legacy bands, including a 
   assert.equal(free.observed.conditions.tokenTariff, 'official-free');
 });
 
-test('BigModel input and output cross-conditions have evidence without a misleading sync expression', async () => {
+test('BigModel cross-conditions select the short-output rate before the native input tiers', async () => {
   const report = await check('zhipu');
-  const result = resultFor(report, 'upstream:zhipuai:glm-4.7:CNY');
-  assert.equal(result.status, 'unsupported');
-  assert.equal(result.observed.sourcePrice.bands[0].output, 8);
-  assert.equal(result.observed.sourcePrice.bands[1].output, 14);
-  assert.equal(
-    report.changes.some(({ id }) => id === result.id),
-    false,
-  );
+  const result = resultFor(report, 'cn-zhipu-glm-4.7-standard');
+  assert.equal(result?.status, 'unchanged', result?.reason);
+  assert.equal(result.observed.sourcePrice.short_output.output, 8);
+  assert.equal(result.observed.sourcePrice.output, 14);
   const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
-  assert.equal(data.billing_expr['glm-4.7'], undefined);
-  assert.equal(data.billing_expr['glm-4.5-air'], undefined);
+  assert.match(
+    data.billing_expr['glm-4.7'],
+    /^len <= 31999 && c <= 199 \? tier\("short_output", p \* 2 \+ cr \* 0.4 \+ c \* 8\) : len <= 31999/,
+  );
+  assert.match(data.billing_expr['glm-4.5-air'], /^len <= 31999 && c <= 199/);
+});
+
+test('MiniMax H3 China charges video duration and only images above its free quota', async () => {
+  const report = await check('minimax');
+  const h3 = resultFor(report, 'cn-minimax-MiniMax-H3-video');
+  assert.equal(h3?.status, 'unchanged', h3?.reason);
+  assert.equal(h3.identity.endpoint, 'https://api.minimax.cn/v2/video_generation');
+  assert.deepEqual(
+    h3.observed.sourcePrice[0].charges.map(({ amount }) => amount),
+    [0.8, 0.8, 0.2],
+  );
+  assert.equal(h3.observed.sourcePrice[0].charges[2].freeQuantity, 5);
+  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.match(data.billing_expr['MiniMax-H3'], /u\("input_images"\) > 5/);
+  assert.equal(data.billing_expr['MiniMax-H3-Max'], undefined);
 });

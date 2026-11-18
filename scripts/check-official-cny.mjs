@@ -299,7 +299,12 @@ function originalRecord(entry, parsed, evidence) {
         !updated ||
         fields(tier.when).some((key) => !Object.hasOwn(updated.when ?? {}, key)) ||
         tier.charges.some(
-          ({ usageKey }) => !updated.charges?.some((charge) => charge.usageKey === usageKey),
+          ({ usageKey, freeQuantity }) =>
+            !updated.charges?.some(
+              (charge) =>
+                charge.usageKey === usageKey &&
+                (freeQuantity === undefined || charge.freeQuantity !== undefined),
+            ),
         )
       ) {
         throw Error('Previously reviewed task tier, charge or condition missing: ' + name);

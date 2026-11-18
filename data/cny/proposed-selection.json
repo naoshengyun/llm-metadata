@@ -77,7 +77,10 @@
     "glm-4.5v": "cn-zhipu-glm-4.5v-standard",
     "glm-4.7-flashx": "cn-zhipu-glm-4.7-flashx-standard",
     "glm-4.7-flash": "cn-zhipu-glm-4.7-flash-standard",
-    "glm-4.6v-flash": "cn-zhipu-glm-4.6v-flash-standard"
+    "glm-4.6v-flash": "cn-zhipu-glm-4.6v-flash-standard",
+    "MiniMax-H3": "cn-minimax-MiniMax-H3-video",
+    "glm-4.7": "cn-zhipu-glm-4.7-standard",
+    "glm-4.5-air": "cn-zhipu-glm-4.5-air-standard"
   },
   "notProposed": [
     {

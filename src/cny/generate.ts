@@ -84,7 +84,7 @@ function inspectCost(value: unknown, path = ''): string[] {
     const p = path ? `${path}.${key}` : key;
     if (PRICE_KEYS.has(key)) {
       if (typeof item !== 'number' || !Number.isFinite(item) || item < 0) errors.push(p);
-    } else if (key === 'size') {
+    } else if (['size', 'maxInput', 'maxOutput'].includes(key)) {
       if (typeof item !== 'number' || !Number.isSafeInteger(item) || item <= 0) errors.push(p);
     } else if (key === 'tiers') {
       if (!Array.isArray(item)) {
@@ -105,7 +105,9 @@ function inspectCost(value: unknown, path = ''): string[] {
         errors.push(...inspectCost(tier, `${p}.${index}`));
       }
     } else if (key === 'currency' || key === 'currency_options') errors.push(p);
-    else if (['tiers', 'tier', 'context_over_200k', 'schedule', 'windows'].includes(key)) {
+    else if (
+      ['tiers', 'tier', 'context_over_200k', 'schedule', 'windows', 'short_output'].includes(key)
+    ) {
       if (Array.isArray(item)) item.forEach((v, i) => errors.push(...inspectCost(v, `${p}.${i}`)));
       else errors.push(...inspectCost(item, p));
     } else if (!['size', 'type', 'name', 'weekdays', 'hours', 'timezone', 'fallback'].includes(key))

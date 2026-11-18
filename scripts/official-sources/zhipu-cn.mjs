@@ -24,17 +24,10 @@ const models = [
 const targets = models.map((model) =>
   standardTarget(provider, endpoint, model, standard, 'cn-zhipu-' + model + '-standard', model),
 );
-const unsupported = ['glm-4.7', 'glm-4.5-air'].map((model) => ({
-  ...standardTarget(
-    provider,
-    endpoint,
-    model,
-    'fixed upstream primary or original CNY sheet',
-    `upstream:${provider}:${model}:CNY`,
-  ),
-  referenceOnlyReason:
-    'Native input tiers do not express the official input/output cross-conditions',
-}));
+const crossModels = new Set(['glm-4.7', 'glm-4.5-air']);
+const crossTargets = [...crossModels].map((model) =>
+  standardTarget(provider, endpoint, model, standard, 'cn-zhipu-' + model + '-standard', model),
+);
 
 const cacheTerms = {
   cacheStorage: 'limited-time-free',
@@ -97,30 +90,46 @@ function parseModel(target, rows) {
   });
 }
 
-function parseReference(target, rows) {
+function parseCrossTariff(target, rows) {
   if (rows.length !== 3) throw Error('Incomplete BigModel input/output cross-condition bands');
-  const bands = rows.map((row, index) => {
-    const { context, amounts } = rates(row);
-    const pattern = [
-      /^输入 \[0, \d+K\)，输出 \[0, \d+(?:\.\d+)?K\)$/,
-      /^输入 \[0, \d+K\)，输出 ≥\d+(?:\.\d+)?K$/,
-      /^输入 \[\d+K, \d+K\)$/,
-    ][index];
-    if (!pattern.test(context)) throw Error('Unrecognized BigModel cross-condition band');
-    return { ...amounts, condition: context };
-  });
-  return {
-    ...tariff(target, { bands }, cacheTerms),
-    required: bands.flatMap((_, i) =>
-      ['input', 'output', 'cache_read'].map((key) => `bands.${i}.${key}`),
-    ),
-  };
+  const [low, regular, wide] = rows.map(rates);
+  const below = /^输入 \[0, (\d+)K\)，输出 \[0, (\d+(?:\.\d+)?)K\)$/.exec(low.context);
+  const above = /^输入 \[0, (\d+)K\)，输出 ≥(\d+(?:\.\d+)?)K$/.exec(regular.context);
+  const high = /^输入 \[(\d+)K, (\d+)K\)$/.exec(wide.context);
+  if (
+    !below ||
+    !above ||
+    !high ||
+    below[1] !== above[1] ||
+    below[1] !== high[1] ||
+    below[2] !== above[2] ||
+    Number(high[2]) <= Number(high[1])
+  ) {
+    throw Error('Unrecognized BigModel input/output cross-condition bands');
+  }
+  const maxInput = Number(below[1]) * 1000 - 1;
+  const maxOutput = Number(below[2]) * 1000 - 1;
+  const result = tariff(
+    target,
+    {
+      ...regular.amounts,
+      short_output: { maxInput, maxOutput, ...low.amounts },
+      tiers: [{ tier: { size: maxInput }, ...wide.amounts }],
+    },
+    { ...cacheTerms, inputOutputBands: [low.context, regular.context, wide.context] },
+  );
+  result.required = Object.keys(regular.amounts).flatMap((key) => [
+    key,
+    'short_output.' + key,
+    'tiers.0.' + key,
+  ]);
+  return result;
 }
 
 export const adapter = {
   id: 'zhipu-cn',
   url: 'https://docs.bigmodel.cn/cn/guide/start/pricing',
-  targets: [...targets, ...unsupported],
+  targets: [...targets, ...crossTargets],
   parse({ body }) {
     const html = decode(body).replace(/<script\b[^]*?<\/script>/gi, '');
     const headers = [
@@ -135,14 +144,16 @@ export const adapter = {
     const main = only(withHeader(all, [...headers, '输入模态']), 'BigModel primary text tariff');
     const legacy = withHeader(all, headers).flat();
     return new Map(
-      [...targets, ...unsupported].map((target) => {
+      [...targets, ...crossTargets].map((target) => {
         const rows = (displayModels.has(target.modelId) ? main : legacy).filter(
           ([model]) => model?.text.toLowerCase() === target.modelId,
         );
         try {
           return [
             target.quoteId,
-            target.referenceOnlyReason ? parseReference(target, rows) : parseModel(target, rows),
+            crossModels.has(target.modelId)
+              ? parseCrossTariff(target, rows)
+              : parseModel(target, rows),
           ];
         } catch (error) {
           return [target.quoteId, { error: error.message }];

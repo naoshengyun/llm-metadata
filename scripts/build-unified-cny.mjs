@@ -290,8 +290,11 @@ function requiredShape(quote) {
     fees.add('task.tiers.' + tier.name);
     for (const key of Object.keys(tier.when ?? {}))
       fees.add('task.tiers.' + tier.name + '.when.' + key);
-    for (const { usageKey } of tier.charges ?? [])
-      fees.add('task.tiers.' + tier.name + '.charges.' + usageKey);
+    for (const { usageKey, freeQuantity } of tier.charges ?? []) {
+      const field = 'task.tiers.' + tier.name + '.charges.' + usageKey;
+      fees.add(field);
+      if (freeQuantity !== undefined) fees.add(field + '.freeQuantity');
+    }
   }
   return fees;
 }

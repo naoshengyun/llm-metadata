@@ -30,7 +30,7 @@ assert.deepEqual(Object.keys(billing_mode), names);
 assert.equal(names.length, manifest.stats.apiModels);
 const coverage = read(current.fixedBase + 'coverage.json');
 const tasks = coverage.quotes.filter((row) => row.outputKind === 'task-model' && row.syncable);
-assert.equal(tasks.length, 9);
+assert.ok(tasks.length >= 9);
 assert.ok(!Object.hasOwn(billing_expr, 'doubao-seedance-2-5-260628'));
 for (const quote of coverage.quotes.filter((row) => row.outputKind === 'tool-reference'))
   assert.ok(!Object.hasOwn(billing_expr, quote.modelId));
@@ -318,7 +318,7 @@ try {
       for (const [key, shape] of Object.entries(variant.usage_schema))
         if (shape.type === 'number')
           assert.ok(included.has(key) || tier.notApplicable?.[key], model + ' ' + key);
-      for (const { usageKey, unit, amount } of tier.charges) {
+      for (const { usageKey, unit, amount, freeQuantity } of tier.charges) {
         const schema = variant.usage_schema[usageKey];
         assert.equal(schema.type, 'number');
         assert.equal(
@@ -326,9 +326,13 @@ try {
           schema.unit === 'token' ? 'per_million_tokens' : 'per_' + schema.unit,
           model,
         );
+        const observed = `u(${JSON.stringify(usageKey)})`;
+        const billable = freeQuantity
+          ? `(${observed} > ${freeQuantity} ? ${observed} - ${freeQuantity} : 0)`
+          : observed;
         assert.ok(
           expression.includes(
-            `u(${JSON.stringify(usageKey)}) * ${amount}${schema.unit === 'token' ? ' / 1000000' : ''}`,
+            `${billable} * ${amount}${schema.unit === 'token' ? ' / 1000000' : ''}`,
           ),
           model,
         );

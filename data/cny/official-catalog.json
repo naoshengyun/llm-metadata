@@ -4354,6 +4354,209 @@
         "context": "—",
         "tokenTariff": "official-free"
       }
+    },
+    {
+      "id": "cn-minimax-MiniMax-H3-video",
+      "provider": "minimax-cn",
+      "model": "MiniMax-H3",
+      "priceList": "MiniMax China H3 video pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create.md",
+            "sha256": "685b347f6fbf1fdda56c350275fe52c68de05e78e9d2d63d0a8d54cf8c2ed8ac",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "unit": "per-charge",
+      "conditions": {
+        "inputVideoBilledAtOutputResolution": true,
+        "audioInputFree": true
+      },
+      "kind": "task",
+      "endpoint": "https://api.minimax.cn/v2/video_generation",
+      "task": {
+        "plugin": "hailuo",
+        "model": "MiniMax-H3",
+        "tiers": [
+          {
+            "name": "2K",
+            "when": {
+              "resolution": "2K"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.8,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.8,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.2,
+                "unit": "per_count",
+                "currency": "CNY",
+                "freeQuantity": 5
+              }
+            ]
+          },
+          {
+            "name": "768P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.5,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.5,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.2,
+                "unit": "per_count",
+                "currency": "CNY",
+                "freeQuantity": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "short_output.input",
+        "tiers.0.input",
+        "output",
+        "short_output.output",
+        "tiers.0.output",
+        "cache_read",
+        "short_output.cache_read",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 14,
+        "cache_read": 0.6,
+        "short_output": {
+          "maxInput": 31999,
+          "maxOutput": 199,
+          "input": 2,
+          "output": 8,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 4,
+            "output": 16,
+            "cache_read": 0.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputOutputBands": [
+          "输入 [0, 32K)，输出 [0, 0.2K)",
+          "输入 [0, 32K)，输出 ≥0.2K",
+          "输入 [32K, 200K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.5-air-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.5-air",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "short_output.input",
+        "tiers.0.input",
+        "output",
+        "short_output.output",
+        "tiers.0.output",
+        "cache_read",
+        "short_output.cache_read",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 6,
+        "cache_read": 0.16,
+        "short_output": {
+          "maxInput": 31999,
+          "maxOutput": 199,
+          "input": 0.8,
+          "output": 2,
+          "cache_read": 0.16
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 1.2,
+            "output": 8,
+            "cache_read": 0.24
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputOutputBands": [
+          "输入 [0, 32K)，输出 [0, 0.2K)",
+          "输入 [0, 32K)，输出 ≥0.2K",
+          "输入 [32K, 128K)"
+        ]
+      }
     }
   ],
   "coverage": [

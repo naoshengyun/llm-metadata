@@ -1,4 +1,12 @@
-import { decode, number, only, standardTarget, tariff } from './lib/domestic-tables.mjs';
+import {
+  decode,
+  number,
+  only,
+  standardTarget,
+  tables,
+  tariff,
+  withHeader,
+} from './lib/domestic-tables.mjs';
 
 const provider = 'minimax-cn';
 const endpoint = 'https://api.minimax.cn/anthropic/v1';
@@ -22,6 +30,156 @@ const images = ['image-01', 'image-01-live'].map((model) =>
     'image',
   ),
 );
+
+const h3 = standardTarget(
+  provider,
+  'https://api.minimax.cn/v2/video_generation',
+  'MiniMax-H3',
+  'MiniMax China H3 video pay-as-you-go',
+  'cn-minimax-MiniMax-H3-video',
+);
+const h3Max = {
+  ...standardTarget(
+    provider,
+    h3.endpoint,
+    'MiniMax-H3-Max',
+    'fixed upstream primary or original CNY sheet',
+    'upstream:minimax-cn:MiniMax-H3-Max:CNY',
+  ),
+  baselineIdentity: { endpoint },
+  referenceOnlyReason: 'The pinned Hailuo task schema has no MiniMax-H3-Max model binding',
+};
+const speech = [
+  'speech-02-hd',
+  'speech-02-turbo',
+  'speech-2.6-hd',
+  'speech-2.6-turbo',
+  'speech-2.8-hd',
+  'speech-2.8-turbo',
+].map((model) => ({
+  ...standardTarget(
+    provider,
+    endpoint,
+    model,
+    'fixed upstream primary or original CNY sheet',
+    `upstream:minimax-cn:${model}:CNY`,
+  ),
+  referenceOnlyReason: 'Native expressions for this model have no billed input character usage',
+}));
+
+function videoTariff(markdown, api, target) {
+  if (
+    !api.includes('- url: https://api.minimax.cn') ||
+    !api.includes('POST /v2/video_generation') ||
+    !api.includes('`' + target.modelId + '`')
+  )
+    throw Error('MiniMax China video endpoint or exact models missing');
+  const standard = target.modelId === 'MiniMax-H3';
+  const section = (
+    standard ? /^### H3 系列旗舰模型\s*$([^]*?)^### /m : /^### H3 系列扩展模型\s*$([^]*?)^### /m
+  ).exec(markdown)?.[1];
+  const quota = /每次任务前 \*\*(\d+) 张\*\*/.exec(section ?? '');
+  if (
+    !section ||
+    !quota ||
+    !section.includes('音频输入免费') ||
+    !/按(?:输入)?时长及(?:所选模型的)?输出分辨率计费/.test(section)
+  ) {
+    throw Error('Incomplete MiniMax H3 video conditions');
+  }
+  const table = only(
+    withHeader(tables(section.replace(/\\\s*\n\s*/g, ' ')), [
+      '模型',
+      '输出分辨率',
+      '输出视频 每秒',
+      '输入视频 每秒',
+      '输入图片 每张 超出免费额度后',
+    ]),
+    target.modelId + ' video tariff',
+  );
+  const start = only(
+    table
+      .map((row, index) => ({ row, index }))
+      .filter(({ row }) => row[0]?.text.startsWith('**' + target.modelId + '** ')),
+    target.modelId,
+  ).index;
+  if (!/rowspan="2"/i.test(table[start][0].attrs) || !table[start + 1]) {
+    throw Error('Incomplete MiniMax H3 video resolution bands');
+  }
+  const expected = standard ? ['2K', '768P'] : ['768P', '480P'];
+  const bands = [table[start].slice(1), table[start + 1]];
+  const sourcePrice = bands.map((row, index) => {
+    const [name, output, video, image] = row.map(({ text }) => text);
+    if (row.length !== 4 || name !== expected[index])
+      throw Error('Unexpected MiniMax video resolution');
+    return {
+      name,
+      ...(index === 0 && { when: { resolution: name } }),
+      charges: [
+        { usageKey: 'seconds', amount: number(output, '¥'), unit: 'per_second', currency: 'CNY' },
+        {
+          usageKey: 'input_video_seconds',
+          amount: number(video, '¥'),
+          unit: 'per_second',
+          currency: 'CNY',
+        },
+        {
+          usageKey: 'input_images',
+          amount: number(image, '¥'),
+          unit: 'per_count',
+          currency: 'CNY',
+          freeQuantity: number(quota[1]),
+        },
+      ],
+    };
+  });
+  return {
+    ...tariff(
+      target,
+      {},
+      { inputVideoBilledAtOutputResolution: true, audioInputFree: true },
+      'per-charge',
+    ),
+    required: standard
+      ? []
+      : sourcePrice.flatMap(({ charges }, i) => charges.map((_, j) => `${i}.charges.${j}.amount`)),
+    sourcePrice,
+    ...(standard && { task: { plugin: 'hailuo', model: target.modelId } }),
+  };
+}
+
+function speechTariff(markdown, target) {
+  const section = /^## 语音\s*$([^]*?)^## MCP\s*$/m.exec(markdown)?.[1];
+  if (!section?.includes('计费单位为字符数，以 10,000 个字符（输入）为单位。1 个汉字算 2 个字符')) {
+    throw Error('Missing MiniMax character meter');
+  }
+  const row = (label) =>
+    only(
+      section
+        .split('\n')
+        .filter(
+          (line) =>
+            line.includes('| ' + label + ' |') &&
+            cells(line)[1]?.split(' / ').includes(target.modelId),
+        ),
+      label,
+    );
+  const synchronous = number(cells(row('同步语音合成 T2A')).at(-1));
+  const asynchronous = number(cells(row('异步长文本语音合成 T2A Async')).at(-1));
+  if (synchronous !== asynchronous)
+    throw Error('Different MiniMax synchronous and asynchronous rates');
+  return tariff(
+    target,
+    { amount: synchronous },
+    {
+      inputCharacters: true,
+      hanCharacterWeight: 2,
+      otherCharacterWeight: 1,
+      services: ['T2A', 'T2A Async'],
+    },
+    'per_10000_input_characters',
+  );
+}
 
 const cells = (line) =>
   line
@@ -48,8 +206,12 @@ export const adapter = {
   url: 'https://platform.minimax.cn/docs/pricing/overview.md',
   supplemental: [
     { id: 'cache', url: 'https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md' },
+    {
+      id: 'video',
+      url: 'https://platform.minimax.cn/docs/api-reference/video-generation-v2-create.md',
+    },
   ],
-  targets: [...models, ...images],
+  targets: [...models, ...images, h3, h3Max, ...speech],
   parse({ body, supplemental }) {
     const markdown = decode(body);
     const text = /^## 语言模型\s*$([^]*?)^## 视频\s*$/m.exec(markdown)?.[1];
@@ -108,7 +270,21 @@ export const adapter = {
       throw Error('Missing MiniMax image-01 family per-image price');
     }
     const image = number(cells(imageRow)[2]);
+    const videoApi = decode(supplemental.get('video').body);
+    const references = [h3, h3Max, ...speech].map((target) => {
+      try {
+        return [
+          target.quoteId,
+          speech.includes(target)
+            ? speechTariff(markdown, target)
+            : videoTariff(markdown, videoApi, target),
+        ];
+      } catch (error) {
+        return [target.quoteId, { error: error.message }];
+      }
+    });
     return new Map([
+      ...references,
       [models[0].quoteId, m3],
       [
         models[1].quoteId,
