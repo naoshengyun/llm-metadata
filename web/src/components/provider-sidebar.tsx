@@ -24,14 +24,18 @@ type ModelIndexState =
   | { status: 'ready'; models: ModelIndexItem[] };
 
 /** 全局模型索引：仅在 locale 非空（用户开始搜索）时加载；`attempt` 变化触发重试 */
-function useModelIndex(locale: Locale | null, attempt: number): ModelIndexState {
+function useModelIndex(
+  locale: Locale | null,
+  attempt: number,
+  catalogBase?: string,
+): ModelIndexState {
   const [state, setState] = useState<ModelIndexState>({ status: 'idle' });
 
   useEffect(() => {
     if (!locale) return;
     let cancelled = false;
     setState({ status: 'loading' });
-    fetchModelIndex(locale).then(
+    fetchModelIndex(locale, catalogBase).then(
       (models) => {
         if (!cancelled) setState({ status: 'ready', models });
       },
@@ -42,7 +46,7 @@ function useModelIndex(locale: Locale | null, attempt: number): ModelIndexState 
     return () => {
       cancelled = true;
     };
-  }, [locale, attempt]);
+  }, [locale, attempt, catalogBase]);
 
   return state;
 }
@@ -58,12 +62,14 @@ function SectionLabel({ title, count }: { title: string; count?: number }) {
 
 export function ProviderSidebar({
   providers,
+  catalogBase,
   selectedId,
   onSelect,
   onSelectModel,
   mobile = false,
 }: {
   mobile?: boolean;
+  catalogBase?: string;
   providers: ProviderIndexItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -75,7 +81,7 @@ export function ProviderSidebar({
 
   const normalized = normalizeQuery(query);
   const searching = normalized.length > 0;
-  const index = useModelIndex(searching ? locale : null, attempt);
+  const index = useModelIndex(searching ? locale : null, attempt, catalogBase);
 
   const filteredProviders = useMemo(
     () => providers.filter((p) => matchesQuery(p, normalized)),
