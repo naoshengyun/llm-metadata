@@ -17,6 +17,11 @@ const fixtures = {
   'morph-list': 'morph',
   'kimi-global': 'kimi-global',
   'xai-video': 'xai-video-current',
+  'openai-standard--cache': 'oic',
+  'openai-standard--images': 'ois',
+  'anthropic-global--ids': 'anthids',
+  'morph-list--api-docs': 'morph-docs',
+  'kimi-global--currency': 'kimi-balance',
 };
 const attemptedAt = '2026-11-18T12:44:58Z';
 
@@ -127,4 +132,14 @@ test('xAI task quotes preserve media units and per-resolution original USD rates
       0.14,
     );
   }
+});
+
+test('USD review binds the official documents carrying charge conditions and currency evidence', async () => {
+  const report = await run();
+  const price = (source, support) => report.responses[source]?.supplemental?.[support];
+  assert.ok(price('openai-standard', 'cache')?.sha256);
+  assert.ok(price('openai-standard', 'images')?.sha256);
+  assert.ok(price('anthropic-global', 'ids')?.sha256);
+  assert.ok(price('morph-list', 'api-docs')?.sha256);
+  assert.ok(price('kimi-global', 'currency')?.sha256);
 });

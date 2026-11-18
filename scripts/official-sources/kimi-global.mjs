@@ -6,7 +6,12 @@ import {
   properties,
   string,
 } from '../official-source-helpers/mintlify-tables.mjs';
-import { exactRow, requireText, usd } from '../official-source-helpers/markdown-table.mjs';
+import {
+  exactRow,
+  markdown,
+  requireText,
+  usd,
+} from '../official-source-helpers/markdown-table.mjs';
 
 const providerId = 'moonshotai';
 const endpoint = 'https://api.moonshot.ai/v1';
@@ -26,6 +31,7 @@ const shortConditions = { cacheHitRenewsTtl: true };
 export const adapter = {
   id: 'kimi-global',
   url: 'https://platform.kimi.ai/docs/pricing/chat',
+  supplemental: [{ id: 'currency', url: 'https://platform.kimi.ai/docs/api/balance.md' }],
   targets: Object.entries(models).flatMap(([group, ids]) =>
     ids.map((modelId) => ({
       quoteId: 'upstream:moonshotai:' + modelId + ':USD',
@@ -98,7 +104,10 @@ function chargeTable(sectionTables, paragraphs, group) {
   return { charges, conditions, rows };
 }
 
-function parse({ body }) {
+function parse({ body, supplemental }) {
+  const balance = markdown(supplemental.get('currency').body);
+  requireText(balance, 'https://api.moonshot.ai/v1/users/me/balance');
+  requireText(balance, 'The available balance (unit: USD)');
   const { sectionTables, paragraphs } = mintlifyTables(body);
   requireText(paragraphs.join('\n'), '1 MTok = 1,000,000 tokens.');
   const results = new Map();

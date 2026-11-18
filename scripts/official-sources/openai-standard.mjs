@@ -68,6 +68,10 @@ function target(modelId, image) {
 export const adapter = {
   id: 'openai-standard',
   url: 'https://developers.openai.com/api/docs/pricing.md',
+  supplemental: [
+    { id: 'cache', url: 'https://developers.openai.com/api/docs/guides/prompt-caching.md' },
+    { id: 'images', url: 'https://developers.openai.com/api/docs/guides/image-generation.md' },
+  ],
   targets: [
     ...models.map((modelId) => target(modelId, false)),
     ...images.map((modelId) => target(modelId, true)),
@@ -75,7 +79,10 @@ export const adapter = {
   parse,
 };
 
-function flagship(text) {
+function flagship(text, cacheGuide) {
+  requireText(cacheGuide, 'or `"12h"` in the Responses API');
+  requireText(cacheGuide, 'These counts do not overlap and sum to `cache_write_tokens`.');
+  requireText(cacheGuide, 'counts billed reads and excludes tokens charged as writes');
   requireText(text, 'Prices per 1M tokens.');
   const context = [
     ...text.matchAll(
@@ -109,7 +116,13 @@ function flagship(text) {
   };
 }
 
-function directImages(text) {
+function directImages(text, imageGuide) {
+  requireText(imageGuide, "It doesn't apply to direct Images API requests");
+  requireText(imageGuide, 'https://api.openai.com/v1/images/generations');
+  requireText(imageGuide, 'https://api.openai.com/v1/images/edits');
+  const partial =
+    /each partial image will incur an additional ([1-9]\d*) image output tokens\./.exec(imageGuide);
+  if (!partial) throw Error('Missing OpenAI partial image charging condition');
   const blocks = text.split(imageHeading);
   if (blocks.length !== 2) throw Error('Missing or ambiguous OpenAI Images pricing section');
   const match =
@@ -133,21 +146,21 @@ function directImages(text) {
     return {
       sourcePrice: { input: usd(input), input_image: usd(imageInput), output: usd(output) },
       required: ['input', 'input_image', 'output'],
-      conditions: imageConditions,
+      conditions: { ...imageConditions, tokensPerPartialImage: Number(partial[1]) },
     };
   };
 }
 
-function parse({ body }) {
+function parse({ body, supplemental }) {
   const text = markdown(body);
   const results = new Map();
-  for (const [group, read] of [
-    ['flagship-standard', flagship],
-    ['direct-images', directImages],
+  for (const [group, read, id] of [
+    ['flagship-standard', flagship, 'cache'],
+    ['direct-images', directImages, 'images'],
   ]) {
     const targets = adapter.targets.filter((item) => item.group === group);
     try {
-      const row = read(text);
+      const row = read(text, markdown(supplemental.get(id).body));
       for (const { quoteId, providerId, endpoint, modelId, priceList, currency } of targets) {
         try {
           results.set(quoteId, {

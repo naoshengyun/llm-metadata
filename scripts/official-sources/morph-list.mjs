@@ -1,3 +1,5 @@
+import { markdown, requireText } from '../official-source-helpers/markdown-table.mjs';
+
 const models = [
   'morph-dsv41flash',
   'morph-dsv41flash-1017',
@@ -22,6 +24,7 @@ const additionalWriteCharge = { cacheWriteSurchargeUsdPerMillionTokens: 0 };
 export const adapter = {
   id: 'morph-list',
   url: 'https://www.morphllm.com/api/models/json?prices=list',
+  supplemental: [{ id: 'api-docs', url: 'https://docs.morphllm.com/llms.txt' }],
   targets: models.map((modelId) => ({
     quoteId: 'upstream:morph:' + modelId + ':USD',
     providerId,
@@ -84,7 +87,10 @@ function rates(modalities, keys, conditions) {
   return prices;
 }
 
-function parse({ body }) {
+function parse({ body, supplemental }) {
+  const docs = markdown(supplemental.get('api-docs').body);
+  requireText(docs, 'models, limits and these list prices, fetch ' + adapter.url);
+  requireText(docs, 'Without `?prices=list`, the same URL serves the OpenRouter provider feed');
   const response = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
   if (!Array.isArray(response.data) || !response.data.length)
     throw Error('Missing Morph model list');

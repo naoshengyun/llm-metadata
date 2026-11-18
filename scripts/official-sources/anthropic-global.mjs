@@ -47,6 +47,12 @@ const charges = ['input', 'cache_write', 'cache_write_1h', 'cache_read', 'output
 export const adapter = {
   id: 'anthropic-global',
   url: 'https://platform.claude.com/docs/en/about-claude/pricing.md',
+  supplemental: [
+    {
+      id: 'ids',
+      url: 'https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions.md',
+    },
+  ],
   targets: Object.keys(labels).map((modelId) => ({
     quoteId: 'us-anthropic-' + modelId + '-standard',
     providerId,
@@ -61,7 +67,10 @@ export const adapter = {
   parse,
 };
 
-function parse({ body }) {
+function parse({ body, supplemental }) {
+  const idDocs = markdown(supplemental.get('ids').body);
+  requireText(idDocs, '`claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`');
+  requireText(idDocs, 'that point to the most recent dated snapshot for that minor version.');
   const text = markdown(body);
   requireText(text, 'All prices are in USD.');
   requireText(text, 'Global routing (the default) uses standard pricing.');
