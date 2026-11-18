@@ -22,7 +22,7 @@ function readInputs(policyPath, officialPath, selectionPath, upstreamPath, previ
     return JSON.parse(bytes);
   };
   const policy = read(policyPath, 'unified-policy');
-  const upstreamRoot = resolve(root, upstreamPath ?? policy.upstreamDirectory);
+  const upstreamRoot = resolve(root, upstreamPath || policy.upstreamDirectory);
   const source = read(join(upstreamRoot, 'source.json'), 'upstream/source.json');
   const snapshots = {};
   for (const name of [...locales.map((locale) => locale + '.json'), 'native.json']) {
