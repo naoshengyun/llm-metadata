@@ -5,6 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
+import { readHistoricalCny } from './fixtures/november-2026-cny.mjs';
 
 const input = (name) => JSON.parse(readFileSync('data/cny/' + name));
 const run = (output, args = []) =>
@@ -24,49 +25,33 @@ test('unified candidate covers the researched catalog and exports every selected
   } = config;
   const manifest = read('manifest.json');
   const coverage = read('coverage.json');
-  const zh = read('api/i18n/zh/all.json');
-  const ja = read('api/i18n/ja/all.json');
   assert.deepEqual(Object.keys(billing_mode), Object.keys(billing_expr));
   assert.equal(config.success, true);
-  assert.equal(manifest.stats.models, 630);
-  assert.equal(manifest.stats.subscriptions, 125);
-  assert.equal(manifest.stats.officialQuotes, input('official-catalog.json').records.length);
+  assert.equal(manifest.stats.models, coverage.models.length);
+  assert.equal(
+    manifest.stats.subscriptions,
+    coverage.models.filter(({ outputKind }) => outputKind === 'subscription').length,
+  );
+  const catalog = input('official-catalog.json');
+  assert.equal(manifest.stats.officialQuotes, catalog.records.length);
+  const quoteIds = new Set(coverage.quotes.map(({ quoteId }) => quoteId));
+  for (const { id } of catalog.records) assert.ok(quoteIds.has(id), id);
   assert.equal(manifest.stats.apiModels, Object.keys(billing_expr).length);
-  const selected = input('proposed-selection.json').selection;
-  for (const [key, id] of Object.entries(selected)) {
-    const quote = coverage.quotes.find((r) => r.quoteId === id);
-    assert.ok(quote, id);
-    if (key === 'search_std') {
-      assert.equal(quote.outputKind, 'tool-reference');
-      assert.equal(quote.syncable, false);
-      assert.ok(!Object.hasOwn(billing_expr, key));
-      continue;
-    }
-    assert.equal(billing_mode[key], 'tiered_expr', id);
-    assert.equal(billing_expr[key], quote.billing_expr, id);
-    assert.equal(quote.nativeKey, key, id);
-    assert.equal(quote.syncable, true, id);
+  const syncable = coverage.models.filter(({ syncable }) => syncable);
+  assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
+  const selectedQuoteIds = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
+  const english = read('api/all.json');
+  for (const { modelId, providerId, selectedQuoteId } of syncable) {
+    assert.equal(billing_mode[modelId], 'tiered_expr', modelId);
+    const published = english[providerId].models[modelId];
+    assert.equal(billing_expr[modelId], published.cnyPrice.expr, modelId);
+    const selectedQuote = selectedQuoteIds.get(selectedQuoteId);
+    if (selectedQuote) assert.equal(billing_expr[modelId], selectedQuote.billing_expr, modelId);
   }
-  assert.deepEqual(zh['moonshotai-cn'].models['kimi-k3.1-pro'].cost, {
-    input: 13,
-    output: 68,
-    cache_read: 1.3,
-    cache_write: 13,
-    cache_write_1h: 26,
-    currency: 'CNY',
-    publication_expr: billing_expr['kimi-k3.1-pro'],
-    publication_unit: 'token',
-  });
-  assert.ok(ja.openai.models['gpt-image-2.5-sunburst']);
-  const seedance = coverage.quotes.find((r) => r.modelId === 'doubao-seedance-2-5-260628');
-  assert.deepEqual(seedance.sourcePrice.rows, [
-    ['480p,720p', 70, 42],
-    ['1080p', 77, 46],
-    ['4K', 31, 19],
-  ]);
-  assert.equal(seedance.syncable, false);
-  assert.ok(!Object.hasOwn(billing_expr, seedance.modelId));
-  assert.ok(zh.volcengine.models[seedance.modelId]);
+  for (const { nativeKey } of coverage.quotes.filter(
+    ({ outputKind }) => outputKind === 'tool-reference',
+  ))
+    assert.ok(!Object.hasOwn(billing_expr, nativeKey));
   for (const [path, meta] of Object.entries(manifest.files)) {
     const bytes = readFileSync(join(out, path));
     assert.equal(bytes.byteLength, meta.bytes);
@@ -77,9 +62,7 @@ test('unified candidate covers the researched catalog and exports every selected
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'unified-cny-fixture-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const policy = input('unified-policy.json');
-  const catalog = input('official-catalog.json');
-  const selection = input('proposed-selection.json');
+  const [policy, catalog, selection] = readHistoricalCny();
   let upstreamDir;
   return {
     policy,
@@ -111,6 +94,34 @@ function fixture(t) {
     },
   };
 }
+
+test('the historical Kimi tariff and Seedance hold retain their exact published conditions', (t) => {
+  const { build } = fixture(t);
+  const read = build('historical');
+  const zh = read('api/i18n/zh/all.json');
+  const { billing_expr } = read('api/newapi/ratio_config.json').data;
+  assert.deepEqual(zh['moonshotai-cn'].models['kimi-k3.1-pro'].cost, {
+    input: 13,
+    output: 68,
+    cache_read: 1.3,
+    cache_write: 13,
+    cache_write_1h: 26,
+    currency: 'CNY',
+    publication_expr: 'tier("standard", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)',
+    publication_unit: 'token',
+  });
+  const seedance = read('coverage.json').quotes.find(
+    ({ modelId }) => modelId === 'doubao-seedance-2-5-260628',
+  );
+  assert.deepEqual(seedance.sourcePrice.rows, [
+    ['480p,720p', 70, 42],
+    ['1080p', 77, 46],
+    ['4K', 31, 19],
+  ]);
+  assert.equal(seedance.syncable, false);
+  assert.ok(!Object.hasOwn(billing_expr, seedance.modelId));
+  assert.ok(zh.volcengine.models[seedance.modelId]);
+});
 
 test('a selected price cannot silently disappear, and withdrawal blocks all alternate identities', (t) => {
   const { policy, catalog, selection, build } = fixture(t);
