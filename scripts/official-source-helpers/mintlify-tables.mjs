@@ -38,7 +38,19 @@ export function componentProps(node, expected) {
   return properties(node.arguments[1]);
 }
 
-export function mintlifyTables(body) {
+function paragraphText(node, includeStaticEmphasis) {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  if (
+    includeStaticEmphasis &&
+    ts.isCallExpression(node) &&
+    node.arguments[0]?.getText() === '_components.strong'
+  ) {
+    return string(componentProps(node, '_components.strong').get('children'));
+  }
+  return '';
+}
+
+export function mintlifyTables(body, { includeStaticEmphasis = false } = {}) {
   const html = new TextDecoder('utf-8', { fatal: true }).decode(body);
   const templates = [
     ...html.matchAll(/<template\s+data-mint="manifest"\s*>([\s\S]*?)<\/template>/g),
@@ -72,13 +84,13 @@ export function mintlifyTables(body) {
         if (children && ts.isArrayLiteralExpression(children)) {
           paragraphs.push(
             array(children)
-              .filter(
-                (child) => ts.isStringLiteral(child) || ts.isNoSubstitutionTemplateLiteral(child),
-              )
-              .map(string)
+              .map((node) => paragraphText(node, includeStaticEmphasis))
               .join(''),
           );
-        } else if (children && (ts.isStringLiteral(children) || ts.isNoSubstitutionTemplateLiteral(children))) {
+        } else if (
+          children &&
+          (ts.isStringLiteral(children) || ts.isNoSubstitutionTemplateLiteral(children))
+        ) {
           paragraphs.push(string(children));
         }
       }
