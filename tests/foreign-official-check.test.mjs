@@ -18,6 +18,13 @@ const fixtures = {
   'kimi-global': 'kimi-global',
   'minimax-international': 'minimax-md',
   'minimax-international--video-api': 'minimax-video-api',
+  'stepfun-international': 'step-intl',
+  'stepfun-international--cache': 'step-cache',
+  'upstage-api': 'upstage',
+  'upstage-api--solar-pro4': 'up-pro4',
+  'upstage-api--solar-mini4': 'up-mini4',
+  'sakana-namazu': 'sakana-namazu',
+  'sakana-fugu': 'sakana-fugu',
   'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--api-ids': 'mistral-md',
@@ -257,4 +264,23 @@ test('MiniMax international preserves the Standard threshold and charges H3 only
     /u\("input_images"\) > 6 \? u\("input_images"\) - 6 : 0/,
   );
   assert.equal(change.difference.amounts, undefined);
+});
+
+test('international Step and Upstage retain USD precision and distinguish retired services', async () => {
+  const report = await run();
+  const row = (id) => report.results.find(({ id: resultId }) => resultId === id);
+  assert.equal(row('upstream:stepfun-ai:step-5-preview:USD').status, 'unchanged');
+  assert.equal(row('upstream:stepfun-ai:step-3.7-flash:USD').observed.cnyCost.output, 8.05);
+  assert.equal(row('upstream:upstage:solar-pro4:USD').status, 'unchanged');
+  assert.equal(row('upstream:upstage:solar-mini4:USD').observed.sourcePrice.cache_read, 0.01);
+  assert.match(row('upstream:upstage:solar-pro3:USD').reason, /retired.*2026-10-30/);
+});
+test('Sakana reports a formal future Namazu rate without treating it as currently effective', async () => {
+  const report = await run();
+  const row = report.results.find(({ id }) => id === 'upstream:sakana:sakana-namazu:USD');
+  assert.equal(row?.status, 'future-effective', row?.reason);
+  assert.equal(row.observed.effectiveAt, '2026-12-01T10:00:00+09:00');
+  assert.equal(row.observed.sourcePrice.input, 1.9);
+  assert.equal(row.observed.conditions.currentTariff.input, 0.95);
+  assert.equal(row.observed.cnyCost.input, 13.3);
 });
