@@ -303,7 +303,7 @@ function officialRows(official, selection, policy, records, providers, lifecycle
       modelId: quote.model,
       nativeKey: tool ? null : (key ?? quote.model),
       priceList: quote.priceList,
-      endpoint: providers[providerId]?.api ?? null,
+      endpoint: quote.endpoint ?? providers[providerId]?.api ?? null,
       sourceCurrency: quote.currency ?? null,
       sourcePrice: task ? quote.task?.tiers : tool ? quote.tools : quote.cost,
       sourceUnit:
@@ -391,7 +391,15 @@ function officialRows(official, selection, policy, records, providers, lifecycle
       );
     const previous = previousById.get(quote.id);
     if (previous) {
-      for (const field of ['provider', 'model', 'priceList', 'origin', 'currency', 'kind'])
+      for (const field of [
+        'provider',
+        'model',
+        'priceList',
+        'origin',
+        'currency',
+        'kind',
+        'endpoint',
+      ])
         if (previous[field] !== quote[field])
           throw Error('Selected quote changed identity field ' + field + ': ' + quote.id);
       const required = requiredShape(quote);

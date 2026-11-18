@@ -5,6 +5,84 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "us-minimax-minimax-h3-global-video",
+      "provider": "minimax",
+      "model": "MiniMax-H3",
+      "priceList": "MiniMax International Video API / pay-as-you-go",
+      "endpoint": "https://api.minimax.io/v2/video_generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://platform.minimax.io/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "1d4cc50a2f31017d75f01498e3c24a517a8fa4bec10a8e2af0b82970141a275f"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "inputVideoBilledAtOutputResolution": true,
+        "audioInputFree": true
+      },
+      "task": {
+        "plugin": "hailuo",
+        "model": "MiniMax-H3",
+        "tiers": [
+          {
+            "name": "2K",
+            "when": {
+              "resolution": "2K"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.13,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.13,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.04,
+                "unit": "per_count",
+                "currency": "USD",
+                "freeQuantity": 5
+              }
+            ]
+          },
+          {
+            "name": "768P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.04,
+                "unit": "per_count",
+                "currency": "USD",
+                "freeQuantity": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "us-xai-grok-imagine-video-standard",
       "provider": "xai",
       "model": "grok-imagine-video",

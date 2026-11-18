@@ -16,6 +16,8 @@ const fixtures = {
   'anthropic-global': 'anth',
   'morph-list': 'morph',
   'kimi-global': 'kimi-global',
+  'minimax-international': 'minimax-md',
+  'minimax-international--video-api': 'minimax-video-api',
   'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--api-ids': 'mistral-md',
@@ -228,4 +230,31 @@ test('Google Developer API preserves Standard modality prices, context tiers and
     report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,
     'deferred',
   );
+});
+
+test('MiniMax international preserves the Standard threshold and charges H3 only beyond its free image quota', async () => {
+  const report = await run();
+  const row = (id) => report.results.find(({ id: resultId }) => resultId === id);
+  const llm = row('upstream:minimax:MiniMax-M3:USD');
+  assert.equal(llm.observed.sourcePrice.tiers[0].tier.size, 512000);
+  assert.equal(llm.observed.sourcePrice.input, 0.3);
+  assert.equal(llm.observed.conditions.undiscounted.base.input, 0.6);
+  const video = row('us-minimax-minimax-h3-global-video');
+  assert.equal(video.status, 'unchanged', video.reason);
+  assert.equal(video.observed.identity.endpoint, 'https://api.minimax.io/v2/video_generation');
+  assert.equal(video.observed.sourcePrice[0].charges[2].freeQuantity, 5);
+  assert.equal(video.observed.cnyCost[0].charges[2].amount, 0.28);
+  assert.match(row('upstream:minimax:MiniMax-H3-Max:USD').reason, /native.*binding/);
+
+  const adjusted = await run((body, id) =>
+    id === 'minimax-international'
+      ? Buffer.from(body.toString().replace('first **5 images**', 'first **6 images**'))
+      : body,
+  );
+  const change = adjusted.changes.find(({ id }) => id === 'us-minimax-minimax-h3-global-video');
+  assert.match(
+    change.candidate.expression,
+    /u\("input_images"\) > 6 \? u\("input_images"\) - 6 : 0/,
+  );
+  assert.equal(change.difference.amounts, undefined);
 });
