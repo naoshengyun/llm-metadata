@@ -121,6 +121,7 @@ function parse({ body, supplemental }) {
           quoteId,
           {
             identity: { providerId, endpoint, modelId, priceList, currency },
+            recordId: 'us-morph-' + modelId + '-standard',
             sourcePrice,
             sourceUnit: 'per_million_tokens',
             required: Object.keys(sourcePrice),

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -55,16 +55,19 @@ const fixtures = {
   'openai-standard--currency': 'openai-currency',
   'openai-standard--cache': 'oic',
   'openai-standard--images': 'ois',
+  'anthropic-global--opus-4-5': 'anth-opus45',
   'anthropic-global--ids': 'anthids',
   'morph-list--api-docs': 'morph-docs',
   'kimi-global--currency': 'kimi-balance',
 };
 const attemptedAt = '2026-11-18T12:44:58Z';
 
-function run(mutate = (body) => body) {
+function run(mutate = (body) => body, options = {}) {
+  const checkedAt = options.attemptedAt ?? attemptedAt;
   return checkOfficialPrices({
     baseline,
-    attemptedAt,
+    attemptedAt: checkedAt,
+    previous: options.previous,
     getResponse: async ({ id, url }) => {
       if (!fixtures[id]) throw Error('Outside foreign fixture scope');
       const fixture = new URL(
@@ -74,7 +77,7 @@ function run(mutate = (body) => body) {
       return {
         url,
         body: mutate(gunzipSync(readFileSync(fixture)), id),
-        obtainedAt: attemptedAt,
+        obtainedAt: checkedAt,
       };
     },
   });
@@ -87,7 +90,11 @@ test('verifies precise OpenAI Standard and direct image quotes, Claude global qu
     'anthropic-global': 17,
     'morph-list': 11,
   })) {
-    const scoped = report.results.filter((result) => result.sourceId === sourceId);
+    const scoped = report.results.filter(
+      (result) =>
+        result.sourceId === sourceId &&
+        (sourceId !== 'anthropic-global' || result.id.startsWith('us-anthropic-')),
+    );
     assert.equal(scoped.length, count, sourceId);
     assert.equal(
       scoped.filter(({ status }) => status === 'unchanged').length,
@@ -322,4 +329,118 @@ test('Alibaba International uses the Singapore service scope and preserves mode 
   assert.equal(id('qwen3.6-35b-a3b').observed.cnyCost.output, 15.75);
   assert.equal(id('qwen-plus-character-ja').observed.sourcePrice.input, 0.5);
   assert.match(id('qwen3.7-max').reason, /requires cache evidence/);
+});
+
+test('the selected Claude Opus 4.5 API alias has its own reviewed identity and complete cache TTLs', async () => {
+  const report = await run();
+  const change = report.changes.find(({ id }) => id === 'upstream:anthropic:claude-opus-4-5:USD');
+  assert.equal(change?.selected, true);
+  assert.equal(change.observed.sourcePrice.cache_write_1h, 10);
+  assert.equal(change.observed.cnyCost.cache_write_1h, 70);
+});
+
+function replaceEvidence(body, from, to) {
+  assert.ok(body.includes(from));
+  return Buffer.from(body.toString().replace(from, to));
+}
+
+test('a changed selected USD price passes candidate rebuild with precisely one conversion', async () => {
+  const report = await run((body, id) =>
+    id === 'openai-standard'
+      ? replaceEvidence(
+          body,
+          '| gpt-6.1-terra | $1.00 | $5.00 |',
+          '| gpt-6.1-terra | $1.00 | $5.25 |',
+        )
+      : body,
+  );
+  const change = report.changes.find(({ id }) => id === 'us-openai-gpt-6.1-terra-standard');
+  assert.equal(change.observed.sourcePrice.output, 5.25);
+  assert.equal(change.observed.cnyCost.output, 36.75);
+  const catalog = JSON.parse(readFileSync('data/cny/official-catalog.json'));
+  catalog.records = catalog.records.map((entry) =>
+    entry.id === change.id ? change.candidate.record : entry,
+  );
+  const path = join(directory, 'foreign-mutated-catalog.json');
+  writeFileSync(path, JSON.stringify(catalog));
+  const out = join(directory, 'foreign-mutated-candidate');
+  execFileSync(process.execPath, [
+    'scripts/build-unified-cny.mjs',
+    out,
+    'data/cny/unified-policy.json',
+    path,
+    'data/cny/proposed-selection.json',
+    'data/upstream/24d3f35c',
+    baseline,
+  ]);
+  const actual = JSON.parse(readFileSync(join(out, 'api/newapi/ratio_config.json')));
+  assert.equal(actual.data.billing_expr['gpt-6.1-terra'], change.candidate.expression);
+  assert.match(change.candidate.expression, /c \* 36\.75/);
+});
+
+test('loss of a charged field, a table migration and a network timeout preserve the last successful check', async () => {
+  const previous = await run();
+  const attempts = [
+    {
+      id: 'openai-standard',
+      result: 'us-openai-gpt-6.1-terra-standard',
+      mutate: (body) => replaceEvidence(body, '| gpt-6.1-terra | $1.00 |', '| gpt-6.1-terra | - |'),
+      reason: /Invalid USD price/,
+    },
+    {
+      id: 'anthropic-global',
+      result: 'us-anthropic-claude-fable-5-2-standard',
+      mutate: (body) => replaceEvidence(body, '5m cache writes |', '30m writes |'),
+      reason: /changed pricing table/,
+    },
+    {
+      id: 'morph-list',
+      result: 'upstream:morph:morph-v3-fast:USD',
+      mutate: () => {
+        throw Error('fixture timeout');
+      },
+      reason: /timeout/,
+    },
+  ];
+  for (const { id, result, mutate, reason } of attempts) {
+    const report = await run((body, source) => (source === id ? mutate(body) : body), {
+      previous,
+      attemptedAt: '2026-11-18T13:17:00Z',
+    });
+    const failure = report.results.find((row) => row.id === result);
+    assert.equal(failure.status, 'failed');
+    assert.equal(failure.latestSuccessfulAt, attemptedAt);
+    assert.match(failure.reason, reason);
+    assert.ok(!report.changes.some((change) => change.id === result));
+  }
+});
+
+test('Morph checks prior real API JSON and rejects the third-party channel response URL', async () => {
+  const previous = await run((body, id) =>
+    id === 'morph-list'
+      ? gunzipSync(
+          readFileSync(
+            new URL('./fixtures/official-check/morph-earlier-2026-11-18.gz', import.meta.url),
+          ),
+        )
+      : body,
+  );
+  assert.equal(
+    previous.results.find(({ id }) => id === 'upstream:morph:morph-dsv4flash:USD').status,
+    'unchanged',
+  );
+  const { adapter } = await import('../scripts/official-sources/morph-list.mjs');
+  const incorrect = await checkOfficialPrices({
+    baseline,
+    attemptedAt,
+    adapters: [adapter],
+    getResponse: async ({ url }) => ({
+      url: url.replace('?prices=list', ''),
+      body: Buffer.from('{}'),
+      obtainedAt: attemptedAt,
+    }),
+  });
+  const row = incorrect.results.find(({ id }) => id === 'upstream:morph:morph-v3-fast:USD');
+  assert.equal(row.status, 'failed');
+  assert.match(row.reason, /unregistered official URL|unregistered URL/);
 });

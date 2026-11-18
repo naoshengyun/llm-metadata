@@ -22,6 +22,7 @@ const labels = {
   'claude-sonnet-4-6': 'Claude Sonnet 4.6',
   'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
   'claude-sonnet-4-5': 'Claude Sonnet 4.5',
+  'claude-opus-4-5': 'Claude Opus 4.5',
   'claude-opus-4-5-20251101': 'Claude Opus 4.5',
   'claude-haiku-4-5': 'Claude Haiku 4.5',
   'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
@@ -48,19 +49,28 @@ export const adapter = {
   id: 'anthropic-global',
   url: 'https://platform.claude.com/docs/en/about-claude/pricing.md',
   supplemental: [
+    { id: 'opus-4-5', url: 'https://platform.claude.com/docs/en/models/opus-4-5/overview.md' },
     {
       id: 'ids',
       url: 'https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions.md',
     },
   ],
   targets: Object.keys(labels).map((modelId) => ({
-    quoteId: 'us-anthropic-' + modelId + '-standard',
+    quoteId:
+      modelId === 'claude-opus-4-5'
+        ? 'upstream:anthropic:claude-opus-4-5:USD'
+        : 'us-anthropic-' + modelId + '-standard',
     providerId,
     endpoint,
     modelId,
     priceList,
     currency,
-    baselineIdentity: { endpoint: null },
+    baselineIdentity: {
+      endpoint: null,
+      ...(modelId === 'claude-opus-4-5' && {
+        priceList: 'fixed upstream primary or original CNY sheet',
+      }),
+    },
     baselineConditions: conditions,
     group: 'global-standard',
   })),
@@ -71,6 +81,10 @@ function parse({ body, supplemental }) {
   const idDocs = markdown(supplemental.get('ids').body);
   requireText(idDocs, '`claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`');
   requireText(idDocs, 'that point to the most recent dated snapshot for that minor version.');
+  const opus = markdown(supplemental.get('opus-4-5').body);
+  requireText(opus, 'Model ID: `claude-opus-4-5-20251101`');
+  if (!/^\| Claude API alias\s+\| `claude-opus-4-5`\s+\|$/m.test(opus))
+    throw Error('Claude Opus 4.5 alias evidence is missing');
   const text = markdown(body);
   requireText(text, 'All prices are in USD.');
   requireText(text, 'Global routing (the default) uses standard pricing.');
@@ -124,6 +138,7 @@ function parse({ body, supplemental }) {
       }
       results.set(quoteId, {
         identity: { providerId, endpoint, modelId, priceList, currency },
+        recordId: 'us-anthropic-' + modelId + '-standard',
         sourcePrice,
         sourceUnit: 'per_million_tokens',
         required,

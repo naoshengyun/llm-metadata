@@ -123,6 +123,7 @@ function parse({ body, supplemental }) {
         );
         results.set(quoteId, {
           identity: { providerId, endpoint, modelId, priceList, currency },
+          recordId: 'usd-moonshot-' + modelId + '-standard',
           sourcePrice: Object.fromEntries(
             charges.map((key, index) => [
               key,

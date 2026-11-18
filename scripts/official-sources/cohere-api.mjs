@@ -86,6 +86,7 @@ function parse({ body, supplemental }) {
           quoteId,
           {
             identity: { providerId, endpoint, modelId, priceList, currency },
+            recordId: 'us-cohere-' + modelId + '-standard',
             sourcePrice:
               group === 'aya-expanse'
                 ? ayaPrices(pricing, page, modelId)

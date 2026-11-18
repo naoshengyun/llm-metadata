@@ -169,7 +169,11 @@ function registeredTargets(adapters, entries) {
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
   for (const source of adapters) {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || source.id.includes('--') || sources.has(source.id)) {
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/.test(source.id) ||
+      source.id.includes('--') ||
+      sources.has(source.id)
+    ) {
       throw Error('Invalid or duplicate official source ID: ' + source.id);
     }
     sources.add(source.id);
@@ -256,10 +260,10 @@ function originalRecord(entry, parsed, evidence) {
   ) {
     throw Error('Model charge shape does not match billing unit');
   }
-  const { providerId, modelId, priceList, currency } = parsed.identity;
+  const { providerId, endpoint, modelId, priceList, currency } = parsed.identity;
   const record = {
     ...previous,
-    ...(!previous && { id: parsed.recordId ?? quote.quoteId, provider: providerId }),
+    ...(!previous && { id: parsed.recordId ?? quote.quoteId, provider: providerId, endpoint }),
     model: modelId,
     priceList,
     origin: entry.domestic ? 'domestic' : 'foreign',
@@ -488,10 +492,18 @@ export async function checkOfficialPrices({
           if (source.supplemental?.length) {
             evidence.supplemental = {};
             for (const request of source.supplemental) {
-              const response = await readResponse({ ...request, id: source.id + '--' + request.id });
+              const response = await readResponse({
+                ...request,
+                id: source.id + '--' + request.id,
+              });
               evidence.supplemental[request.id] = response.evidence;
               if (response.evidence.status !== 200) {
-                throw Error('Supplemental official source ' + request.id + ' HTTP ' + response.evidence.status);
+                throw Error(
+                  'Supplemental official source ' +
+                    request.id +
+                    ' HTTP ' +
+                    response.evidence.status,
+                );
               }
               supplemental.set(request.id, response);
             }
@@ -591,16 +603,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const sourceFiles = readdirSync(sourceDirectory, { recursive: true })
     .filter((name) => name.endsWith('.mjs'))
     .sort();
-  const checkerFiles = Object.fromEntries(sourceFiles.map((name) => [
-    name,
-    sha(readFileSync(new URL(name, sourceDirectory))),
-  ]));
+  const checkerFiles = Object.fromEntries(
+    sourceFiles.map((name) => [name, sha(readFileSync(new URL(name, sourceDirectory)))]),
+  );
   const checker = {
     sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: new URL('../', import.meta.url),
       encoding: 'utf8',
     }).trim(),
-    files: { 'check-official-cny.mjs': sha(readFileSync(new URL(import.meta.url))), ...checkerFiles },
+    files: {
+      'check-official-cny.mjs': sha(readFileSync(new URL(import.meta.url))),
+      ...checkerFiles,
+    },
   };
   const report = await checkOfficialPrices({
     baseline,
