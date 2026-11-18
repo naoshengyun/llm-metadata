@@ -15,18 +15,19 @@ const run = (script, args = []) =>
   execFileSync(process.execPath, [script, ...args], { stdio: 'inherit' });
 
 run('scripts/check-cny-effective-time.mjs');
-const candidateArgs = (directory, baseline) => [
+const policyPath = 'data/cny/unified-policy.json';
+const candidateArgs = (directory, baseline, repository = '.') => [
   directory,
-  'data/cny/unified-policy.json',
+  policyPath,
   'data/cny/official-catalog.json',
   'data/cny/proposed-selection.json',
-  '',
+  JSON.parse(readFileSync(resolve(repository, policyPath))).upstreamDirectory,
   ...(baseline ? [baseline] : []),
 ];
 if (option === '--check-base') {
   const base = execFileSync('git', ['rev-parse', 'HEAD^1'], { encoding: 'utf8' }).trim();
   const hasUnifiedInputs =
-    spawnSync('git', ['cat-file', '-e', base + ':data/cny/unified-policy.json']).status === 0;
+    spawnSync('git', ['cat-file', '-e', base + ':' + policyPath]).status === 0;
   if (hasUnifiedInputs && prior?.sourceSha !== base) {
     // The protected branch may be ahead of Pages after a suspended or failed deployment.
     const baseRoot = resolve(work, 'base-source');
@@ -37,7 +38,7 @@ if (option === '--check-base') {
       execFileSync('npm', ['ci', '--ignore-scripts'], fromBase);
       execFileSync(
         'npm',
-        ['run', 'cny:unified:build', '--', ...candidateArgs(baseCandidate, previous)],
+        ['run', 'cny:unified:build', '--', ...candidateArgs(baseCandidate, previous, baseRoot)],
         fromBase,
       );
       run(
