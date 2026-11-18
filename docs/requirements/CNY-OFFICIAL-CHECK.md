@@ -30,3 +30,10 @@ npm run cny:official:check -- /tmp/cny-unified /tmp/cny-official-recheck /tmp/cn
 | 2026-11-18 | `a19a8f3f9c0a456384a58ea85d88081b2b80c065a34ad488cc5324850467529a` |
 
 运行 `npm run test:cny` 可复现两份真实响应的同价回归，以及从固定响应构造的改价、缺字段、结构变化和错误场景。正式未来价与明确撤价使用结构化测试响应。测试产生的拟变价仅作本地候选校验。
+
+适配器需要多个官方文件才能核对同一价目时，可声明
+`supplemental: [{ id, url, allowedFinalUrls }]`。每份文件经相同的 HTTPS GET、最终地址和
+响应时间校验，原始字节以 `<adapter-id>--<id>.body` 保存，并记录独立响应哈希。
+`parse({ body, evidence, supplemental })` 的 `supplemental` 为按短 ID 索引的 Map，
+每个值包含响应 `body` 和 `evidence`。任何必需文件获取失败都会使该适配器本次核价失败。
+拟议价目的 `source.supplemental` 保留这些官方文件的 URL、哈希和日期。

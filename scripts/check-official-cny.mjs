@@ -169,11 +169,19 @@ function registeredTargets(adapters, entries) {
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
   for (const source of adapters) {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || sources.has(source.id)) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || source.id.includes('--') || sources.has(source.id)) {
       throw Error('Invalid or duplicate official source ID: ' + source.id);
     }
     sources.add(source.id);
     httpsUrl(source.url);
+    const supplementalIds = new Set();
+    for (const request of source.supplemental ?? []) {
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(request.id) || supplementalIds.has(request.id)) {
+        throw Error('Invalid or duplicate supplemental official source ID: ' + request.id);
+      }
+      supplementalIds.add(request.id);
+      httpsUrl(request.url);
+    }
     for (const target of source.targets) {
       if (!target.group || registered.has(target.quoteId)) {
         throw Error('Invalid or duplicate official quote registration: ' + target.quoteId);
@@ -265,6 +273,13 @@ function originalRecord(entry, parsed, evidence) {
       url: evidence.finalUrl,
       sha256: evidence.sha256,
       checkedAt: evidence.obtainedAt.slice(0, 10),
+      ...(evidence.supplemental && {
+        supplemental: Object.values(evidence.supplemental).map((item) => ({
+          url: item.finalUrl,
+          sha256: item.sha256,
+          checkedAt: item.obtainedAt.slice(0, 10),
+        })),
+      }),
     },
   };
   if (previous?.upstreamKey) record.upstreamKey = previous.upstreamKey;
@@ -443,28 +458,45 @@ export async function checkOfficialPrices({
         let body;
         let parsed;
         let failure;
-        try {
-          const response = await getResponse(source, attemptedAt);
-          body = Buffer.from(response.body);
+        async function readResponse(request) {
+          const response = await getResponse(request, attemptedAt);
+          const body = Buffer.from(response.body);
           const url = httpsUrl(response.url);
-          if (![source.url, ...(source.allowedFinalUrls ?? [])].map(httpsUrl).includes(url)) {
+          if (![request.url, ...(request.allowedFinalUrls ?? [])].map(httpsUrl).includes(url)) {
             throw Error('Official response came from an unregistered URL');
           }
           if (timestamp(response.obtainedAt) < timestamp(attemptedAt)) {
             throw Error('Official response predates this check attempt');
           }
-          evidence = {
-            requestedUrl: source.url,
+          const evidence = {
+            requestedUrl: request.url,
             finalUrl: url,
             sha256: sha(body),
             obtainedAt: response.obtainedAt,
             status: response.status ?? 200,
-            file: 'responses/' + source.id + '.body',
+            file: 'responses/' + request.id + '.body',
           };
           onResponse(evidence, body);
-          responses.set(source.id, evidence);
+          responses.set(request.id, evidence);
+          return { body, evidence };
+        }
+
+        try {
+          ({ body, evidence } = await readResponse(source));
           if (evidence.status !== 200) throw Error('Official source HTTP ' + evidence.status);
-          parsed = await source.parse({ body, evidence });
+          const supplemental = new Map();
+          if (source.supplemental?.length) {
+            evidence.supplemental = {};
+            for (const request of source.supplemental) {
+              const response = await readResponse({ ...request, id: source.id + '--' + request.id });
+              evidence.supplemental[request.id] = response.evidence;
+              if (response.evidence.status !== 200) {
+                throw Error('Supplemental official source ' + request.id + ' HTTP ' + response.evidence.status);
+              }
+              supplemental.set(request.id, response);
+            }
+          }
+          parsed = await source.parse({ body, evidence, supplemental });
         } catch (error) {
           failure = error;
         }
@@ -555,21 +587,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const previous = previousPath ? JSON.parse(readFileSync(previousPath)) : undefined;
   mkdirSync(output);
   mkdirSync(join(output, 'responses'));
-  const modules = readdirSync(new URL('./official-sources/', import.meta.url))
+  const sourceDirectory = new URL('./official-sources/', import.meta.url);
+  const sourceFiles = readdirSync(sourceDirectory, { recursive: true })
     .filter((name) => name.endsWith('.mjs'))
-    .sort()
-    .map((name) => new URL('./official-sources/' + name, import.meta.url));
+    .sort();
+  const checkerFiles = Object.fromEntries(sourceFiles.map((name) => [
+    name,
+    sha(readFileSync(new URL(name, sourceDirectory))),
+  ]));
   const checker = {
     sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: new URL('../', import.meta.url),
       encoding: 'utf8',
     }).trim(),
-    files: Object.fromEntries(
-      [new URL(import.meta.url), ...modules].map((module) => [
-        module.pathname.split('/').at(-1),
-        sha(readFileSync(module)),
-      ]),
-    ),
+    files: { 'check-official-cny.mjs': sha(readFileSync(new URL(import.meta.url))), ...checkerFiles },
   };
   const report = await checkOfficialPrices({
     baseline,
