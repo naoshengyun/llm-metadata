@@ -38,15 +38,19 @@ export function componentProps(node, expected) {
   return properties(node.arguments[1]);
 }
 
-function paragraphText(node) {
+function paragraphText(node, includeStaticEmphasis) {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
-  if (ts.isCallExpression(node) && node.arguments[0]?.getText() === '_components.strong') {
+  if (
+    includeStaticEmphasis &&
+    ts.isCallExpression(node) &&
+    node.arguments[0]?.getText() === '_components.strong'
+  ) {
     return string(componentProps(node, '_components.strong').get('children'));
   }
   return '';
 }
 
-export function mintlifyTables(body) {
+export function mintlifyTables(body, { includeStaticEmphasis = false } = {}) {
   const html = new TextDecoder('utf-8', { fatal: true }).decode(body);
   const templates = [
     ...html.matchAll(/<template\s+data-mint="manifest"\s*>([\s\S]*?)<\/template>/g),
@@ -78,7 +82,11 @@ export function mintlifyTables(body) {
       } else if (['_jsx', '_jsxs'].includes(node.expression.text) && name === '_components.p') {
         const children = properties(node.arguments[1]).get('children');
         if (children && ts.isArrayLiteralExpression(children)) {
-          paragraphs.push(array(children).map(paragraphText).join(''));
+          paragraphs.push(
+            array(children)
+              .map((node) => paragraphText(node, includeStaticEmphasis))
+              .join(''),
+          );
         } else if (
           children &&
           (ts.isStringLiteral(children) || ts.isNoSubstitutionTemplateLiteral(children))

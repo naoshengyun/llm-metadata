@@ -30,7 +30,7 @@ export const adapter = {
   url: 'https://platform.kimi.com/docs/pricing/batch',
   targets,
   parse({ body }) {
-    const { sectionTables, paragraphs } = mintlifyTables(body);
+    const { sectionTables, paragraphs } = mintlifyTables(body, { includeStaticEmphasis: true });
     const rate = only(
       paragraphs.flatMap((paragraph) => {
         const match =
