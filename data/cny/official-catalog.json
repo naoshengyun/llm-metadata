@@ -6091,6 +6091,61 @@
           "text"
         ]
       }
+    },
+    {
+      "id": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-plus-character",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c466d1808974ab935319f21d6c021aac90ed35a622a336214f0a9bc8078044bb",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "5363ec60e251a68403e3e3931e826d0a76aaf259413dfc56ff4153c313100739",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "615126d94e9aafa2aa76f3e767c031d2569e7f8839dfdc7658c0b8358773db9c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.16
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true,
+        "sessionCacheRequestHeader": "x-dashscope-aca-session",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
     }
   ],
   "coverage": [

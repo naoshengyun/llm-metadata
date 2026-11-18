@@ -28,6 +28,7 @@ function check(sourceName, transform = (body) => body, status = 200) {
         'alibaba-cn--cache': 'alibaba-cache',
         'alibaba-cn--thinking': 'alibaba-thinking',
         'alibaba-cn--omni': 'alibaba-omni',
+        'alibaba-cn--character': 'alibaba-character',
         'stepfun-cn--audio': 'stepfun-audio',
         'minimax-cn--cache': 'minimax-cache',
         'minimax-cn--video': 'minimax-video',
@@ -400,4 +401,14 @@ test('Bailian distinguishes unified multimodal tokens from non-uniform output an
   const asr = resultFor(report, 'upstream:alibaba-cn:qwen3-asr-flash:unknown');
   assert.equal(asr?.status, 'unsupported', asr?.reason);
   assert.equal(asr.observed.sourcePrice.amount, 0.00022);
+});
+
+test('Bailian Character preserves the native session-cache rate and header condition', async () => {
+  const result = resultFor(
+    await check('alibaba'),
+    'dashscope--qwen-plus-character--cn-beijing-online-original-implicit',
+  );
+  assert.equal(result?.status, 'unchanged', result?.reason);
+  assert.deepEqual(result.observed.sourcePrice, { input: 0.8, output: 2, cache_read: 0.16 });
+  assert.equal(result.observed.conditions.sessionCacheRequestHeader, 'x-dashscope-aca-session');
 });

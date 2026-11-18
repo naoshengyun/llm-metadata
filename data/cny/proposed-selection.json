@@ -101,7 +101,8 @@
     "siliconflow/deepseek-v3.2": "dashscope--siliconflow-deepseek-v3.2--cn-beijing-online-original-token",
     "tongyi-intent-detect-v3": "dashscope--tongyi-intent-detect-v3--cn-beijing-online-original-token",
     "qwen-plus": "dashscope--qwen-plus--cn-beijing-online-original-implicit",
-    "qwen3.8-omni-flash": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit"
+    "qwen3.8-omni-flash": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit",
+    "qwen-plus-character": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit"
   },
   "notProposed": [
     {

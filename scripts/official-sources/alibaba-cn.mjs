@@ -17,6 +17,7 @@ const serviceModes = {
   'qwen-flash': ['implicit', 'explicit'],
   'qwen-max': ['implicit'],
   'qwen-plus': ['implicit', 'explicit'],
+  'qwen-plus-character': ['implicit'],
   'qwen3-coder-flash': ['implicit', 'explicit'],
   'qwen3-vl-plus': ['implicit', 'explicit'],
   'qwen3.5-flash': ['explicit'],
@@ -313,6 +314,7 @@ export const adapter = {
     { id: 'cache', url: 'https://help.aliyun.com/zh/model-studio/context-cache' },
     { id: 'thinking', url: 'https://help.aliyun.com/zh/model-studio/deep-thinking' },
     { id: 'omni', url: 'https://help.aliyun.com/zh/model-studio/qwen-omni' },
+    { id: 'character', url: 'https://help.aliyun.com/zh/model-studio/role-play' },
   ],
   targets: [...targets, ...referenceTargets],
   parse({ body, supplemental }) {
@@ -322,6 +324,13 @@ export const adapter = {
       throw Error('Missing Bailian Beijing domestic pricing region');
     }
     const all = beijingTables(html);
+    const character = htmlText(
+      decode(supplemental.get('character').body).replace(/<script\b[^]*?<\/script>/gi, ''),
+    );
+    const characterSession =
+      character.includes('命中缓存的 Token 按照 隐式缓存 计量计费') &&
+      character.includes('在请求头中添加 x-dashscope-aca-session 参数');
+
     const omniGuide = htmlText(
       decode(supplemental.get('omni').body).replace(/<script\b[^]*?<\/script>/gi, ''),
     );
@@ -356,6 +365,9 @@ export const adapter = {
         }
         try {
           const { bands, declaredCache } = modelBands(all, modelId);
+          if (modelId === 'qwen-plus-character' && !characterSession)
+            throw Error('Missing exact Bailian Character session-cache condition');
+
           const supportsCache = explicit
             ? terms.domesticExplicit.has(modelId)
             : terms.domesticImplicit.has(modelId);
@@ -395,6 +407,10 @@ export const adapter = {
                 inputBands: bands.map(({ lower, upper }) => ({ lower, upper })),
               }),
               reasoningBilledAsOutput: true,
+              ...(modelId === 'qwen-plus-character' && {
+                sessionCacheRequestHeader: 'x-dashscope-aca-session',
+              }),
+
               ...(thinkingToggle && {
                 thinkingToggle: { param: 'enable_thinking', value: true, default: false },
               }),
