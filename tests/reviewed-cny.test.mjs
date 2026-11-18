@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -12,11 +12,9 @@ test('the reviewed build refuses a cutoff in the future before creating a candid
   policy.asOf = '2999-01-01T00:00:00Z';
   const policyPath = join(temp, 'policy.json');
   writeFileSync(policyPath, JSON.stringify(policy));
-  const result = spawnSync(
-    process.execPath,
-    ['scripts/check-cny-effective-time.mjs', policyPath],
-    { encoding: 'utf8' },
-  );
+  const result = spawnSync(process.execPath, ['scripts/check-cny-effective-time.mjs', policyPath], {
+    encoding: 'utf8',
+  });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Review cutoff is in the future/);
 });
@@ -53,11 +51,33 @@ test('branch rule readback rejects a bypass actor', (t) => {
   readback.bypass_actors.push({ actor_id: 5, actor_type: 'RepositoryRole', bypass_mode: 'always' });
   const path = join(temp, 'rules.json');
   writeFileSync(path, JSON.stringify(readback));
+  const result = spawnSync(process.execPath, ['scripts/check-cny-rules.mjs', path], {
+    encoding: 'utf8',
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Ruleset bypass actors are forbidden/);
+});
+
+test('site sealing refuses to replace an already published fixed URL', (t) => {
+  const temp = mkdtempSync(join(tmpdir(), 'reviewed-cny-history-'));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  const site = join(temp, 'site');
+  const previous = join(temp, 'previous');
+  const path = join('versions', 'f'.repeat(64), 'ratio_config.json');
+  for (const root of [site, previous]) {
+    mkdirSync(join(root, 'versions', 'f'.repeat(64)), { recursive: true });
+    writeFileSync(join(root, 'current.json'), '{}');
+  }
+  writeFileSync(join(site, 'site-manifest.json'), '{"files":{}}');
+  writeFileSync(join(site, path), 'rewritten');
+  writeFileSync(join(previous, path), 'published');
+
   const result = spawnSync(
     process.execPath,
-    ['scripts/check-cny-rules.mjs', path],
+    ['scripts/cny-pages-release.mjs', 'seal', site, previous],
     { encoding: 'utf8' },
   );
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Ruleset bypass actors are forbidden/);
+  assert.match(result.stderr, /Immutable Pages file changed/);
+  assert.equal(readFileSync(join(site, path), 'utf8'), 'rewritten');
 });

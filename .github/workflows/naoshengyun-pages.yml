@@ -20,8 +20,7 @@ jobs:
       deployments: read
       pull-requests: read
     outputs:
-      prior_sha: ${{ steps.predecessor.outputs.source }}
-      prior_release: ${{ steps.seal.outputs.prior_release }}
+      prior_pointer_hash: ${{ steps.seal.outputs.prior_pointer_hash }}
       site_hash: ${{ steps.seal.outputs.site_hash }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -66,6 +65,10 @@ jobs:
             state="$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --jq '.[0].state')"
             case "$state" in
               success)
+                if [ "$source" = "$GITHUB_SHA" ]; then
+                  echo "::error::This merge commit already has a successful Pages deployment. Verify its original receipt."
+                  exit 1
+                fi
                 git merge-base --is-ancestor "$source" "$GITHUB_SHA"
                 printf 'source=%s\n' "$source" >> "$GITHUB_OUTPUT"
                 exit 0
@@ -101,7 +104,7 @@ jobs:
           set -euo pipefail
           node scripts/cny-pages-release.mjs seal "$RUNNER_TEMP/site" "$RUNNER_TEMP/prior" > "$RUNNER_TEMP/publication-receipt.json"
           test "$(jq -er .sourceSha "$RUNNER_TEMP/publication-receipt.json")" = "$GITHUB_SHA"
-          jq -r '"site_hash=\(.siteManifestSha256)", "prior_release=\(.previousRelease)"' "$RUNNER_TEMP/publication-receipt.json" >> "$GITHUB_OUTPUT"
+          jq -r '"site_hash=\(.siteManifestSha256)", "prior_pointer_hash=\(.previousPointerSha256)"' "$RUNNER_TEMP/publication-receipt.json" >> "$GITHUB_OUTPUT"
           tar --directory "$RUNNER_TEMP/site" -cf "$RUNNER_TEMP/artifact.tar" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -132,21 +135,14 @@ jobs:
       - name: Reject a stale source or changed public pointer immediately before deployment
         env:
           GH_TOKEN: ${{ github.token }}
-          PRIOR_SHA: ${{ needs.build.outputs.prior_sha }}
-          PRIOR_RELEASE: ${{ needs.build.outputs.prior_release }}
+          PRIOR_POINTER_HASH: ${{ needs.build.outputs.prior_pointer_hash }}
         run: |
           set -euo pipefail
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/naoshengyun" --jq .object.sha)" = "$GITHUB_SHA"
           curl --fail --silent --show-error --max-time 30 --header 'Cache-Control: no-cache' \
-            "${PAGES_ORIGIN}current.json?cny-release-check=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$(date +%s)" |
-            jq -e --arg release "$PRIOR_RELEASE" --arg source "$PRIOR_SHA" '
-              .releaseId == $release and (
-                (.schemaVersion == 3 and .sourceSha == $source) or
-                (.schemaVersion == 2 and
-                 $source == "19af68518c9bbe5551093e961f081d6c411dacf4" and
-                 .manifestSha256 == "e375efa1357b42fc898d5078816d00ab2e40dd9261a201dbe1be2e3b99ea2853")
-              )
-            '
+            "${PAGES_ORIGIN}current.json?cny-release-check=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$(date +%s)" \
+            --output "$RUNNER_TEMP/current.json"
+          printf '%s  %s\n' "$PRIOR_POINTER_HASH" "$RUNNER_TEMP/current.json" | sha256sum --check
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
         with:
@@ -178,8 +174,8 @@ jobs:
           SITE_HASH: ${{ needs.build.outputs.site_hash }}
         run: |
           set -euo pipefail
-          for attempt in {1..12}; do
-            if receipt="$(node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH")"; then
+          for attempt in {1..10}; do
+            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH")"; then
               printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi

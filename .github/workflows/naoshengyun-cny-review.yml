@@ -35,9 +35,13 @@ jobs:
       - name: Read the preceding immutable price candidate
         if: github.repository == 'naoshengyun/llm-metadata'
         run: |
-          node scripts/cny-pages-release.mjs snapshot https://naoshengyun.github.io/llm-metadata/ "$RUNNER_TEMP/prior" "" review
+          node scripts/cny-pages-release.mjs snapshot https://naoshengyun.github.io/llm-metadata/ "$RUNNER_TEMP/prior" "" retain
       - name: Build the simulated merge and fixed candidate
-        run: node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP"
+        run: |
+          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP"
+          if [ -f "$RUNNER_TEMP/prior/current.json" ]; then
+            node scripts/cny-pages-release.mjs seal "$RUNNER_TEMP/site" "$RUNNER_TEMP/prior" > "$RUNNER_TEMP/publication-receipt.json"
+          fi
       - name: Install the browser test driver
         run: npm --prefix "$RUNNER_TEMP/browser" install --ignore-scripts --no-audit --no-fund playwright@1.56.1
       - name: Test the built page and the fixed HTTP JSON

@@ -82,7 +82,8 @@ async function publicSnapshot(origin, expectedSource) {
   const manifestBytes = await remote(origin, 'site-manifest.json');
   const manifest = decode(manifestBytes);
   const load = async (path) => checked(await remote(origin, path), manifest.files[path], path);
-  const pointer = decode(await load('current.json'));
+  const pointerBytes = await load('current.json');
+  const pointer = decode(pointerBytes);
   validatePointer(pointer);
   if (expectedSource) verifyPredecessor(pointer, expectedSource);
   if (pointer.schemaVersion === 2) verifyPredecessor(pointer, bootstrap.sourceSha);
@@ -97,49 +98,49 @@ async function publicSnapshot(origin, expectedSource) {
   assert.equal(sha(fixedBytes), pointer.manifestSha256);
   const fixedManifest = decode(fixedBytes);
   assert.equal(fixedManifest.candidateId ?? fixedManifest.releaseId, pointer.releaseId);
-  assert.equal(
-    sha(await load('api/newapi/ratio_config.json')),
-    pointer.modelSourceSha256,
-  );
+  assert.equal(sha(await load('api/newapi/ratio_config.json')), pointer.modelSourceSha256);
   assert.equal(sha(await load(pointer.modelSource)), pointer.modelSourceSha256);
-  return { manifest, manifestBytes, pointer, fixedBytes, fixedManifest, load };
+  return { manifest, manifestBytes, pointer, pointerBytes, fixedManifest, load };
 }
 
 async function snapshot(origin, destination, source, mode) {
   assert.ok(['review', 'retain'].includes(mode));
   const previous = await publicSnapshot(origin, source);
-  const { pointer, fixedManifest, manifest, load } = previous;
+  const { pointer, pointerBytes, fixedManifest, manifest, load } = previous;
   mkdirSync(destination);
   if (mode === 'retain') {
     const versions = Object.fromEntries(
-      Object.entries(manifest.files).filter(([path]) =>
-        /^versions\/[0-9a-f]{64}\//.test(path),
-      ),
+      Object.entries(manifest.files).filter(([path]) => /^versions\/[0-9a-f]{64}\//.test(path)),
     );
     await collect(versions, async (path) => write(destination, path, await load(path)));
   } else if (pointer.schemaVersion === 3) {
     for (const file of [
-      'manifest.json', 'official-selection.json', 'policy.json', 'coverage.json',
-      'selection.json', 'api/newapi/ratio_config.json',
+      'manifest.json',
+      'official-selection.json',
+      'policy.json',
+      'coverage.json',
+      'selection.json',
+      'api/newapi/ratio_config.json',
     ]) {
       const path = pointer.fixedBase + file;
       write(destination, path, await load(path));
     }
   }
-  if (pointer.schemaVersion === 3)
-    assert.equal(fixedManifest.sourceSha, pointer.sourceSha);
-  write(destination, 'current.json', json(pointer));
+  if (pointer.schemaVersion === 3) assert.equal(fixedManifest.sourceSha, pointer.sourceSha);
+  write(destination, 'current.json', pointerBytes);
   console.log(JSON.stringify(pointer));
 }
 
 function seal(site, previous) {
   const manifest = decode(read(site, 'site-manifest.json'));
   const pointer = decode(read(site, 'current.json'));
-  const old = decode(read(previous, 'current.json'));
-  const walk = (path) => readdirSync(join(previous, path), { withFileTypes: true }).flatMap((entry) => {
-    const relative = path + '/' + entry.name;
-    return entry.isDirectory() ? walk(relative) : [relative];
-  });
+  const oldPointerBytes = read(previous, 'current.json');
+  const old = decode(oldPointerBytes);
+  const walk = (path) =>
+    readdirSync(join(previous, path), { withFileTypes: true }).flatMap((entry) => {
+      const relative = path + '/' + entry.name;
+      return entry.isDirectory() ? walk(relative) : [relative];
+    });
   // Compare bytes even when the initial site generator already recreated the old directory.
   for (const path of walk('versions')) {
     const bytes = read(previous, path);
@@ -154,13 +155,16 @@ function seal(site, previous) {
   manifest.files['current.json'] = { sha256: sha(pointerBytes), bytes: pointerBytes.length };
   const manifestBytes = Buffer.from(json(manifest));
   write(site, 'site-manifest.json', manifestBytes, 'w');
-  console.log(JSON.stringify({
-    sourceSha: pointer.sourceSha,
-    releaseId: pointer.releaseId,
-    manifestSha256: pointer.manifestSha256,
-    siteManifestSha256: sha(manifestBytes),
-    previousRelease: old.releaseId,
-  }));
+  console.log(
+    JSON.stringify({
+      sourceSha: pointer.sourceSha,
+      releaseId: pointer.releaseId,
+      manifestSha256: pointer.manifestSha256,
+      siteManifestSha256: sha(manifestBytes),
+      previousRelease: old.releaseId,
+      previousPointerSha256: sha(oldPointerBytes),
+    }),
+  );
 }
 
 async function verify(origin, source, expectedHash) {

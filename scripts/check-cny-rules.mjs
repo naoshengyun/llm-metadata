@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs';
 const [path] = process.argv.slice(2);
 assert.ok(path, 'Pass ruleset or active branch rules JSON');
 const actual = JSON.parse(readFileSync(path));
-const expected = JSON.parse(readFileSync(new URL('../.github/cny-branch-rules.json', import.meta.url)));
+const expected = JSON.parse(
+  readFileSync(new URL('../.github/cny-branch-rules.json', import.meta.url)),
+);
 const rules = Array.isArray(actual) ? actual : actual.rules;
 if (!Array.isArray(actual)) {
   assert.equal(actual.name, expected.name);
@@ -22,5 +24,9 @@ const check = (actualValue, expectedValue, label) => {
     check(actualValue[key], value, label + '.' + key);
 };
 for (const rule of expected.rules)
-  check(rules.find(({ type }) => type === rule.type), rule, rule.type);
+  check(
+    rules.find(({ type }) => type === rule.type),
+    rule,
+    rule.type,
+  );
 console.log('CNY business branch protection matches the required rules');

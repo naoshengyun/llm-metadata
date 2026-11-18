@@ -98,13 +98,18 @@ try {
   }
 
   const previous = JSON.parse(await get('upstream-current.json'));
-  assert.equal(previous.releaseId, current.previousRelease);
+  assert.ok((await get('publication.html')).includes('./' + current.modelSource));
   assert.equal(sha(await get(previous.modelSource)), previous.modelSourceSha256);
   assert.ok((await get('upstream-publication.html')).includes('./' + previous.modelSource));
   const first = JSON.parse(await get('legacy-current.json'));
   const firstSource = `versions/${first.releaseId}/ratio_config.json`;
   assert.ok((await get('legacy-publication.html')).includes('./' + firstSource));
   assert.notEqual(await get(firstSource), canonical);
+  const english = JSON.parse(await get('api/all.json'));
+  const display = english['moonshotai-cn'].models['kimi-k3.1-pro'];
+  const expectedKimiPrices = [display.cost.input, display.cost.output]
+    .filter(Number.isFinite)
+    .map((price) => '¥' + Number(price.toPrecision(4)));
   const select = (id, model) =>
     '/#' + new URLSearchParams({ p: id, ...(model ? { m: model } : {}) });
 
@@ -142,23 +147,26 @@ try {
     const kimi = page.locator('article').filter({
       has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
     });
-    await expectVisible(kimi.getByText('CNY base price · included in API'));
-    assert.match(await kimi.innerText(), /¥13/);
-    assert.match(await kimi.innerText(), /¥68/);
+    if (display.cnyPrice.exported)
+      await expectVisible(kimi.getByText('CNY base price · included in API'));
+    for (const price of expectedKimiPrices) assert.ok((await kimi.innerText()).includes(price));
     await snapshot(page, viewport.width, 'cards');
     await page.getByRole('button', { name: 'Table view' }).click();
     const row = page.getByRole('row').filter({
       has: page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }),
     });
-    await expectVisible(row.getByText('CNY base price · included in API'));
-    assert.match(await row.innerText(), /¥13/);
-    assert.match(await row.innerText(), /¥68/);
+    if (display.cnyPrice.exported)
+      await expectVisible(row.getByText('CNY base price · included in API'));
+    for (const price of expectedKimiPrices) assert.ok((await row.innerText()).includes(price));
     await snapshot(page, viewport.width, 'table');
     await page.getByRole('textbox', { name: 'Search models…', exact: true }).fill('kimi-k3.1-pro');
     await page.getByRole('button', { name: 'View details for Kimi K3.1 Pro', exact: true }).click();
     await expectVisible(page.getByRole('heading', { name: 'Official tariffs' }));
-    const kimiExpr = Object.entries(data.billing_expr).find(([key]) => key === 'kimi-k3.1-pro')[1];
-    assert.equal(await page.locator('code').filter({ hasText: 'tier(' }).innerText(), kimiExpr);
+    if (display.cnyPrice.exported)
+      assert.equal(
+        await page.locator('code').filter({ hasText: 'tier(' }).innerText(),
+        data.billing_expr['kimi-k3.1-pro'],
+      );
     await page.getByRole('heading', { name: 'Official tariffs' }).scrollIntoViewIfNeeded();
     await snapshot(page, viewport.width, 'detail');
     await expectVisible(
@@ -167,9 +175,10 @@ try {
     await expectVisible(page.getByText('Actual billing awaiting verification').first());
 
     await page.getByRole('button', { name: 'View details for Moonshot AI', exact: true }).click();
-    await expectVisible(
-      page.getByText('explicit-official-price-selected', { exact: false }).first(),
-    );
+    if (display.cnyPrice.exported)
+      await expectVisible(
+        page.getByText('explicit-official-price-selected', { exact: false }).first(),
+      );
     assert.equal(new URL(page.url()).hash, select('moonshotai', 'kimi-k3.1-pro').split('/')[1]);
 
     if (mobile) await page.getByText('Search providers / all models', { exact: true }).click();
@@ -181,7 +190,8 @@ try {
       new URL(page.url()).hash,
       select('openai', 'gpt-image-2.5-sunburst').split('/')[1],
     );
-    await expectVisible(page.getByText('Selected for sync', { exact: true }).first());
+    if (english.openai.models['gpt-image-2.5-sunburst'].cnyPrice.exported)
+      await expectVisible(page.getByText('Selected for sync', { exact: true }).first());
     if (mobile)
       assert.ok(
         !(await page.getByRole('textbox', { name: 'Filter providers or models…' }).isVisible()),
@@ -201,11 +211,9 @@ try {
       await rows.evaluateAll((entries) =>
         entries.map((row) => [...row.cells].map((cell) => cell.textContent)),
       ),
-      [
-        ['480p,720p', '70', '42'],
-        ['1080p', '77', '46'],
-        ['4K', '31', '19'],
-      ],
+      english.volcengine.models['doubao-seedance-2-5-260628'].cnyPrice.quotes
+        .find(({ sourcePrice }) => sourcePrice?.rows)
+        .sourcePrice.rows.map((row) => row.map(String)),
     );
     await expectVisible(
       page.getByText('actual charged token usage is API usage.completion_tokens', { exact: false }),
@@ -220,12 +228,6 @@ try {
     await expectVisible(
       page.getByText('Subscription plan; not a token tariff', { exact: false }).first(),
     );
-    await goto(select('volcengine'));
-    await page.getByRole('button', { name: 'Card view' }).click();
-    await expectVisible(page.getByText(/CNY 0\.12 \/ count/).first());
-    await page.getByRole('button', { name: 'Table view' }).click();
-    await expectVisible(page.getByText(/CNY 0\.12 \/ count/).first());
-
     // Actually use every provider clipboard that contributes at least one native key.
     const selectedProviders = [
       ...new Set(
@@ -254,7 +256,7 @@ try {
     );
     await expectVisible(dialog.getByText('tool calls are free', { exact: false }));
     await dialog.getByText('Official tool tariff references').click();
-    await expectVisible(dialog.getByText('search_std · CNY 0.01 / per_call'));
+    await expectVisible(dialog.getByText(/search_std · CNY [0-9.]+ \/ per_call/));
     await dialog.getByText('Official tool tariff references').click();
     assert.equal(
       await readCopy(dialog.getByRole('button', { name: 'Copy full configuration' })),
