@@ -16,7 +16,14 @@ const fixtures = {
   'anthropic-global': 'anth',
   'morph-list': 'morph',
   'kimi-global': 'kimi-global',
+  'cohere-api': 'co-pricing',
+  'cohere-api--command-a': 'co-a',
+  'cohere-api--command-r': 'co-r',
+  'cohere-api--command-r-plus': 'co-plus',
+  'cohere-api--command-r7b': 'co-7b',
+  'cohere-api--aya-expanse': 'co-aya',
   'xai-video': 'xai-video-current',
+  'openai-standard--currency': 'openai-currency',
   'openai-standard--cache': 'oic',
   'openai-standard--images': 'ois',
   'anthropic-global--ids': 'anthids',
@@ -142,4 +149,18 @@ test('USD review binds the official documents carrying charge conditions and cur
   assert.ok(price('anthropic-global', 'ids')?.sha256);
   assert.ok(price('morph-list', 'api-docs')?.sha256);
   assert.ok(price('kimi-global', 'currency')?.sha256);
+});
+
+test('Cohere verifies five priced production IDs and preserves the exact deferred rows', async () => {
+  const report = await run();
+  const results = report.results.filter(({ sourceId }) => sourceId === 'cohere-api');
+  assert.equal(results.length, 5);
+  assert.ok(results.every(({ status }) => status === 'unchanged'));
+  const r7b = results.find(({ nativeKey }) => nativeKey === 'command-r7b-12-2024');
+  assert.equal(r7b.observed.sourcePrice.input, 0.0375);
+  assert.equal(r7b.observed.cnyCost.input, 0.2625);
+  assert.equal(
+    report.results.find(({ nativeKey }) => nativeKey === 'command-a-plus-05-2026').status,
+    'deferred',
+  );
 });

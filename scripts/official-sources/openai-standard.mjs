@@ -69,6 +69,7 @@ export const adapter = {
   id: 'openai-standard',
   url: 'https://developers.openai.com/api/docs/pricing.md',
   supplemental: [
+    { id: 'currency', url: 'https://developers.openai.com/api/docs/guides/chatgpt-api-credits.md' },
     { id: 'cache', url: 'https://developers.openai.com/api/docs/guides/prompt-caching.md' },
     { id: 'images', url: 'https://developers.openai.com/api/docs/guides/image-generation.md' },
   ],
@@ -152,6 +153,12 @@ function directImages(text, imageGuide) {
 }
 
 function parse({ body, supplemental }) {
+  const creditDocs = markdown(supplemental.get('currency').body);
+  requireText(creditDocs, 'Monthly API credits (USD)');
+  requireText(
+    creditDocs,
+    'These benefits cover paid API Platform usage billed to the linked organization',
+  );
   const text = markdown(body);
   const results = new Map();
   for (const [group, read, id] of [
