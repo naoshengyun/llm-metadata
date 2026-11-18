@@ -16,6 +16,7 @@ const fixtures = {
   'anthropic-global': 'anth',
   'morph-list': 'morph',
   'kimi-global': 'kimi-global',
+  'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--api-ids': 'mistral-md',
   'zai-international': 'zai',
@@ -207,4 +208,24 @@ test('Z.AI explicit Free rows are distinct from limited-time free storage and mi
     /limited-time free storage/,
   );
   assert.match(rows.find(({ nativeKey }) => nativeKey === 'glm-5-turbo').reason, /Exact price row/);
+});
+
+test('Google Developer API preserves Standard modality prices, context tiers and announced future prices separately', async () => {
+  const report = await run();
+  const rows = report.results.filter(({ sourceId }) => sourceId === 'gemini-developer');
+  assert.equal(rows.length, 37);
+  const get = (id) => rows.find(({ nativeKey }) => nativeKey === id);
+  const carbon = get('gemini-4-carbon');
+  assert.equal(carbon.observed.sourcePrice.input, 2);
+  assert.equal(carbon.observed.cnyCost.output, 70);
+  assert.equal(carbon.observed.conditions.announcedPrices.output.amount, 20);
+  const pro = get('gemini-3.1-pro-preview');
+  assert.equal(pro.observed.sourcePrice.tiers[0].tier.size, 200000);
+  assert.equal(pro.observed.conditions.explicitCacheStorage.amount, 4.5);
+  assert.equal(get('gemini-3.1-flash-image').observed.sourcePrice.output_image, 60);
+  assert.match(get('gemini-2.5-flash').reason, /audio cache rate.*native/);
+  assert.equal(
+    report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,
+    'deferred',
+  );
 });
