@@ -37,6 +37,8 @@ const fixtures = {
   'upstage-api--solar-pro4': 'up-pro4',
   'upstage-api--solar-mini4': 'up-mini4',
   'sakana-namazu': 'sakana-namazu',
+  'alibaba-international': 'alibaba',
+  'alibaba-international--singapore': 'alibaba-sg-endpoint',
   'gemini-developer': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--api-ids': 'mistral-md',
@@ -309,4 +311,15 @@ test('OpenAI upstream models use the correct Standard tables and retain explicit
   assert.equal(row('gpt-image-1.5').observed.sourcePrice.output_image, 32);
   assert.match(row('gpt-4o-2024-05-13').reason, /Shut down/);
   assert.match(row('gpt-5.3-codex-spark').reason, /Exact price row/);
+});
+
+test('Alibaba International uses the Singapore service scope and preserves mode tariffs', async () => {
+  const report = await run();
+  const rows = report.results.filter(({ sourceId }) => sourceId === 'alibaba-international');
+  assert.equal(rows.length, 49);
+  const id = (model) => rows.find(({ nativeKey }) => nativeKey === model);
+  assert.equal(id('qwen3.6-35b-a3b').observed.sourcePrice.input, 0.375);
+  assert.equal(id('qwen3.6-35b-a3b').observed.cnyCost.output, 15.75);
+  assert.equal(id('qwen-plus-character-ja').observed.sourcePrice.input, 0.5);
+  assert.match(id('qwen3.7-max').reason, /requires cache evidence/);
 });
