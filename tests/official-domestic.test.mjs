@@ -26,6 +26,8 @@ function check(sourceName, transform = (body) => body, status = 200) {
       const supplementNames = {
         'tencent-cn--migration': 'tencent-migration',
         'alibaba-cn--cache': 'alibaba-cache',
+        'alibaba-cn--thinking': 'alibaba-thinking',
+        'alibaba-cn--omni': 'alibaba-omni',
         'stepfun-cn--audio': 'stepfun-audio',
         'minimax-cn--cache': 'minimax-cache',
         'minimax-cn--video': 'minimax-video',
@@ -350,4 +352,52 @@ test('MiniMax H3 China charges video duration and only images above its free quo
   const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
   assert.match(data.billing_expr['MiniMax-H3'], /u\("input_images"\) > 5/);
   assert.equal(data.billing_expr['MiniMax-H3-Max'], undefined);
+});
+
+test('Bailian parses Beijing single, tiered and explicit-cache tariffs without using international rows', async () => {
+  const report = await check('alibaba');
+  const one = resultFor(report, 'dashscope--qwen-long--cn-beijing-online-original-token');
+  assert.equal(one?.status, 'unchanged', one?.reason);
+  assert.deepEqual(one.observed.sourcePrice, { input: 0.5, output: 2 });
+  const tiered = resultFor(
+    report,
+    'dashscope--qwen3-coder-flash--cn-beijing-online-original-implicit',
+  );
+  assert.equal(tiered?.status, 'unchanged', tiered?.reason);
+  assert.equal(tiered.observed.sourcePrice.tiers[2].output, 25);
+  assert.equal(tiered.observed.sourcePrice.tiers[2].cache_read, 1);
+  const explicit = resultFor(
+    report,
+    'dashscope--qwen3.6-plus--cn-beijing-online-original-explicit',
+  );
+  assert.equal(explicit?.status, 'unchanged', explicit?.reason);
+  assert.equal(explicit.observed.sourcePrice.tiers[0].cache_write, 10);
+  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.equal(data.billing_expr['qwen-long'], 'tier("standard", p * 0.5 + c * 2)');
+});
+
+test('Bailian Qwen Plus keeps both price modes and native request selection', async () => {
+  const report = await check('alibaba');
+  const plus = resultFor(report, 'dashscope--qwen-plus--cn-beijing-online-original-implicit');
+  assert.equal(plus?.status, 'unchanged', plus?.reason);
+  assert.equal(plus.observed.sourcePrice.output, 2);
+  assert.equal(plus.observed.sourcePrice.reasoning, 8);
+  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.match(data.billing_expr['qwen-plus'], /^param\("enable_thinking"\) == true/);
+});
+
+test('Bailian distinguishes unified multimodal tokens from non-uniform output and ASR seconds', async () => {
+  const report = await check('alibaba');
+  const omni = resultFor(
+    report,
+    'dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit',
+  );
+  assert.equal(omni?.status, 'unchanged', omni?.reason);
+  assert.deepEqual(omni.observed.sourcePrice, { input: 0.8, cache_read: 0.1, output: 2.7 });
+  const oldOmni = resultFor(report, 'upstream:alibaba-cn:qwen3-omni-flash:USD');
+  assert.equal(oldOmni?.status, 'unsupported', oldOmni?.reason);
+  assert.equal(oldOmni.observed.sourcePrice.multimodal.output, 12.7);
+  const asr = resultFor(report, 'upstream:alibaba-cn:qwen3-asr-flash:unknown');
+  assert.equal(asr?.status, 'unsupported', asr?.reason);
+  assert.equal(asr.observed.sourcePrice.amount, 0.00022);
 });

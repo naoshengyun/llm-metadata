@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { compileTask, compileTool, type TaskQuote, type ToolQuote } from './media.js';
-import type { ModelCost } from '../billing/cost.js';
+import type { ModelCost, ThinkingToggle } from '../billing/cost.js';
 import { NewApiBuilder } from '../services/newapi-builder.js';
 import type { Model, NormalizedData } from '../types/index.js';
 
@@ -19,6 +19,7 @@ export interface OfficialQuote {
   /** Explicitly pin a model in the upstream snapshot; disappearance blocks this new quote. */
   upstreamKey?: { provider: string; model: string };
   description?: string;
+  thinkingToggle?: ThinkingToggle;
   kind?: 'model' | 'task' | 'tool';
   task?: TaskQuote;
   tools?: ToolQuote[];
@@ -316,6 +317,7 @@ export function generateCny(input: CnyInput) {
         providers: {
           selected: {
             id: 'selected',
+            ...(quote.thinkingToggle && { billing: { thinkingToggle: quote.thinkingToggle } }),
             models: { official: { ...entry.snapshotModel, id: 'official', cost: entry.cnyCost } },
           },
         },

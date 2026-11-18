@@ -272,6 +272,7 @@ function originalRecord(entry, parsed, evidence) {
     cost: isTask ? {} : parsed.sourcePrice,
     conditions: parsed.conditions,
     ...(parsed.description !== undefined && { description: parsed.description }),
+    ...(parsed.thinkingToggle && { thinkingToggle: parsed.thinkingToggle }),
     unit: parsed.sourceUnit,
     source: {
       url: evidence.finalUrl,
