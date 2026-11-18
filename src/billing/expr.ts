@@ -87,7 +87,10 @@ function collectSegments(cost: ModelCost): PriceSegment[] {
   const tiers = Array.isArray(cost.tiers) ? cost.tiers : [];
   const sized = tiers.filter((tier) => typeof tier.tier?.size === 'number' && tier.tier.size > 0);
   if (sized.length > 0) {
-    for (const tier of sized) byStart.set(tier.tier!.size!, pickCells(tier));
+    for (const tier of sized) {
+      const { size, comparison } = tier.tier!;
+      byStart.set(comparison === 'gte' ? size! - 1 : size!, pickCells(tier));
+    }
   } else if (cost.context_over_200k) {
     byStart.set(200_000, pickCells(cost.context_over_200k));
   }

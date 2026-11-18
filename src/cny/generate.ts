@@ -85,6 +85,8 @@ function inspectCost(value: unknown, path = ''): string[] {
       if (typeof item !== 'number' || !Number.isFinite(item) || item < 0) errors.push(p);
     } else if (key === 'size') {
       if (typeof item !== 'number' || !Number.isSafeInteger(item) || item <= 0) errors.push(p);
+    } else if (key === 'comparison') {
+      if (item !== 'gte') errors.push(p);
     } else if (key === 'tiers') {
       if (!Array.isArray(item)) {
         errors.push(p);
@@ -92,7 +94,9 @@ function inspectCost(value: unknown, path = ''): string[] {
       }
       const thresholds = new Set<number>();
       for (const [index, tier] of item.entries()) {
-        const threshold = tier?.tier?.size;
+        const size = tier?.tier?.size;
+        const threshold =
+          typeof size === 'number' && tier?.tier?.comparison === 'gte' ? size - 1 : size;
         if (
           typeof threshold !== 'number' ||
           !Number.isSafeInteger(threshold) ||

@@ -22,6 +22,8 @@ const fixtures = {
   'cohere-api--command-r-plus': 'co-plus',
   'cohere-api--command-r7b': 'co-7b',
   'cohere-api--aya-expanse': 'co-aya',
+  'xai-text': 'xai-text',
+  'xai-text--cache': 'xcache',
   'xai-video': 'xai-video-current',
   'openai-standard--currency': 'openai-currency',
   'openai-standard--cache': 'oic',
@@ -163,4 +165,19 @@ test('Cohere verifies five priced production IDs and preserves the exact deferre
     report.results.find(({ nativeKey }) => nativeKey === 'command-a-plus-05-2026').status,
     'deferred',
   );
+});
+
+test('xAI global long context starts at exactly 200,000 tokens', async () => {
+  const report = await run();
+  const rows = report.results.filter(({ sourceId }) => sourceId === 'xai-text');
+  assert.equal(rows.length, 9);
+  assert.equal(rows.filter(({ status }) => status === 'changed').length, 8);
+  const change = report.changes.find(({ id }) => id === 'upstream:xai:grok-4.7:USD');
+  assert.equal(change.difference.amounts, undefined);
+  assert.equal(change.observed.sourcePrice.tiers[0].tier.comparison, 'gte');
+  assert.match(change.candidate.expression, /len <= 199999 \?/);
+  assert.equal(change.candidate.record.id, 'us-xai-grok-4.7-global-standard');
+  const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
+  assert.equal(old.status, 'failed');
+  assert.match(old.reason, /Exact xAI text price row/);
 });
