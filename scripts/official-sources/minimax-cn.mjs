@@ -47,7 +47,7 @@ export const adapter = {
   id: 'minimax-cn',
   url: 'https://platform.minimax.cn/docs/pricing/overview.md',
   supplemental: [
-    { id: 'cache', url: 'https://platform.minimaxi.com/docs/api-reference/text-prompt-caching.md' },
+    { id: 'cache', url: 'https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md' },
   ],
   targets: [...models, ...images],
   parse({ body, supplemental }) {

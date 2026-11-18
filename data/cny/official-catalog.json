@@ -3934,7 +3934,7 @@
         "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
         "supplemental": [
           {
-            "url": "https://platform.minimaxi.com/docs/api-reference/text-prompt-caching.md",
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
             "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
             "checkedAt": "2026-11-18"
           }
@@ -3984,7 +3984,7 @@
         "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
         "supplemental": [
           {
-            "url": "https://platform.minimaxi.com/docs/api-reference/text-prompt-caching.md",
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
             "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
             "checkedAt": "2026-11-18"
           }
