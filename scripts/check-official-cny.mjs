@@ -169,7 +169,11 @@ function registeredTargets(adapters, entries) {
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
   for (const source of adapters) {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || source.id.includes('--') || sources.has(source.id)) {
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/.test(source.id) ||
+      source.id.includes('--') ||
+      sources.has(source.id)
+    ) {
       throw Error('Invalid or duplicate official source ID: ' + source.id);
     }
     sources.add(source.id);
@@ -363,14 +367,30 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt) {
       difference: { withdrawal: { before, after: { statement, effectiveAt: parsed.effectiveAt } } },
     };
   }
-  const candidate = originalRecord(entry, parsed, evidence);
+  const referenceReason = target.referenceOnlyReason;
+  if (referenceReason) {
+    const amounts = priceComponents(parsed.sourcePrice).amounts;
+    if (
+      !Object.keys(amounts).length ||
+      Object.values(amounts).some((amount) => !Number.isFinite(amount) || amount < 0) ||
+      !parsed.sourceUnit ||
+      !parsed.conditions ||
+      !Array.isArray(parsed.required) ||
+      !parsed.required.length ||
+      parsed.required.some((key) => !Object.hasOwn(amounts, key))
+    ) {
+      throw Error('Incomplete official reference amounts or conditions');
+    }
+  }
+  const candidate = referenceReason ? undefined : originalRecord(entry, parsed, evidence);
   const observed = {
     identity,
     sourcePrice: parsed.sourcePrice,
     sourceUnit: parsed.sourceUnit,
     conditions: parsed.conditions,
     ...(parsed.effectiveAt && { effectiveAt: parsed.effectiveAt }),
-    cnyCost: candidate.cnyCost,
+    ...(candidate && { cnyCost: candidate.cnyCost }),
+    ...(referenceReason && identity.currency === 'CNY' && { cnyCost: parsed.sourcePrice }),
   };
   const beforePrice = priceComponents(before.sourcePrice);
   const afterPrice = priceComponents(observed.sourcePrice);
@@ -393,10 +413,19 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt) {
       difference[category] = { before: beforeValue ?? null, after: afterValue ?? null };
     }
   }
-  if (entry.selected && !candidate.expression)
+  if (!referenceReason && entry.selected && !candidate.expression)
     throw Error('Selected official quote did not emit a valid price');
   return {
-    status: fields(difference).length === 0 ? 'unchanged' : future ? 'future-effective' : 'changed',
+    status: referenceReason
+      ? future
+        ? 'future-effective'
+        : 'unsupported'
+      : fields(difference).length === 0
+        ? 'unchanged'
+        : future
+          ? 'future-effective'
+          : 'changed',
+    ...(referenceReason && { reason: referenceReason }),
     observed,
     difference,
     candidate,
@@ -488,10 +517,18 @@ export async function checkOfficialPrices({
           if (source.supplemental?.length) {
             evidence.supplemental = {};
             for (const request of source.supplemental) {
-              const response = await readResponse({ ...request, id: source.id + '--' + request.id });
+              const response = await readResponse({
+                ...request,
+                id: source.id + '--' + request.id,
+              });
               evidence.supplemental[request.id] = response.evidence;
               if (response.evidence.status !== 200) {
-                throw Error('Supplemental official source ' + request.id + ' HTTP ' + response.evidence.status);
+                throw Error(
+                  'Supplemental official source ' +
+                    request.id +
+                    ' HTTP ' +
+                    response.evidence.status,
+                );
               }
               supplemental.set(request.id, response);
             }
@@ -536,14 +573,15 @@ export async function checkOfficialPrices({
               });
               continue;
             }
-            const { status, observed, difference } = evaluation;
+            const { status, observed, difference, reason } = evaluation;
             Object.assign(result, {
               status,
+              ...(reason && { reason }),
               observed,
               difference,
               latestSuccessfulAt: attemptedAt,
             });
-            if (status !== 'unchanged') {
+            if (status !== 'unchanged' && status !== 'unsupported') {
               changes.push({
                 id: entry.id,
                 nativeKey: entry.quote.nativeKey,
@@ -591,16 +629,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const sourceFiles = readdirSync(sourceDirectory, { recursive: true })
     .filter((name) => name.endsWith('.mjs'))
     .sort();
-  const checkerFiles = Object.fromEntries(sourceFiles.map((name) => [
-    name,
-    sha(readFileSync(new URL(name, sourceDirectory))),
-  ]));
+  const checkerFiles = Object.fromEntries(
+    sourceFiles.map((name) => [name, sha(readFileSync(new URL(name, sourceDirectory)))]),
+  );
   const checker = {
     sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: new URL('../', import.meta.url),
       encoding: 'utf8',
     }).trim(),
-    files: { 'check-official-cny.mjs': sha(readFileSync(new URL(import.meta.url))), ...checkerFiles },
+    files: {
+      'check-official-cny.mjs': sha(readFileSync(new URL(import.meta.url))),
+      ...checkerFiles,
+    },
   };
   const report = await checkOfficialPrices({
     baseline,

@@ -3561,6 +3561,450 @@
         ],
         "scope": "Existing GLM Chat search_std encoder/meter. Actual search invocation/billing O verification is not claimed."
       }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-pro-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-pro",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 6,
+        "cache_read": 0.025
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-flash-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-flash",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 2,
+        "cache_read": 0.02
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-pro-ultraspeed-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-pro-ultraspeed",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 30,
+        "output": 60,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.0-flash-standard",
+      "provider": "bailing",
+      "model": "Ling-3.0-flash",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.0-flash-VL-standard",
+      "provider": "bailing",
+      "model": "Ling-3.0-flash-VL",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.1-flash-standard",
+      "provider": "bailing",
+      "model": "Ling-3.1-flash",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.4
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-longcat-LongCat-2.0-standard",
+      "provider": "longcat",
+      "model": "LongCat-2.0",
+      "priceList": "LongCat-2.0 first-party original RMB tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0",
+        "checkedAt": "2026-11-18",
+        "sha256": "a3db027207849bb7161a17f940eee945fe06ae0cefe6be8f273bc42d0ba3de4c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 5,
+        "output": 20,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party published LongCat-2.0 base tariff"
+      }
+    },
+    {
+      "id": "cn-stepfun-step-5-preview-standard",
+      "provider": "stepfun",
+      "model": "step-5-preview",
+      "priceList": "StepFun China online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3"
+      },
+      "effectiveAt": "2026-10-14T00:30:00+08:00",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 7,
+        "output": 20,
+        "cache_read": 0.7
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "legacyCacheHit": {
+          "amount": 0.35,
+          "eligibility": "Used Step 5 Preview through the pay-as-you-go API before the effective time",
+          "unit": "per_million_tokens"
+        }
+      }
+    },
+    {
+      "id": "cn-tencent-hy3-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy3",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-tencent-hy3-preview-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy3-preview",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "effectiveAt": "2026-08-31T00:00:00+08:00",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou",
+        "billedAsModel": "hy3"
+      }
+    },
+    {
+      "id": "cn-tencent-hy4-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy4",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 18,
+        "cache_read": 0.3
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-tencent-hy4-preview-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy4-preview",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 18,
+        "cache_read": 0.3
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-minimax-MiniMax-M3-standard",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3",
+      "priceList": "MiniMax China standard original online tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimaxi.com/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 4.2,
+        "output": 16.8,
+        "cache_read": 0.84,
+        "tiers": [
+          {
+            "tier": {
+              "size": 512000
+            },
+            "input": 8.4,
+            "output": 33.6,
+            "cache_read": 1.68
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheMinimumInputTokens": 512,
+        "cachePrefixMatch": true,
+        "inputThreshold": 512000,
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "id": "cn-minimax-MiniMax-M3.1-Flash-standard",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3.1-Flash",
+      "priceList": "MiniMax China standard original online tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimaxi.com/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheMinimumInputTokens": 512,
+        "cachePrefixMatch": true
+      }
     }
   ],
   "coverage": [

@@ -30,7 +30,7 @@ test('unified candidate covers the researched catalog and exports every selected
   assert.equal(config.success, true);
   assert.equal(manifest.stats.models, 630);
   assert.equal(manifest.stats.subscriptions, 125);
-  assert.equal(manifest.stats.officialQuotes, 62);
+  assert.equal(manifest.stats.officialQuotes, input('official-catalog.json').records.length);
   assert.equal(manifest.stats.apiModels, Object.keys(billing_expr).length);
   const selected = input('proposed-selection.json').selection;
   for (const [key, id] of Object.entries(selected)) {

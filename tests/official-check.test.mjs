@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { gunzipSync } from 'node:zlib';
 import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
+import { adapter as kimi } from '../scripts/official-sources/kimi-cn.mjs';
 
 const directory = mkdtempSync(join(tmpdir(), 'official-check-'));
 const baseline = join(directory, 'baseline');
@@ -26,6 +27,7 @@ function check(body = current, options = {}) {
   return checkOfficialPrices({
     baseline,
     attemptedAt,
+    adapters: [kimi],
     getResponse: async () => ({ body, url, obtainedAt: attemptedAt }),
     ...options,
   });

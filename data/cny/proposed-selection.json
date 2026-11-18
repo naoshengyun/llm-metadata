@@ -54,7 +54,21 @@
     "doubao-seedream-5-0-260128": "volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original",
     "doubao-seedream-4-5-251128": "volcengine--doubao-seedream-4-5-251128--cn-beijing-task-online-original",
     "doubao-seedream-4-0-250828": "volcengine--doubao-seedream-4-0-250828--cn-beijing-task-online-original",
-    "search_std": "cn-zhipu-search-std-standard"
+    "search_std": "cn-zhipu-search-std-standard",
+    "mimo-v2.6-pro": "cn-xiaomi-mimo-v2.6-pro-standard",
+    "mimo-v2.6-flash": "cn-xiaomi-mimo-v2.6-flash-standard",
+    "mimo-v2.6-pro-ultraspeed": "cn-xiaomi-mimo-v2.6-pro-ultraspeed-standard",
+    "Ling-3.0-flash": "cn-bailing-Ling-3.0-flash-standard",
+    "Ling-3.0-flash-VL": "cn-bailing-Ling-3.0-flash-VL-standard",
+    "Ling-3.1-flash": "cn-bailing-Ling-3.1-flash-standard",
+    "LongCat-2.0": "cn-longcat-LongCat-2.0-standard",
+    "step-5-preview": "cn-stepfun-step-5-preview-standard",
+    "hy3": "cn-tencent-hy3-standard",
+    "hy3-preview": "cn-tencent-hy3-preview-standard",
+    "hy4": "cn-tencent-hy4-standard",
+    "hy4-preview": "cn-tencent-hy4-preview-standard",
+    "MiniMax-M3": "cn-minimax-MiniMax-M3-standard",
+    "MiniMax-M3.1-Flash": "cn-minimax-MiniMax-M3.1-Flash-standard"
   },
   "notProposed": [
     {

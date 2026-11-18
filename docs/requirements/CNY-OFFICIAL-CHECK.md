@@ -37,3 +37,5 @@ npm run cny:official:check -- /tmp/cny-unified /tmp/cny-official-recheck /tmp/cn
 `parse({ body, evidence, supplemental })` 的 `supplemental` 为按短 ID 索引的 Map，
 每个值包含响应 `body` 和 `evidence`。任何必需文件获取失败都会使该适配器本次核价失败。
 拟议价目的 `source.supplemental` 保留这些官方文件的 URL、哈希和日期。
+
+`targets` 可用 `referenceOnlyReason` 标明已成功提取、但完整收费条件超出现有原生计费能力的价目。这些结果以 `unsupported` 报告。未到正式生效时间的新价以 `future-effective` 报告，附原价和有效时间，候选中没有替代表达式。
