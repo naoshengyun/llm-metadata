@@ -5,6 +5,251 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "us-xai-grok-imagine-video-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image",
+        "inputVideoUnit": "input-second"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video",
+        "tiers": [
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.07,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.002,
+                "unit": "per_count",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.01,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.05,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.002,
+                "unit": "per_count",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.01,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-imagine-video-1.5-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video-1.5",
+        "tiers": [
+          {
+            "name": "1080p",
+            "when": {
+              "resolution": "1080p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.25,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.14,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-imagine-video-1.5-lite-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5-lite",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video-1.5-lite",
+        "tiers": [
+          {
+            "name": "1080p",
+            "when": {
+              "resolution": "1080p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.14,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.03,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.02,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "us-anthropic-claude-fable-5-2-standard",
       "provider": "anthropic",
       "model": "claude-fable-5-2",
