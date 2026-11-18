@@ -9,6 +9,7 @@ export interface OfficialQuote {
   provider: string;
   model: string;
   priceList: string;
+  endpoint?: string;
   origin: 'domestic' | 'foreign';
   currency: 'CNY' | 'USD';
   source: { url: string; checkedAt: string };
@@ -167,6 +168,8 @@ export function generateCny(input: CnyInput) {
       !record.provider ||
       !record.model ||
       !record.priceList ||
+      (record.endpoint !== undefined &&
+        !/^https:\/\/[^/@\s]+(?:\/[^\s]*)?$/.test(record.endpoint)) ||
       !['domestic', 'foreign'].includes(record.origin)
     )
       fields.push('official identity');
