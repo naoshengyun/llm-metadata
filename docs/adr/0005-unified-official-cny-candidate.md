@@ -26,3 +26,23 @@ scope: unified-official-cny / issues-34-39
 `unified-policy.json` 的 `asOf` 是人工审核的固定时间，并带时区。晚于该时间的正式价目保留为待生效，选中会使构建失败。到期时通过新的审核变更更新选择与审查时间。撤价和恢复以原生键维护附带证据的有序事件。撤价屏蔽全部同名自动候选，恢复需要显式选择与新的匹配证据。日期推进与选价变化均由审查处理。
 
 历史仅上游发布由 [ADR 0004](0004-separate-upstream-catalog-and-cny-eligibility.md) 记录。#40 接通页面交互与原生实例全量读回，#44 接通固定候选的发布门禁。
+
+## 网站与原生验证
+
+用下列命令把同一统一候选的目录、覆盖表与原生同步 JSON 装配到网站。两个输出目录须尚不存在。站点首页从当次加载的清单选定固定版本，后续目录导航、搜索和导出均使用这个版本。站点同时提供同字节的 `api/newapi/ratio_config.json` 入口。此前两版的固定产物继续以原 ID 提供，历史价格页中的下载指向各自的固定入口。
+
+```sh
+npm ci
+npm --prefix web ci
+npm run cny:unified:build -- "$candidate_dir"
+node scripts/build-visual-site.mjs data/cny/publication/upstream-release.json "$site_dir" "$candidate_dir"
+```
+
+在已安装 Chrome 和 Playwright 的机器运行浏览器验收。验收包含桌面、移动端、三语目录和价格、完整剪贴板与下载校验、地区导航、订阅及 Seedance 2.5 的整模型排除。原生验收在本地 Docker 中用固定官方 rc.50 镜像新建临时无渠道实例，从同一站点产物通过 HTTP 拉取，逐键预览、按配置版本选择保存和读回，并对任务插件检查覆盖、移除与继承。两个验收程序分别向尚不存在的证据目录写入候选身份和执行结果。
+
+```sh
+node scripts/check-unified-site.mjs "$site_dir" "$playwright_module" "$browser_evidence_dir"
+node scripts/check-unified-native.mjs "$site_dir" "$native_evidence_dir"
+```
+
+隔离实例保存通过仅确认配置能力。生产实例应用与实际供应商计费分别验收，工具参考价由运营按免费政策另行处理，Seedance 2.5 继续等待目标部署两种 4K 结算验证。

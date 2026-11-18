@@ -37,6 +37,7 @@ function useSiblings(
   providerId: string,
   locale: Locale,
   providers: ProviderIndexItem[],
+  catalogBase?: string,
 ): SiblingsState {
   const [state, setState] = useState<SiblingsState>({ status: 'loading' });
   const providerById = useMemo(() => new Map(providers.map((p) => [p.id, p])), [providers]);
@@ -44,7 +45,7 @@ function useSiblings(
   useEffect(() => {
     let cancelled = false;
     setState({ status: 'loading' });
-    fetchModelIndex(locale)
+    fetchModelIndex(locale, catalogBase)
       .then((index) => {
         const targets = index
           .filter((item) => item.id === modelId && item.providerId !== providerId)
@@ -54,7 +55,7 @@ function useSiblings(
           });
         return Promise.all(
           targets.map(async (provider) => {
-            const model = (await fetchProvider(locale, provider.id)).models[modelId];
+            const model = (await fetchProvider(locale, provider.id, catalogBase)).models[modelId];
             return model ? [{ provider, model }] : [];
           }),
         );
@@ -72,7 +73,7 @@ function useSiblings(
     return () => {
       cancelled = true;
     };
-  }, [modelId, providerId, locale, providerById]);
+  }, [modelId, providerId, locale, providerById, catalogBase]);
 
   return state;
 }
@@ -86,14 +87,16 @@ export function SiblingEndpoints({
   providerId,
   providers,
   onOpen,
+  catalogBase,
 }: {
   modelId: string;
   providerId: string;
   providers: ProviderIndexItem[];
+  catalogBase?: string;
   onOpen: (providerId: string, modelId: string) => void;
 }) {
   const { locale, t } = useI18n();
-  const state = useSiblings(modelId, providerId, locale, providers);
+  const state = useSiblings(modelId, providerId, locale, providers, catalogBase);
 
   if (state.status === 'loading') return null;
   if (state.status === 'ready' && state.siblings.length === 0) return null;

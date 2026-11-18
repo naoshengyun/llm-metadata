@@ -203,6 +203,9 @@ function upstreamRows(providers, policy, source) {
         priceList: 'fixed upstream primary or original CNY sheet',
         endpoint: provider.api ?? null,
         sourceCurrency,
+        originalPriceVerified: Boolean(
+          amount && price.sourceCurrency && !corrected && evidence !== 'source-currency',
+        ),
         sourcePrice: corrected || evidence === 'source-currency' ? null : amount,
         upstreamReportedCost: model.cost ?? null,
         sourceUnit:
@@ -330,6 +333,17 @@ function officialRows(official, selection, policy, records, providers, lifecycle
       outputKind: tool ? 'tool-reference' : task ? 'task-model' : 'model',
       cnyCost: task || tool || diagnostic.status !== 'ready' ? undefined : cnyCost,
       usagePlugin: task ? quote.task?.plugin : undefined,
+      cnyTaskTiers:
+        task && diagnostic.status === 'ready'
+          ? quote.task.tiers.map((tier) => ({
+              ...tier,
+              charges: tier.charges.map((charge) => ({
+                ...charge,
+                amount: charge.amount * CNY_POLICY[charge.currency],
+                currency: 'CNY',
+              })),
+            }))
+          : undefined,
       toolPolicy: tool
         ? { customerPrice: 0, operation: 'configure-in-New-API', reference: policy.sources.tools }
         : undefined,
@@ -391,7 +405,7 @@ function officialRows(official, selection, policy, records, providers, lifecycle
       : compiled.models[key]?.billing_expr;
     if (!expression) throw Error('Selected quote did not emit a complete price: ' + quote.id);
     row.billing_expr = expression;
-    row.unit = quote.cost?.per_image !== undefined ? 'image' : task ? undefined : 'token';
+    row.unit = quote.cost?.per_image !== undefined ? 'image' : task ? 'task' : 'token';
   }
   for (const [key, id] of entries(selection)) {
     if (!quoteById.has(id) && lifecycle.state.get(key)?.state !== 'withdrawn')
@@ -569,7 +583,21 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
           expr: winner?.billing_expr,
           outputKind: winner?.outputKind ?? (status === 'validation-held' ? 'task-model' : 'model'),
           selectedQuoteId: winner?.quoteId ?? null,
-          quotes: quoteIds.map((quoteId) => quotes.get(quoteId)),
+          quotes: [
+            ...quoteIds.map((quoteId) => quotes.get(quoteId)),
+            ...(upstreamPrice
+              ? [
+                  {
+                    ...upstreamPrice,
+                    reason: upstreamPrice.syncable
+                      ? null
+                      : winner
+                        ? 'explicit-official-price-selected'
+                        : reason,
+                  },
+                ]
+              : []),
+          ],
         };
       }
       provider.models[modelId] = model;
@@ -720,6 +748,10 @@ function buildCandidate({
       data: { billing_mode, billing_expr },
     }),
     'coverage.json': json(coverage),
+    'api/cny-tools.json': json({
+      official: coverage.quotes.filter((quote) => quote.outputKind === 'tool-reference'),
+      optional: coverage.toolReferences,
+    }),
     'price-diff.json': json(priceDiff(prior, selected, models, policy, lifecycle, previous)),
     'policy.json': json(policy),
     'official-selection.json': json(selection),
@@ -762,14 +794,19 @@ function buildCandidate({
 
 function codeIdentity() {
   const files = [
-    ...['scripts', 'src', '.cache/cny-build'].flatMap((dir) =>
+    ...['scripts', 'src', 'web/src', '.cache/cny-build'].flatMap((dir) =>
       readdirSync(join(root, dir), { recursive: true })
-        .filter((name) => /\.(?:[cm]?js|ts)$/.test(name))
+        .filter((name) => /\.(?:[cm]?js|tsx?|css)$/.test(name))
         .map((name) => join(dir, name)),
     ),
     'package.json',
     'package-lock.json',
     'tsconfig.json',
+    'web/index.html',
+    'web/package.json',
+    'web/package-lock.json',
+    'web/tsconfig.json',
+    'web/vite.config.ts',
   ].sort();
   return hash(Object.fromEntries(files.map((name) => [name, sha(readFileSync(join(root, name)))])));
 }

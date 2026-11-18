@@ -1,3 +1,4 @@
+import { TaskPriceSummary } from '@/components/official-quotes';
 import { PricingNotice } from '@/components/pricing-notice';
 import { Fragment, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
@@ -366,6 +367,7 @@ export function PricingTable({
                             {model.id}
                           </div>
                           <PricingNotice model={model} />
+                          <TaskPriceSummary model={model} />
                         </div>
                       </div>
                     </TableCell>
