@@ -92,6 +92,9 @@ try {
     '/data:rw',
     '--env',
     'SQLITE_PATH=/data/new-api.db',
+    // The isolated fixture makes repeated profile writes to exercise each task's inheritance.
+    '--env',
+    'CRITICAL_RATE_LIMIT=1000',
     '--env',
     'SESSION_SECRET',
     image,
@@ -113,8 +116,8 @@ try {
       ...(body ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.timeout(15000),
     });
+    assert.equal(response.status, expectedStatus, `${method} ${path}`);
     const envelope = await response.json();
-    assert.equal(response.status, expectedStatus, `${method} ${path}: ${envelope.message}`);
     assert.equal(
       envelope.success,
       expectedStatus === 200,
