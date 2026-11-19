@@ -5,6 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+import { hash } from '../.cache/cny-build/cny/generate.js';
 
 test('upstream validation binds the generated site, checks actual pricing, and rejects a repriced official key', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'cny-upstream-validation-'));
@@ -13,9 +14,6 @@ test('upstream validation binds the generated site, checks actual pricing, and r
   const candidate = 'b'.repeat(40);
   const previousUpstream = 'c'.repeat(40);
   const upstream = 'd'.repeat(40);
-  const beforeId = 'e'.repeat(64);
-  const afterId = 'f'.repeat(64);
-  const fixed = 'versions/' + afterId + '/';
   const api = 'api/newapi/ratio_config.json';
   const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
   const encode = (value) => JSON.stringify(value) + '\n';
@@ -34,14 +32,21 @@ test('upstream validation binds the generated site, checks actual pricing, and r
       },
     };
   }
-  function make(dir, sourceSha, upstreamSha, candidateId, config, models) {
+  function make(dir, sourceSha, upstreamSha, config, models) {
     write(dir + '/' + api, config);
-    write(dir + '/manifest.json', {
+    const payload = {
       sourceSha,
       upstreamSha,
-      candidateId,
+      codeSha256: 'e'.repeat(64),
       stats: { apiModels: 2, models },
-      files: { [api]: { sha256: digest(encode(config)) } },
+      files: {
+        [api]: { bytes: Buffer.byteLength(encode(config)), sha256: digest(encode(config)) },
+      },
+    };
+    const manifest = { ...payload, candidateId: hash(payload) };
+    write(dir + '/manifest.json', manifest);
+    write(dir + '/coverage.json', {
+      models: Array.from({ length: models }, (_, n) => ({ id: n })),
     });
     write(dir + '/official-selection.json', { local: 'official' });
     write(dir + '/selection.json', { local: 'official', remote: 'upstream' });
@@ -50,6 +55,7 @@ test('upstream validation binds the generated site, checks actual pricing, and r
       lifecycle: {},
       upstreamSelection: {},
     });
+    return manifest;
   }
   write('preparation.json', {
     status: 'candidate-ready',
@@ -58,12 +64,15 @@ test('upstream validation binds the generated site, checks actual pricing, and r
     upstream,
     previousUpstream,
   });
-  make('before', business, previousUpstream, beforeId, config('p * 12', 'p * 2'), 7);
+  const before = make('before', business, previousUpstream, config('p * 12', 'p * 2'), 7);
+  let afterId;
   function publish(official) {
     const afterConfig = config(official, 'p * 3');
-    make('after', candidate, upstream, afterId, afterConfig, 8);
+    const after = make('after', candidate, upstream, afterConfig, 8);
+    afterId = after.candidateId;
+    const fixed = 'versions/' + afterId + '/';
     write('after/price-diff.json', {
-      baseline: { candidateId: beforeId },
+      baseline: { candidateId: before.candidateId },
       changes: [{ nativeKey: 'remote', type: 'changed' }],
     });
     write('site/current.json', {
@@ -73,7 +82,9 @@ test('upstream validation binds the generated site, checks actual pricing, and r
       fixedBase: fixed,
       modelSource: fixed + api,
       modelSourceSha256: digest(encode(afterConfig)),
+      manifestSha256: digest(encode(after)),
     });
+    write('site/' + fixed + 'manifest.json', after);
     write('site/' + api, afterConfig);
     write('site/' + fixed + api, afterConfig);
     return spawnSync(

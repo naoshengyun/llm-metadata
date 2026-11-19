@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { hash } from '../.cache/cny-build/cny/generate.js';
 
 const configPath = 'api/newapi/ratio_config.json';
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -10,10 +11,20 @@ const read = (root, relative) => readFileSync(join(root, relative));
 const json = (root, relative) => JSON.parse(read(root, relative));
 
 function checkedCandidate(root, source, upstream) {
-  const manifest = json(root, 'manifest.json');
+  const manifestBytes = read(root, 'manifest.json');
+  const { candidateId, ...payload } = JSON.parse(manifestBytes);
+  const manifest = { ...payload, candidateId };
   assert.equal(manifest.sourceSha, source, 'Candidate source SHA');
   assert.equal(manifest.upstreamSha, upstream, 'Candidate upstream SHA');
-  assert.match(manifest.candidateId, /^[a-f0-9]{64}$/);
+  assert.equal(candidateId, hash(payload), 'Candidate manifest identity');
+  assert.match(manifest.codeSha256, /^[a-f0-9]{64}$/);
+  for (const [path, { bytes, sha256 }] of Object.entries(manifest.files)) {
+    assert.match(path, /^(?:[a-zA-Z0-9_.-]+\/)*[a-zA-Z0-9_.-]+\.json$/);
+    assert.ok(!path.split('/').some((part) => part === '.' || part === '..'));
+    const file = read(root, path);
+    assert.equal(sha(file), sha256, 'Candidate file checksum: ' + path);
+    assert.equal(file.length, bytes, 'Candidate file size: ' + path);
+  }
   const config = read(root, configPath);
   assert.equal(sha(config), manifest.files[configPath].sha256, 'Candidate price checksum');
   const { success, data } = JSON.parse(config);
@@ -22,8 +33,13 @@ function checkedCandidate(root, source, upstream) {
   assert.equal(Object.keys(data.billing_expr).length, manifest.stats.apiModels);
   const { upstreamDirectory, ...policy } = json(root, 'policy.json');
   assert.equal(upstreamDirectory, 'data/upstream/' + upstream.slice(0, 8));
+  const { models } = json(root, 'coverage.json');
+  assert.ok(Array.isArray(models), 'Candidate coverage models');
+  assert.equal(models.length, manifest.stats.models, 'Candidate model count');
   return {
     manifest,
+    manifestBytes,
+    modelCount: models.length,
     config,
     data,
     policy,
@@ -74,6 +90,8 @@ assert.equal(pointer.releaseId, candidateId);
 assert.equal(pointer.fixedBase, fixedBase);
 assert.equal(pointer.modelSource, fixedBase + configPath);
 assert.equal(pointer.modelSourceSha256, sha(after.config));
+assert.equal(pointer.manifestSha256, sha(after.manifestBytes));
+assert.ok(read(site, fixedBase + 'manifest.json').equals(after.manifestBytes));
 assert.ok(
   read(site, configPath).equals(after.config),
   'Stable site JSON differs from the candidate',
@@ -108,7 +126,7 @@ console.log(
     priceDiff,
     priceChanges,
     omittedPriceChanges: diff.changes.length - priceChanges.length,
-    models: { before: before.manifest.stats.models, after: after.manifest.stats.models },
+    models: { before: before.modelCount, after: after.modelCount },
     officialKeys,
   }),
 );
