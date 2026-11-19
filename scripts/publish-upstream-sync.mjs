@@ -381,7 +381,12 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
     if (!headSha || headSha !== prior.head.sha || !recordedHead) return reuseResult(prior, headSha, managed);
 
     const resume = previous?.to === candidate;
-    const supersede = Boolean(previous && prior.draft === true && !resume);
+    // A marker can remain on a ready PR before conversion to draft or after marking it ready.
+    const supersede = Boolean(previous && !resume && (
+      prior.draft
+        || (headSha === previous.from && managed.revision === previous.recorded)
+        || (headSha === previous.to && managed.revision === previous.to)
+    ));
     const start = !previous && prior.draft === false && managed.business !== business && headSha !== candidate;
     if (!resume && !supersede && !start) return reuseResult(prior, headSha, managed);
 
@@ -430,7 +435,7 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
         checkRefresh(section, refresh);
       } else {
         if (supersede) checkRefresh(section, previous);
-        assert(pull.draft === supersede && section.revision === refresh.recorded
+        assert(pull.draft === prior.draft && section.revision === refresh.recorded
           && section.business === managed.business && (supersede || !section.refresh),
         'Managed pull request evidence changed before refresh');
         // Record intent while the old evidence is still intact so retries can identify a bot-owned draft.

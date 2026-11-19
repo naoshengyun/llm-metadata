@@ -63,7 +63,7 @@ function fixture(t) {
 }
 
 function github(f, {
-  prior = null, head = null, baseSha, failOnceAfterPush = false, moveBeforePush = null,
+  prior = null, head = null, baseSha, failOnceAfterPush = false, failOnceAt, moveBeforePush = null,
 } = {}) {
   let pushed = false;
   const requests = [];
@@ -135,8 +135,9 @@ function github(f, {
     }
     if (path === '/pulls/42' && method === 'PATCH') {
       assert.equal(auth, 'Bearer fake-installation-token');
-      if (pushed && failOnceAfterPush) {
+      if (pushed && (failOnceAfterPush || (failOnceAt === 'after ready' && !prior.draft))) {
         failOnceAfterPush = false;
+        failOnceAt = undefined;
         return response({}, 500);
       }
       const request = JSON.parse(options.body);
@@ -150,6 +151,10 @@ function github(f, {
       assert.equal(variables.input.pullRequestId, nodeId);
       const mutation = query.includes('convertPullRequestToDraft') ? 'convertPullRequestToDraft' : 'markPullRequestReadyForReview';
       assert.ok(query.includes(mutation));
+      if (failOnceAt === 'before draft' && mutation === 'convertPullRequestToDraft') {
+        failOnceAt = undefined;
+        return response({}, 500);
+      }
       prior.draft = mutation === 'convertPullRequestToDraft';
       transitions.push(prior.draft ? 'draft' : 'ready');
       return response({ data: { [mutation]: { pullRequest: {
@@ -325,6 +330,18 @@ test('finishes a refresh after an interruption between the ref push and body upd
   assert.equal(remote.draft, false);
 });
 
+function advanceBusiness(f) {
+  f.git('switch', '--detach', f.business);
+  f.git('commit', '--allow-empty', '-m', 'Advanced business baseline');
+  f.business = f.git('rev-parse', 'HEAD');
+  f.git('commit', '--allow-empty', '-m', 'New checked candidate');
+  f.candidate = f.git('rev-parse', 'HEAD');
+  for (const report of [f.preparationReport, f.validationReport]) {
+    Object.assign(report, { business: f.business, candidate: f.candidate });
+  }
+  f.writeReports();
+}
+
 test('supersedes an interrupted bot draft when the business branch advances again', async (t) => {
   const f = fixture(t);
   const oldHead = 'e'.repeat(40);
@@ -337,16 +354,7 @@ test('supersedes an interrupted bot draft when the business branch advances agai
   assert.equal(remote.draft, true);
 
   const interruptedHead = f.candidate;
-  f.git('switch', '--detach', f.business);
-  f.git('commit', '--allow-empty', '-m', 'Advanced business baseline');
-  f.business = f.git('rev-parse', 'HEAD');
-  f.git('commit', '--allow-empty', '-m', 'New checked candidate');
-  f.candidate = f.git('rev-parse', 'HEAD');
-  for (const report of [f.preparationReport, f.validationReport]) {
-    Object.assign(report, { business: f.business, candidate: f.candidate });
-  }
-  f.writeReports();
-
+  advanceBusiness(f);
   assert.deepEqual(await remote.run(), { status: 'refreshed', number: 42, url, headSha: f.candidate, freshHead: true });
   assert.deepEqual(remote.transitions, ['draft', 'push', 'push', 'ready']);
   assert.match(remote.body, /请保留人工评审备注/);
@@ -354,6 +362,41 @@ test('supersedes an interrupted bot draft when the business branch advances agai
   assert.ok(!remote.body.includes(interruptedHead));
   assert.equal(remote.draft, false);
 });
+
+for (const [window, completed] of [
+  ['before draft', []],
+  ['after ready', ['draft', 'push', 'ready']],
+]) {
+  test('supersedes a refresh interrupted ' + window + ' when the business branch advances', async (t) => {
+    const f = fixture(t);
+    const oldHead = 'e'.repeat(40);
+    const remote = github(f, {
+      prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40), draft: false },
+      head: oldHead,
+      failOnceAt: window,
+    });
+    const interruptedHead = f.candidate;
+    await assert.rejects(remote.run(), /HTTP 500/);
+    assert.equal(remote.draft, false);
+    assert.deepEqual(remote.transitions, completed);
+    assert.match(remote.body, /cny-upstream-sync:refresh/);
+
+    advanceBusiness(f);
+    assert.deepEqual(await remote.run(), {
+      status: 'refreshed', number: 42, url, headSha: f.candidate, freshHead: true,
+    });
+    assert.deepEqual(remote.transitions, [...completed, 'draft', 'push', 'ready']);
+    assert.equal(remote.draft, false);
+    assert.equal(remote.pulls.length, 0);
+    assert.match(remote.body, /请保留人工评审备注/);
+    assert.ok(remote.body.includes(f.candidate));
+    assert.ok(!remote.body.includes(interruptedHead));
+    assert.doesNotMatch(remote.body, /cny-upstream-sync:refresh/);
+    assert.deepEqual(await remote.run(), {
+      status: 'reused', number: 42, url, headSha: f.candidate, freshHead: true,
+    });
+  });
+}
 
 test('preserves a human-drafted PR with no automation refresh in progress', async (t) => {
   const f = fixture(t);
