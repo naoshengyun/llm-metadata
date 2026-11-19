@@ -90,7 +90,10 @@ export async function publishOfficialProposal(
   );
   const head = 'codex/official-prices/' + plan.digest;
   const token = env.GH_TOKEN;
-  assert.match(token, /^[A-Za-z0-9._~+\/-]+={0,2}$/);
+  assert.ok(
+    typeof token === 'string' && /^[A-Za-z0-9._~+\/-]+={0,2}$/.test(token),
+    'Missing or invalid GitHub contents token',
+  );
   const github = (operation, path, options) =>
     githubApi(fetchApi, operation, api + path, token, options);
   const getRef = async (name, allowMissing = false) => {

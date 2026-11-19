@@ -55,7 +55,10 @@ export function summarizeOfficialCheck(report, plan, proposal, runId, proposalEr
 function apiFor(env, fetchApi) {
   assert.equal(env.GITHUB_REPOSITORY, repository);
   assert.equal(env.GITHUB_REF, 'refs/heads/naoshengyun');
-  assert.match(env.GH_TOKEN, /^[A-Za-z0-9._~+\/-]+={0,2}$/);
+  assert.ok(
+    typeof env.GH_TOKEN === 'string' && /^[A-Za-z0-9._~+\/-]+={0,2}$/.test(env.GH_TOKEN),
+    'Missing or invalid GitHub contents token',
+  );
   return (operation, path, options) =>
     githubApi(fetchApi, operation, route + path, env.GH_TOKEN, options);
 }
