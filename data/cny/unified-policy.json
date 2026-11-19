@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-18T00:00:00+08:00",
+  "asOf": "2026-11-19T16:27:00+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -16,6 +16,7 @@
   },
   "outOfScopeProviders": ["hunyuan"],
   "notOfferedModels": [
+    "MiniMax-M2",
     "MiniMax-M2.1",
     "MiniMax-M2.1-highspeed",
     "MiniMax-M2.5",
@@ -492,7 +493,344 @@
     }
   },
   "upstreamSelection": {},
-  "lifecycle": {},
+  "lifecycle": {
+    "devstral-2512": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:devstral-2512:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/devstral-2-25-12",
+          "sha256": "e48ace376bdfd10550576c5b010546a92740d9d7a7203d263e270c2fb946a953",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-07-31 as the retirement date."
+        }
+      }
+    ],
+    "doubao-seed-1-8-251228": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:volcengine:doubao-seed-1-8-251228:CNY",
+        "evidence": {
+          "url": "https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh",
+          "sha256": "4a356db7c28689e8f3b0fa40aea08f3e693611fd9d1905e339365dda01a0c5de",
+          "checkedAt": "2026-11-19",
+          "detail": "Ark lists end of service on 2026-09-21 at 14:00 UTC+08:00 and migration to doubao-seed-2-0-lite-260428."
+        }
+      }
+    ],
+    "gemini-2.5-flash": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:google:gemini-2.5-flash:USD",
+        "evidence": {
+          "url": "https://aistudio.google.com/docs/deprecations#gemini-2.5-flash-models",
+          "sha256": "92c195006e7eb922a9caa131670551885a63bbf1b7f6d95bcfa9de12d47a2518",
+          "checkedAt": "2026-11-19",
+          "detail": "Google explicitly deprecates this model. Requests will route to Gemini 3.5 Flash-Lite from 2026-12-01."
+        }
+      }
+    ],
+    "gemini-3.5-flash": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:google:gemini-3.5-flash:USD",
+        "evidence": {
+          "url": "https://aistudio.google.com/docs/deprecations#gemini-3-models",
+          "sha256": "92c195006e7eb922a9caa131670551885a63bbf1b7f6d95bcfa9de12d47a2518",
+          "checkedAt": "2026-11-19",
+          "detail": "Google stopped offering this model in AI Studio. Its API ID now routes to gemini-3.6-flash."
+        }
+      }
+    ],
+    "gemini-3.7-flash": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:google:gemini-3.7-flash:USD",
+        "evidence": {
+          "url": "https://aistudio.google.com/docs/deprecations#gemini-3-models",
+          "sha256": "92c195006e7eb922a9caa131670551885a63bbf1b7f6d95bcfa9de12d47a2518",
+          "checkedAt": "2026-11-19",
+          "detail": "Google stopped offering this model in AI Studio. Its API ID now routes to gemini-3.8-flash."
+        }
+      }
+    ],
+    "glm-5-2": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:glm-5-2:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/zai-glm-5-2",
+          "sha256": "b37d7586af8afa73d9fa19b162e87c98dc5c94e0c4b97292d15f6e9c06e5bbb4",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-10-31 as the retirement date."
+        }
+      }
+    ],
+    "gpt-3.5-turbo": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:gpt-3.5-turbo:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "gpt-4": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:gpt-4:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "gpt-4-turbo": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:gpt-4-turbo:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "gpt-4.1-nano": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:gpt-4.1-nano:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "labs-devstral-small-2512": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:labs-devstral-small-2512:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/devstral-small-2-25-12",
+          "sha256": "3c928e9d2d0f4be9ce6c325354c4bc59fd199508583082b024c95d31dfe14a86",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-03-31 as the retirement date."
+        }
+      }
+    ],
+    "magistral-medium-latest": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:magistral-medium-latest:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/magistral-medium-1-2-25-09",
+          "sha256": "e58f2280536c7de9a99564899630f220f1433ecab700aa56db1ab926c54c5b28",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-07-31 as the retirement date."
+        }
+      }
+    ],
+    "mistral-large-2512": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:mistral-large-2512:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-large-3-25-12",
+          "sha256": "f09d0f13bc466f45c59588ff3a8c5d4eec55af8721b900a7f3c72b5b8469a5f6",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2027-04-30 as the retirement date."
+        }
+      }
+    ],
+    "mistral-medium-2505": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:mistral-medium-2505:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-medium-3-25-05",
+          "sha256": "52110a6dc5d2547a5c2f61cf8028cf89a5d60bef0d87eab4ecdca8f8fa442450",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-08-31 as the retirement date."
+        }
+      }
+    ],
+    "mistral-medium-2508": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:mistral-medium-2508:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-medium-3-1-25-08",
+          "sha256": "30d7ddece46d7011795ca00f44f7a3094ef213fb25d482caab73b43f7e26bd24",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-08-31 as the retirement date."
+        }
+      }
+    ],
+    "mistral-small-2506": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:mistral-small-2506:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-small-3-2-25-06",
+          "sha256": "e55f4abd8be4442993a901fc147dffeda2817073b3ac437174aac0db0f4edfb2",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-07-31 as the retirement date."
+        }
+      }
+    ],
+    "o1": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:o1:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "o1-pro": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:o1-pro:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "o3-mini": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:o3-mini:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "o4-mini": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:openai:o4-mini:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI lists the exact API IDs with a shutdown date of 2026-10-23."
+        }
+      }
+    ],
+    "open-mistral-nemo": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:open-mistral-nemo:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-nemo-12b-24-07",
+          "sha256": "a1ee5d1cef150ed8ff4dd400d2a9c5266bdce7d22708c26ce695b213b7af8144",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-07-31 as the retirement date."
+        }
+      }
+    ],
+    "solar-pro2": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:upstage:solar-pro2:USD",
+        "evidence": {
+          "url": "https://www.upstage.ai/pricing/api",
+          "sha256": "7ff062961d52a3183dd821824d56ed58b5c440b6e7993ec49985f2f5b41461d0",
+          "checkedAt": "2026-11-19",
+          "detail": "The official pricing cards identify these exact aliases and list end of service on 2026-10-30 KST."
+        }
+      }
+    ],
+    "solar-pro3": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:upstage:solar-pro3:USD",
+        "evidence": {
+          "url": "https://www.upstage.ai/pricing/api",
+          "sha256": "7ff062961d52a3183dd821824d56ed58b5c440b6e7993ec49985f2f5b41461d0",
+          "checkedAt": "2026-11-19",
+          "detail": "The official pricing cards identify these exact aliases and list end of service on 2026-10-30 KST."
+        }
+      }
+    ],
+    "zai-glm-5-2": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:27:00+08:00",
+        "quoteId": "upstream:mistral:zai-glm-5-2:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/zai-glm-5-2",
+          "sha256": "b37d7586af8afa73d9fa19b162e87c98dc5c94e0c4b97292d15f6e9c06e5bbb4",
+          "checkedAt": "2026-11-19",
+          "detail": "Mistral marks this model Deprecated and lists 2026-10-31 as the retirement date."
+        }
+      }
+    ]
+  },
   "upstreamDirectory": "data/upstream/24d3f35c",
   "fixedEvidence": {
     "cn-moonshot-kimi-k3.1-pro-standard": {

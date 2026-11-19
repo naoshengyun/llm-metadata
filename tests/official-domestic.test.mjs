@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -596,6 +596,12 @@ test('Kimi China Batch rejects missing amount fields and an unexpected table hea
 
 test('MiniMax M2 launch evidence preserves exact original CNY without inventing cache rates', async () => {
   const id = 'upstream:minimax-cn:MiniMax-M2:CNY';
+  const historicalBaseline = join(directory, 'minimax-m2-baseline');
+  const policyPath = join(directory, 'minimax-m2-policy.json');
+  const policy = JSON.parse(readFileSync('data/cny/unified-policy.json'));
+  policy.notOfferedModels = policy.notOfferedModels.filter((model) => model !== 'MiniMax-M2');
+  writeFileSync(policyPath, JSON.stringify(policy));
+  execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', historicalBaseline, policyPath]);
   const fixture = gunzipSync(
     readFileSync(
       new URL(
@@ -606,7 +612,7 @@ test('MiniMax M2 launch evidence preserves exact original CNY without inventing 
   );
   const run = (body) =>
     checkOfficialPrices({
-      baseline,
+      baseline: historicalBaseline,
       attemptedAt,
       getResponse: async ({ id, url }) => {
         if (id !== 'minimax-m2-cn-launch') throw Error('Outside MiniMax launch fixture scope');

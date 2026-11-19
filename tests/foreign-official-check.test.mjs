@@ -13,6 +13,7 @@ after(() => rmSync(directory, { recursive: true, force: true }));
 const adapterPolicy = join(directory, 'adapter-policy.json');
 const policy = JSON.parse(readFileSync('data/cny/unified-policy.json'));
 delete policy.notOfferedModels;
+policy.lifecycle = {};
 writeFileSync(adapterPolicy, JSON.stringify(policy));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline, adapterPolicy]);
 const fixtures = {
@@ -516,7 +517,7 @@ test('a changed selected USD price passes candidate rebuild with precisely one c
   execFileSync(process.execPath, [
     'scripts/build-unified-cny.mjs',
     out,
-    'data/cny/unified-policy.json',
+    adapterPolicy,
     path,
     'data/cny/proposed-selection.json',
     'data/upstream/24d3f35c',

@@ -126,6 +126,8 @@ function lifecycleState(policy, selection, legacySelection, previous) {
       const at = effectiveTime(event.at, key);
       if (
         !['withdrawn', 'restored'].includes(event.state) ||
+        (event.reason !== undefined &&
+          (event.state !== 'withdrawn' || event.reason !== 'model-deprecated')) ||
         !event.quoteId ||
         !event.evidence?.url?.startsWith('https://') ||
         !/^[0-9a-f]{64}$/.test(event.evidence?.sha256 ?? '') ||
@@ -170,6 +172,10 @@ function lifecycleState(policy, selection, legacySelection, previous) {
     )
       throw Error('Selected price removed without withdrawal: ' + key);
   return { asOf, state };
+}
+
+function withdrawalStatus(event) {
+  return event.reason === 'model-deprecated' ? 'deprecated' : 'withdrawn';
 }
 
 function originalPrice(model, currency) {
@@ -403,14 +409,14 @@ function officialRows(
       status: notOffered
         ? 'not-offered'
         : withdrawn
-          ? 'withdrawn'
+          ? withdrawalStatus(event)
           : pending
             ? 'pending-effective'
             : diagnostic.status,
       reason: notOffered
         ? 'naoshengyun-service-scope'
         : withdrawn
-          ? 'official-price-withdrawn'
+          ? (event.reason ?? 'official-price-withdrawn')
           : pending
             ? 'official-price-not-yet-effective'
             : diagnostic.fields.join('; ') || null,
@@ -572,9 +578,14 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
     const event = lifecycle.state.get(modelId);
     if (event?.state === 'withdrawn') {
       for (const row of current) {
-        row.status = 'withdrawn';
-        row.reason = 'official-price-withdrawn';
+        row.status = withdrawalStatus(event);
+        row.reason = event.reason ?? 'official-price-withdrawn';
         row.lifecycle = event;
+        if (row.status === 'deprecated' && row.upstreamPrice) {
+          row.upstreamPrice.status = row.status;
+          row.upstreamPrice.reason = row.reason;
+          delete row.upstreamPrice.billing_expr;
+        }
       }
       continue;
     }
@@ -742,7 +753,7 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
-      if (status === 'not-offered') {
+      if (status === 'not-offered' || status === 'deprecated') {
         delete model.cost;
         delete model.sourceCost;
         model.cnyPrice = {
@@ -750,6 +761,7 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
           reason,
           exported: false,
           outputKind: 'model',
+          ...(status === 'deprecated' && { lifecycle: row.lifecycle }),
         };
         provider.models[modelId] = model;
         continue;
@@ -870,7 +882,7 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
     const reason = notOffered
       ? 'naoshengyun-service-scope'
       : event?.state === 'withdrawn'
-        ? 'formal-withdrawal'
+        ? (event.reason ?? 'formal-withdrawal')
         : correction && former?.providerId === correction.providerId
           ? 'source-currency-correction'
           : capability && former?.providerId === capability.providerId

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -23,7 +23,11 @@ test('records the exact Seed 1.8 hourly cache tariff as reference and fails clos
   const work = mkdtempSync(join(tmpdir(), 'cny-ark-seed-'));
   t.after(() => rmSync(work, { recursive: true, force: true }));
   const baseline = join(work, 'baseline');
-  execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
+  const policyPath = join(work, 'archive-policy.json');
+  const policy = JSON.parse(readFileSync('data/cny/unified-policy.json'));
+  delete policy.lifecycle['doubao-seed-1-8-251228'];
+  writeFileSync(policyPath, JSON.stringify(policy));
+  execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline, policyPath]);
   const check = (document) =>
     checkOfficialPrices({
       baseline,

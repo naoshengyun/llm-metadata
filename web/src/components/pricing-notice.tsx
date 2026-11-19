@@ -19,6 +19,7 @@ const statusLabels: Record<string, [string, string, string]> = {
     'サブスクリプション料金は確認対象外です',
   ],
   withdrawn: ['Official price withdrawn', '官方价目已撤回', '公式料金を撤回済み'],
+  deprecated: ['Model deprecated', '已废弃', '廃止済み'],
   'pending-effective': ['Awaiting effective date', '等待官方价目生效', '公式料金の発効待ち'],
   'validation-held': [
     'Sync held pending billing verification',
@@ -72,7 +73,7 @@ export function PricingNotice({ model }: { model: Model }) {
       {p.exported && p.sourceCurrency && p.sourceCurrency !== 'CNY'
         ? ` · ${p.sourceCurrency} → CNY`
         : ''}
-      {p.reason && p.status !== 'not-offered' && p.status !== 'subscription'
+      {p.reason && !['not-offered', 'subscription', 'deprecated'].includes(p.status)
         ? ` · ${p.reason}`
         : ''}
     </p>
