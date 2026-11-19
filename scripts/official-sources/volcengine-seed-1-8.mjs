@@ -56,11 +56,29 @@ export const adapter = {
   targets: [target],
   parse({ body }) {
     const html = decode(body).replace(/<script\b[^]*?<\/script>/gi, '');
-    if (!/Model ID：doubao-seed-1-8-251228(?=\s|$)/.test(htmlText(html))) {
-      throw Error('Exact Ark Seed 1.8 model ID missing');
+    const modelIds = new Set(
+      [...htmlText(html).matchAll(/Model ID\s*[:：]\s*([a-z0-9.-]+)/g)].map((match) => match[1]),
+    );
+    if (
+      modelIds.size !== 1 ||
+      !modelIds.has(modelId) ||
+      !/<div\b[^>]*class="title-[^"]+"[^>]*>豆包大模型1\.8<\/div>/.test(html)
+    ) {
+      throw Error('Exact Ark Seed 1.8 model page missing or ambiguous');
     }
+    const headings = [
+      ...html.matchAll(
+        /<div\b[^>]*class="[^"]*\bheading-h2\b[^"]*"[^>]*>\s*<div\b[^>]*>\s*<span\b[^>]*>([^<]+)<\/span>/g,
+      ),
+    ];
+    const pricingHeading = only(
+      headings.filter((heading) => heading[1] === '模型价格'),
+      'Ark Seed 1.8 pricing section',
+    );
+    const nextHeading = headings[headings.indexOf(pricingHeading) + 1];
+    const pricing = html.slice(pricingHeading.index, nextHeading?.index);
     const [, ...rows] = only(
-      withHeader(tables(html), headers).filter((table) => table.length > 1),
+      withHeader(tables(pricing), headers).filter((table) => table.length > 1),
       'Ark Seed 1.8 online and Batch rate table',
     );
     if (rows.length !== bands.length) throw Error('Incomplete Ark Seed 1.8 charging bands');
