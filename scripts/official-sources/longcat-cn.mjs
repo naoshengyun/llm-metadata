@@ -1,12 +1,4 @@
-import {
-  decode,
-  number,
-  only,
-  standardTarget,
-  tables,
-  tariff,
-  withHeader,
-} from './lib/domestic-tables.mjs';
+import { decode, number, only, standardTarget, tables, tariff } from './lib/domestic-tables.mjs';
 
 const target = standardTarget(
   'longcat',
@@ -24,20 +16,25 @@ export const adapter = {
     const html = decode(body);
     if (!/<title>LongCat-2\.0\b/.test(html)) throw Error('Missing LongCat-2.0 page identity');
     const table = only(
-      withHeader(tables(html), [
-        '计费项',
-        '原价 / 百万 Tokens',
-        '折扣价 / 百万 Tokens（限时）',
-      ]).filter((rows) => rows[1]?.[1]?.text.startsWith('¥')),
-      'LongCat original RMB tariff',
+      tables(html).filter(([header, first]) => {
+        if (header?.[0]?.text !== '计费项' || !first?.[1]?.text.startsWith('¥')) return false;
+        if (header.length === 2) return /^(?:单价|价格) \/ 百万 Tokens$/.test(header[1]?.text);
+        return (
+          header.length === 3 &&
+          header[1]?.text === '原价 / 百万 Tokens' &&
+          /^折扣价 \/ 百万 Tokens(?:（[^）]+）)?$/.test(header[2]?.text)
+        );
+      }),
+      'LongCat published RMB tariff',
     );
+    const priceColumn = table[0].length - 1;
     function charge(label) {
       const row = only(
         table.filter(([cell]) => cell?.text === label),
         'LongCat ' + label,
       );
-      if (row.length !== 3) throw Error('Incomplete LongCat charge: ' + label);
-      return number(row[1].text, '¥');
+      if (row.length !== table[0].length) throw Error('Incomplete LongCat charge: ' + label);
+      return number(row[priceColumn].text, '¥');
     }
     return new Map([
       [

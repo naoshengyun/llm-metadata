@@ -195,10 +195,8 @@ function charges(row, parse) {
   return { input: parse(parts[1]), output: parse(parts[2]), cache_read: parse(parts[3]) };
 }
 
-function original(value) {
-  const match = /^~~(\d+(?:\.\d+)?)~~ \d+(?:\.\d+)?$/.exec(value);
-  if (!match) throw Error('Missing MiniMax standard base amount and separate discount');
-  return number(match[1]);
+function currentPrice(value) {
+  return number(value.replace(/^~~[^~]+~~\s+/, ''));
 }
 
 export const adapter = {
@@ -237,20 +235,20 @@ export const adapter = {
     );
     const bands = standard.split('\n').filter((line) => line.startsWith('> | **MiniMax-M3** '));
     const low = only(
-      bands.filter((row) => /^> \| \*\*MiniMax-M3\*\* ≤ \d+k 输入 tokens 永久五折 \|/.test(row)),
+      bands.filter((row) => /^> \| \*\*MiniMax-M3\*\* ≤ \d+k 输入 tokens(?: [^|]+)? \|/.test(row)),
       'MiniMax M3 lower band',
     );
     const high = only(
       bands.filter((row) =>
-        /^> \| \*\*MiniMax-M3\*\* > \d+k 输入 tokens\\\* 永久五折 \|/.test(row),
+        /^> \| \*\*MiniMax-M3\*\* > \d+k 输入 tokens(?:\\\*)?(?: [^|]+)? \|/.test(row),
       ),
       'MiniMax M3 upper band',
     );
     const limit = Number(/≤ (\d+)k/.exec(low)[1]);
     if (limit !== Number(/> (\d+)k/.exec(high)[1]))
       throw Error('Discontinuous MiniMax M3 input bands');
-    const lowPrice = charges(low, original);
-    const highPrice = charges(high, original);
+    const lowPrice = charges(low, currentPrice);
+    const highPrice = charges(high, currentPrice);
     const m3 = tariff(
       models[0],
       {

@@ -104,43 +104,32 @@ function textPrice(text, modelId) {
     throw Error('Exact MiniMax International LLM price absent: ' + modelId);
   const standard = tabs.split('> [tab] Priority')[0].replace(/^> ?/gm, '');
   const rows = table(standard, columns);
-  const threshold = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens Permanent 50% off$/;
+  const threshold = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens(?: .+)?$/;
   const low = exactRow(rows, ([cell]) => threshold.test(cell), modelId + ' ordinary', 4);
   const sizeText = threshold.exec(low[0])[1];
   const high = exactRow(
     rows,
-    ([cell]) => cell === '**MiniMax-M3** > ' + sizeText + 'k input tokens\\* Permanent 50% off',
+    ([cell]) =>
+      /^\*\*MiniMax-M3\*\* > (\d+)k input tokens(?:\\\*)?(?: .+)?$/.exec(cell)?.[1] === sizeText,
     modelId + ' long context',
     4,
   );
-  const rates = [low, high].map((row) => {
-    const sale = {};
-    const undiscounted = {};
-    for (const [index, key] of charges.entries()) {
-      const pair = /^~~(\\\$\d+(?:\.\d+)?)~~ (\\\$\d+(?:\.\d+)?)$/.exec(row[index + 1]);
-      if (!pair) throw Error('Missing MiniMax International original or applicable rate');
-      undiscounted[key] = usdAmount(pair[1]);
-      sale[key] = usdAmount(pair[2]);
-      if (undiscounted[key] !== 2 * sale[key])
-        throw Error('MiniMax permanent discount and numeric rates disagree');
-    }
-    return { sale, undiscounted };
-  });
-  const [base, long] = rates;
+  const [base, long] = [low, high].map((row) =>
+    Object.fromEntries(
+      charges.map((key, index) => [key, usdAmount(row[index + 1].replace(/^~~[^~]+~~\s+/, ''))]),
+    ),
+  );
   return {
     sourcePrice: {
-      ...base.sale,
-      context_over_200k: long.sale,
-      tiers: [{ tier: { size: Number(sizeText) * 1000, type: 'context' }, ...long.sale }],
+      ...base,
+      context_over_200k: long,
+      tiers: [{ tier: { size: Number(sizeText) * 1000, type: 'context' }, ...long }],
     },
     required: [
       ...charges,
       ...charges.flatMap((key) => ['tiers.0.' + key, 'context_over_200k.' + key]),
     ],
-    conditions: {
-      discountClass: 'published-permanent-50-percent',
-      undiscounted: { currency, base: base.undiscounted, long: long.undiscounted },
-    },
+    conditions: {},
   };
 }
 

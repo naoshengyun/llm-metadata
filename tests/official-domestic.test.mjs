@@ -87,13 +87,13 @@ test('Xiaomi uses the domestic real-time tariff and preserves separate cache-wri
   assert.equal(data.billing_expr['mimo-v2.6-pro'], 'tier("standard", p * 3 + cr * 0.025 + c * 6)');
 });
 
-test('Bailing and LongCat review original RMB prices from tables that also quote discounts', async () => {
+test('Bailing and LongCat use the current public RMB rates from the exact first-party tables', async () => {
   const bailing = resultFor(await check('bailing'), 'cn-bailing-Ling-3.1-flash-standard');
   const longcat = resultFor(await check('longcat'), 'cn-longcat-LongCat-2.0-standard');
   assert.equal(bailing?.status, 'unchanged');
   assert.equal(longcat?.status, 'unchanged');
-  assert.deepEqual(bailing.observed.sourcePrice, { input: 2, output: 6, cache_read: 0.4 });
-  assert.deepEqual(longcat.observed.sourcePrice, { input: 5, output: 20, cache_read: 0.1 });
+  assert.deepEqual(bailing.observed.sourcePrice, { input: 0.5, output: 1.5, cache_read: 0.1 });
+  assert.deepEqual(longcat.observed.sourcePrice, { input: 2, output: 8, cache_read: 0.04 });
 });
 
 test('BigModel China reads cache storage and model modalities as conditions alongside CNY charges', async () => {
@@ -279,17 +279,38 @@ test('StepFun verifies ASR when the CNY token table is missing', async () => {
   assert.equal(asr.evidence.supplemental.audio.status, 200);
 });
 
-test('MiniMax uses the original standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
+test('MiniMax uses the current public standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
   const report = await check('minimax');
   const m3 = resultFor(report, 'cn-minimax-MiniMax-M3-standard');
   assert.equal(m3?.status, 'unchanged', m3?.reason);
-  assert.equal(m3.observed.sourcePrice.input, 4.2);
+  assert.equal(m3.observed.sourcePrice.input, 2.1);
   assert.equal(m3.observed.sourcePrice.tiers[0].tier.size, 512000);
-  assert.equal(m3.observed.sourcePrice.tiers[0].output, 33.6);
+  assert.equal(m3.observed.sourcePrice.tiers[0].output, 16.8);
   const flash = resultFor(report, 'cn-minimax-MiniMax-M3.1-Flash-standard');
   assert.equal(flash?.status, 'unchanged', flash?.reason);
   assert.deepEqual(flash.observed.sourcePrice, { input: 1, output: 4, cache_read: 0.1 });
   assert.equal(flash.observed.conditions.cacheMinimumInputTokens, 512);
+});
+
+test('a MiniMax promotion label change does not change the public CNY tariff', async () => {
+  const result = resultFor(
+    await check('minimax', (body) =>
+      Buffer.from(body.toString().replaceAll(' 永久五折', ' 优惠至 2026-12-07')),
+    ),
+    'cn-minimax-MiniMax-M3-standard',
+  );
+  assert.equal(result.status, 'unchanged', result.reason);
+  assert.equal(result.observed.sourcePrice.cache_read, 0.42);
+  assert.equal(result.observed.sourcePrice.tiers[0].cache_read, 0.84);
+});
+
+test('a missing active LongCat price cannot fall back to the comparison amount', async () => {
+  const result = resultFor(
+    await check('longcat', (body) => Buffer.from(body.toString().replace('¥0.04</td>', '—</td>'))),
+    'cn-longcat-LongCat-2.0-standard',
+  );
+  assert.equal(result.status, 'failed', result.reason);
+  assert.equal(result.observed, undefined);
 });
 
 test('missing official structure and HTTP errors fail through the daily checker', async () => {

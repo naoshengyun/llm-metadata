@@ -439,7 +439,15 @@ test('MiniMax international preserves the Standard threshold and charges H3 only
   const llm = row('upstream:minimax:MiniMax-M3:USD');
   assert.equal(llm.observed.sourcePrice.tiers[0].tier.size, 512000);
   assert.equal(llm.observed.sourcePrice.input, 0.3);
-  assert.equal(llm.observed.conditions.undiscounted.base.input, 0.6);
+  assert.deepEqual(llm.observed.conditions, {});
+  const relabelled = await run((body, source) =>
+    source === 'minimax-international'
+      ? Buffer.from(body.toString().replaceAll(' Permanent 50% off', ' Offer through Dec 7'))
+      : body,
+  );
+  const reviewed = relabelled.results.find(({ id }) => id === llm.id);
+  assert.equal(reviewed.status, llm.status, reviewed.reason);
+  assert.deepEqual(reviewed.observed, llm.observed);
   const video = row('us-minimax-minimax-h3-global-video');
   assert.equal(video.status, 'unchanged', video.reason);
   assert.equal(video.observed.identity.endpoint, 'https://api.minimax.io/v2/video_generation');
