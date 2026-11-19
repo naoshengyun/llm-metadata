@@ -63,13 +63,14 @@ function fixture(t) {
 }
 
 function github(f, {
-  prior = null, head = null, baseSha = f.business, failOnceAfterPush = false, moveBeforePush = null,
+  prior = null, head = null, baseSha, failOnceAfterPush = false, moveBeforePush = null,
 } = {}) {
   let pushed = false;
   const requests = [];
   const pulls = [];
   const transitions = [];
   const nodeId = 'PR_kwDTEST';
+  const businessTip = () => baseSha ?? f.business;
   const code = (sha) => String.fromCharCode(96) + sha + String.fromCharCode(96);
   function response(value, status = 200) {
     return new Response(JSON.stringify(value), { status });
@@ -84,7 +85,7 @@ function github(f, {
       ].join('\n'),
       user: { login, type: 'Bot' },
       head: { ref: branch, sha, repo: { full_name: repo } },
-      base: { ref: base, sha: baseSha, repo: { full_name: repo } },
+      base: { ref: base, sha: businessTip(), repo: { full_name: repo } },
     };
   }
   async function fetchApi(raw, options) {
@@ -103,7 +104,7 @@ function github(f, {
     }
     if (method === 'GET' && path === '/git/ref/heads/' + base) {
       assert.equal(auth, 'Bearer ' + env.GH_TOKEN);
-      return response({ ref: 'refs/heads/' + base, object: { type: 'commit', sha: baseSha } });
+      return response({ ref: 'refs/heads/' + base, object: { type: 'commit', sha: businessTip() } });
     }
     if (method === 'GET' && path === '/git/ref/heads/' + branch) {
       assert.equal(auth, 'Bearer ' + env.GH_TOKEN);
@@ -152,7 +153,7 @@ function github(f, {
       prior.draft = mutation === 'convertPullRequestToDraft';
       transitions.push(prior.draft ? 'draft' : 'ready');
       return response({ data: { [mutation]: { pullRequest: {
-        id: nodeId, isDraft: prior.draft, state: 'OPEN', headRefOid: head, baseRefOid: baseSha,
+        id: nodeId, isDraft: prior.draft, state: 'OPEN', headRefOid: head, baseRefOid: businessTip(),
       } } } });
     }
     if (method === 'POST' && path === '/pulls') {
@@ -324,6 +325,36 @@ test('finishes a refresh after an interruption between the ref push and body upd
   assert.equal(remote.draft, false);
 });
 
+test('supersedes an interrupted bot draft when the business branch advances again', async (t) => {
+  const f = fixture(t);
+  const oldHead = 'e'.repeat(40);
+  const remote = github(f, {
+    prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40) },
+    head: oldHead,
+    failOnceAfterPush: true,
+  });
+  await assert.rejects(remote.run(), /HTTP 500/);
+  assert.equal(remote.draft, true);
+
+  const interruptedHead = f.candidate;
+  f.git('switch', '--detach', f.business);
+  f.git('commit', '--allow-empty', '-m', 'Advanced business baseline');
+  f.business = f.git('rev-parse', 'HEAD');
+  f.git('commit', '--allow-empty', '-m', 'New checked candidate');
+  f.candidate = f.git('rev-parse', 'HEAD');
+  for (const report of [f.preparationReport, f.validationReport]) {
+    Object.assign(report, { business: f.business, candidate: f.candidate });
+  }
+  f.writeReports();
+
+  assert.deepEqual(await remote.run(), { status: 'refreshed', number: 42, url, headSha: f.candidate, freshHead: true });
+  assert.deepEqual(remote.transitions, ['draft', 'push', 'push', 'ready']);
+  assert.match(remote.body, /请保留人工评审备注/);
+  assert.ok(remote.body.includes(f.candidate));
+  assert.ok(!remote.body.includes(interruptedHead));
+  assert.equal(remote.draft, false);
+});
+
 test('preserves a human-drafted PR with no automation refresh in progress', async (t) => {
   const f = fixture(t);
   const oldHead = 'e'.repeat(40);
@@ -371,4 +402,22 @@ test('shows bounded source and CNY price changes with hostile Markdown escaped',
   assert.doesNotMatch(body, /@everyone|<img>|oversized-model/);
   assert.match(body, /另有 5 项/);
   assert.ok(Buffer.byteLength(body) < 20_000);
+});
+
+test('shows old and new official quote identities and sources when only evidence changes', async (t) => {
+  const f = fixture(t);
+  const price = { sourcePrice: { input: 1 }, sourceCurrency: 'USD', cnyPrice: { input: 7 } };
+  const change = {
+    nativeKey: 'evidence-model',
+    type: 'changed',
+    before: { ...price, quoteId: 'quote-before', sourceUrl: 'https://provider.example/before' },
+    after: { ...price, quoteId: 'quote-after', sourceUrl: 'https://provider.example/after' },
+  };
+  f.validationReport.priceChanges = [change];
+  f.writeReports();
+  const remote = github(f);
+  await remote.run();
+  const fence = String.fromCharCode(96).repeat(3);
+  const block = remote.pulls[0].body.split(fence)[1];
+  assert.deepEqual(JSON.parse(block.slice('json\n'.length)), [change]);
 });

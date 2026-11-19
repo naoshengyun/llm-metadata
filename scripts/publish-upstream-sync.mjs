@@ -98,8 +98,8 @@ function changedDirectories(git, business, candidate) {
 function priceExcerpt(changes = [], omitted = 0) {
   function terms(side) {
     if (side == null) return side;
-    const { providerId, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions } = side;
-    return { providerId, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions };
+    const { providerId, quoteId, sourceUrl, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions } = side;
+    return { providerId, quoteId, sourceUrl, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions };
   }
   const rows = [];
   let bytes = 0;
@@ -158,7 +158,7 @@ function pullEvidence(preparation, validation, directories, env) {
 
 function managedBody(evidence, refresh) {
   const lines = [EVIDENCE_START, evidence];
-  if (refresh) lines.push('<!-- cny-upstream-sync:refresh ' + refresh.from + ' ' + refresh.to + ' -->');
+  if (refresh) lines.push('<!-- cny-upstream-sync:refresh ' + [refresh.from, refresh.to, refresh.recorded].join(' ') + ' -->');
   lines.push(EVIDENCE_END);
   return lines.join('\n');
 }
@@ -175,12 +175,12 @@ function readManagedBody(body) {
   const revision = /^\| Git 候选提交 \| \x60([a-f0-9]{40})\x60 \|$/m.exec(evidence)?.[1];
   const business = /^\| 业务基线 \| \x60([a-f0-9]{40})\x60 \|$/m.exec(evidence)?.[1];
   if (!revision || !business) return null;
-  const marker = /\n<!-- cny-upstream-sync:refresh ([a-f0-9]{40}) ([a-f0-9]{40}) -->$/.exec(evidence);
+  const marker = /\n<!-- cny-upstream-sync:refresh ([a-f0-9]{40}) ([a-f0-9]{40})(?: ([a-f0-9]{40}))? -->$/.exec(evidence);
   return {
     revision,
     business,
     evidence: marker ? evidence.slice(0, marker.index) : evidence,
-    refresh: marker ? { from: marker[1], to: marker[2] } : null,
+    refresh: marker ? { from: marker[1], to: marker[2], recorded: marker[3] ?? marker[1] } : null,
     replace: (newEvidence, refresh) => body.slice(0, start) + managedBody(newEvidence, refresh) + body.slice(end + EVIDENCE_END.length + 1),
   };
 }
@@ -374,15 +374,19 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
     if (prior.state === 'closed') return pullResult(prior, 'closed');
     const headSha = await readRef(ref, true);
     const managed = readManagedBody(prior.body);
-    const pending = managed?.refresh?.to === candidate
-      && (managed.revision === managed.refresh.from || managed.revision === candidate);
-    const ownedHead = managed && headSha === prior.head.sha
-      && (headSha === managed.revision || (pending && headSha === candidate));
-    const canStart = ownedHead && prior.draft === false && !managed.refresh
-      && managed.business !== business && headSha !== candidate;
-    if (!ownedHead || (!pending && !canStart)) return reuseResult(prior, headSha, managed);
+    const previous = managed?.refresh;
+    const recordedHead = previous
+      ? [previous.from, previous.to].includes(headSha) && [previous.recorded, previous.to].includes(managed.revision)
+      : headSha === managed?.revision;
+    if (!headSha || headSha !== prior.head.sha || !recordedHead) return reuseResult(prior, headSha, managed);
 
-    const refresh = pending ? managed.refresh : { from: headSha, to: candidate };
+    const resume = previous?.to === candidate;
+    const supersede = Boolean(previous && prior.draft === true && !resume);
+    const start = !previous && prior.draft === false && managed.business !== business && headSha !== candidate;
+    if (!resume && !supersede && !start) return reuseResult(prior, headSha, managed);
+
+    // After an interrupted push, the lease SHA and the SHA in the PR evidence may differ.
+    const refresh = resume ? previous : { from: headSha, to: candidate, recorded: managed.revision };
     const nextEvidence = evidence();
     await checkBase();
     const { number } = pullResult(prior, 'reused');
@@ -406,8 +410,10 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
       return { pull, section };
     }
 
-    function checkRefresh(section, from, to) {
-      assert(section.refresh?.from === from && section.refresh.to === to, 'Managed pull request refresh marker changed');
+    function checkRefresh(section, expected) {
+      const actual = section.refresh;
+      assert(actual?.from === expected.from && actual.to === expected.to && actual.recorded === expected.recorded,
+        'Managed pull request refresh marker changed');
     }
 
     return withAppToken(fetchApi, privateKey, async (appApi) => {
@@ -420,23 +426,25 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
 
       let { pull, section } = await readPull(headSha);
       checkBodySize(section.replace(nextEvidence, refresh));
-      if (pending) {
-        checkRefresh(section, refresh.from, refresh.to);
+      if (resume) {
+        checkRefresh(section, refresh);
       } else {
-        assert(pull.draft === false && !section.refresh && section.revision === headSha
-          && section.business === managed.business, 'Managed pull request evidence changed before refresh');
+        if (supersede) checkRefresh(section, previous);
+        assert(pull.draft === supersede && section.revision === refresh.recorded
+          && section.business === managed.business && (supersede || !section.refresh),
+        'Managed pull request evidence changed before refresh');
         // Record intent while the old evidence is still intact so retries can identify a bot-owned draft.
         await patchBody(pull, section.replace(section.evidence, refresh));
         ({ pull, section } = await readPull(headSha));
-        checkRefresh(section, refresh.from, refresh.to);
+        checkRefresh(section, refresh);
       }
 
       if (headSha !== candidate) {
-        assert(headSha === refresh.from && section.revision === refresh.from, 'Managed pull request head is no longer owned by this refresh');
+        assert(headSha === refresh.from && section.revision === refresh.recorded, 'Managed pull request head is no longer owned by this refresh');
         if (!pull.draft) await changeDraft(appApi, pull, true, business, headSha);
         ({ pull, section } = await readPull(headSha));
-        checkRefresh(section, refresh.from, refresh.to);
-        assert(pull.draft && section.revision === refresh.from, 'Managed pull request is not a draft at its previous candidate');
+        checkRefresh(section, refresh);
+        assert(pull.draft && section.revision === refresh.recorded, 'Managed pull request is not a draft at its previous candidate');
         checkBodySize(section.replace(nextEvidence, refresh));
         await checkBase();
         try {
@@ -445,22 +453,22 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
           if (await readRef(ref, true) !== candidate) throw error;
         }
         ({ pull, section } = await readPull(candidate));
-        checkRefresh(section, refresh.from, refresh.to);
+        checkRefresh(section, refresh);
       }
 
       if (pull.draft) {
-        assert(section.revision === refresh.from || (section.revision === candidate && section.business === business),
+        assert(section.revision === refresh.recorded || (section.revision === candidate && section.business === business),
           'Managed pull request contains unexpected evidence for this refresh');
         await patchBody(pull, section.replace(nextEvidence, refresh));
         ({ pull, section } = await readPull(candidate));
-        checkRefresh(section, refresh.from, refresh.to);
+        checkRefresh(section, refresh);
         assert(pull.draft && section.revision === candidate && section.business === business,
           'Managed pull request did not retain the checked evidence on its draft');
         await checkBase();
         await changeDraft(appApi, pull, false, business, candidate);
         ({ pull, section } = await readPull(candidate));
       }
-      checkRefresh(section, refresh.from, refresh.to);
+      checkRefresh(section, refresh);
       assert(pull.draft === false && section.revision === candidate && section.business === business,
         'Managed pull request is missing current evidence or has not been marked ready');
       await patchBody(pull, section.replace(section.evidence));
