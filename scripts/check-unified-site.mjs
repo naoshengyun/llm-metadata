@@ -62,6 +62,7 @@ try {
   assert.deepEqual(Object.keys(data.billing_mode).sort(), names);
   assert.ok(!names.includes('doubao-seedance-2-5-260628'));
   const coverage = JSON.parse(await get(current.fixedBase + 'coverage.json'));
+  const notOffered = coverage.models.find(({ status }) => status === 'not-offered');
   for (const q of coverage.quotes.filter(({ outputKind }) => outputKind === 'tool-reference'))
     assert.ok(!names.includes(q.modelId));
 
@@ -214,6 +215,12 @@ try {
       );
     }
 
+    if (notOffered) {
+      await goto(select(notOffered.providerId, notOffered.modelId));
+      await expectVisible(page.getByText('Not offered by Naoshengyun', { exact: true }));
+      assert.equal(await page.getByRole('heading', { name: 'Official tariffs' }).count(), 0);
+    }
+
     if (english['minimax-cn'].models['MiniMax-H3'].cnyPrice.exported) {
       await goto(select('minimax-cn'));
       await page.getByRole('button', { name: 'Card view' }).click();
@@ -252,7 +259,7 @@ try {
 
     await goto(select('alibaba-coding-plan-cn'));
     await expectVisible(
-      page.getByText('Subscription plan; not a token tariff', { exact: false }).first(),
+      page.getByText('Subscription pricing is out of scope', { exact: true }).first(),
     );
     // Actually use every provider clipboard that contributes at least one native key.
     const selectedProviders = [

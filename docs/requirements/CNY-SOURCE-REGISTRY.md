@@ -64,3 +64,11 @@
 | 自有官方原价与当前选价 | [原价目录](../../data/cny/official-catalog.json) · [明确选价](../../data/cny/proposed-selection.json) |
 | 上游输入指针、精确延期、币种纠错与撤价历史 | [统一构建政策](../../data/cny/unified-policy.json) |
 | 本增量构建行为与候选交接 | [ADR 0005](../adr/0005-unified-official-cny-candidate.md) |
+
+## Naoshengyun service scope
+
+2026-11-19，用户确认脑生云不提供上一轮列出的 34 个模型，因此停止逐一核价，并从对客价目及 New API 同步候选排除。范围绑定 [PR #58](https://github.com/naoshengyun/llm-metadata/pull/58) 复核后仍失败或缺适配器的 34 个原生计费模型名。精确清单维护在 [统一构建政策的 `notOfferedModels`](../../data/cny/unified-policy.json)。
+
+核价结果与目录状态标记为 `not-offered`。同名供应商价目不参与自动或显式选价。模型目录保留名称和元数据并标明脑生云未提供，价格差异和既有证据保留审计用途。适用范围按脑生云业务决定执行。历史发布、厂商退役、正式撤价和 #35 延期各按原契约追溯。#42 与 #43 按更新后的范围验收，之后启动 #46。
+
+国内外 Coding Plan、Token Plan、Step Plan 等订阅套餐的价格不在本项目范围。统一候选按上游 `subscription` 标记识别套餐，保留端点和模型元数据，清除对客目录及当前覆盖清单的套餐金额，跳过官方核价与 New API 同步。同型号的官方按量价目继续按既有规则处理。已归档发布按原版本保留。

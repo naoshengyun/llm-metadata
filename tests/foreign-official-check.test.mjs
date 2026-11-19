@@ -10,7 +10,11 @@ import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
 const directory = mkdtempSync(join(tmpdir(), 'official-usd-'));
 const baseline = join(directory, 'baseline');
 after(() => rmSync(directory, { recursive: true, force: true }));
-execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
+const adapterPolicy = join(directory, 'adapter-policy.json');
+const policy = JSON.parse(readFileSync('data/cny/unified-policy.json'));
+delete policy.notOfferedModels;
+writeFileSync(adapterPolicy, JSON.stringify(policy));
+execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline, adapterPolicy]);
 const fixtures = {
   'openai-upstream': 'osm',
   'openai-upstream--chatgpt-image-latest': 'o-model-chatgpt-image-latest',
