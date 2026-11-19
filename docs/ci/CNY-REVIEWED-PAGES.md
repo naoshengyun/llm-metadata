@@ -21,6 +21,21 @@ gh api "repos/$repo" --jq '{allow_auto_merge, allow_merge_commit}'
 
 启用后，新 PR 必须通过最新基线的检查，再由 PR 作者之外的账户批准。修改提交会取消旧批准。审核人核对来源、原币、价格条件、选择和差异，合并操作由人执行。合并策略使用 GitHub 的 merge commit。部署工作流还会核对实际规则、精确的已合并 PR、合并提交的第二个父提交以及当前 PR head 上独立人类批准的记录。
 
+### 核对发布工作流的 Action 允许列表
+
+GitHub 在创建作业前校验整份工作流，包括仅在发布失败后运行的恢复作业。变更发布工作流的 `uses:` 时，用 bash 对比待审核工作流与仓库允许列表。输出为空且仓库仍为 `selected`、`sha_pinning_required: true` 时，本项通过。
+
+```bash
+set -euo pipefail
+repo=naoshengyun/llm-metadata
+gh api "repos/$repo/actions/permissions" --jq '{allowed_actions, sha_pinning_required}'
+allowed="$(gh api "repos/$repo/actions/permissions/selected-actions" --jq '.patterns_allowed[]')"
+required="$(sed -nE 's/^[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]+([^[:space:]#]+).*/\2/p' .github/workflows/naoshengyun-pages.yml)"
+LC_ALL=C comm -23 <(LC_ALL=C sort -u <<< "$required") <(LC_ALL=C sort -u <<< "$allowed")
+```
+
+恢复作业需要允许 `actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093`，它从当次运行下载已验证的上一版恢复包。2026-11-19，仓库缺少这个精确条目，合并 PR #53 后的发布在创建作业前失败。补齐该条目后，GitHub 仍拒绝重试这次运行。公网继续提供上一版。遇到同类不可重试的启动失败时，修复并读回仓库配置，再通过下一次受保护的人工合并触发发布，并按下节验收新合并提交。[失败运行](https://github.com/naoshengyun/llm-metadata/actions/runs/44448259707)
+
 ## 发布结果
 
 业务分支 push 发布同一提交构建的 Pages 包。构建只读已提交并校验的价格和上游资料，前一已发布快照用于撤价/恢复连续性及固定文件留存。当前业务基线领先于已发布快照时，检验也会基于精确的前一业务提交运行，保留已审核但仍待发布的生命周期和收费条件。提交中的 `asOf` 有明确时区，须已到生效时间。待生效报价可作为资料保留，选中的未来价会阻断检查。构建和部署使用不同权限，只有固定的部署步骤持有 Pages/OIDC 权限。发布前再次核对业务分支和已验证的当前指针。工作流串行执行，过期任务不能提升当前版本。
