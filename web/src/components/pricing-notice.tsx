@@ -13,6 +13,11 @@ const statusLabels: Record<string, [string, string, string]> = {
   ],
   deferred: ['Review deferred', '核价已获准延期', '料金確認を延期'],
   excluded: ['Price source excluded', '价目来源不符合规则', '料金ソースは対象外'],
+  subscription: [
+    'Subscription pricing is out of scope',
+    '订阅套餐价格不纳入核价',
+    'サブスクリプション料金は確認対象外です',
+  ],
   withdrawn: ['Official price withdrawn', '官方价目已撤回', '公式料金を撤回済み'],
   'pending-effective': ['Awaiting effective date', '等待官方价目生效', '公式料金の発効待ち'],
   'validation-held': [
@@ -41,29 +46,23 @@ export function PricingNotice({ model }: { model: Model }) {
           : p.reason === 'missing-original-CNY'
             ? 'Original CNY price unavailable; not exported'
             : 'Upstream source price unavailable; not exported'
-      : p.status === 'subscription'
+      : p.status === 'unsupported'
         ? zh
-          ? '订阅套餐；不是普通 Token 价'
+          ? '价格仅供资料；原生计费暂不支持'
           : ja
-            ? 'サブスクリプション・通常のトークン料金ではありません'
-            : 'Subscription plan; not a token tariff'
-        : p.status === 'unsupported'
+            ? '参考価格・ネイティブ課金未対応'
+            : 'Price information only; native billing unsupported'
+        : p.exported
           ? zh
-            ? '价格仅供资料；原生计费暂不支持'
+            ? 'CNY 基础价 · 已纳入价格 API'
             : ja
-              ? '参考価格・ネイティブ課金未対応'
-              : 'Price information only; native billing unsupported'
-          : p.exported
-            ? zh
-              ? 'CNY 基础价 · 已纳入价格 API'
-              : ja
-                ? 'CNY 基準価格・API 対象'
-                : 'CNY base price · included in API'
-            : zh
-              ? '区域资料价；API 使用国内/已选端点'
-              : ja
-                ? '地域別参考価格・API は選択端点を使用'
-                : 'Regional price information; API uses selected endpoint');
+              ? 'CNY 基準価格・API 対象'
+              : 'CNY base price · included in API'
+          : zh
+            ? '区域资料价；API 使用国内/已选端点'
+            : ja
+              ? '地域別参考価格・API は選択端点を使用'
+              : 'Regional price information; API uses selected endpoint');
   return (
     <p
       className="text-muted-foreground my-2 text-xs break-words whitespace-normal"
@@ -73,7 +72,9 @@ export function PricingNotice({ model }: { model: Model }) {
       {p.exported && p.sourceCurrency && p.sourceCurrency !== 'CNY'
         ? ` · ${p.sourceCurrency} → CNY`
         : ''}
-      {p.reason && p.status !== 'not-offered' ? ` · ${p.reason}` : ''}
+      {p.reason && p.status !== 'not-offered' && p.status !== 'subscription'
+        ? ` · ${p.reason}`
+        : ''}
     </p>
   );
 }

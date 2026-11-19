@@ -188,6 +188,7 @@ function upstreamRows(providers, policy, source) {
     for (const [modelId, model] of entries(provider.models)) {
       if (model.id !== modelId) throw Error('Upstream model identity mismatch: ' + modelId);
       const price = adaptPrice(provider, model);
+      const subscription = price.status === 'subscription';
       const deferred = policy.deferredModels[providerId]?.includes(modelId);
       const deferredEvidence = policy.deferredEvidence[providerId];
       const evidence = deferredEvidence?.models.includes(modelId)
@@ -221,24 +222,27 @@ function upstreamRows(providers, policy, source) {
           : evidence === 'source-currency'
             ? null
             : (price.sourceCurrency ?? model.cost?.currency ?? (model.cost ? 'USD' : null));
-      const status =
-        deferred || evidence
+      const status = subscription
+        ? 'subscription'
+        : deferred || evidence
           ? 'deferred'
           : corrected || price.reason?.startsWith('unsupported-source-currency:')
             ? 'excluded'
             : incapable
               ? 'unsupported'
               : price.status;
-      const reason = deferred
-        ? 'approved-deferred-model'
-        : evidence
-          ? 'approved-deferred-evidence:complete-tariff-requires-' + evidence
-          : corrected
-            ? correction.reason
-            : incapable
-              ? exclusion.reason
-              : (price.reason ?? null);
-      const amount = originalPrice(model, sourceCurrency);
+      const reason = subscription
+        ? 'subscription-price-out-of-scope'
+        : deferred
+          ? 'approved-deferred-model'
+          : evidence
+            ? 'approved-deferred-evidence:complete-tariff-requires-' + evidence
+            : corrected
+              ? correction.reason
+              : incapable
+                ? exclusion.reason
+                : (price.reason ?? null);
+      const amount = subscription ? null : originalPrice(model, sourceCurrency);
       const upstreamPrice = {
         quoteId: 'upstream:' + providerId + ':' + modelId + ':' + (sourceCurrency ?? 'unknown'),
         providerId,
@@ -258,7 +262,7 @@ function upstreamRows(providers, policy, source) {
               ? exclusion.sourcePrice
               : amount,
         ...(incapable && { conditions: exclusion.conditions }),
-        upstreamReportedCost: model.cost ?? null,
+        upstreamReportedCost: subscription ? null : (model.cost ?? null),
         sourceUnit: incapable
           ? exclusion.sourceUnit
           : price.unit === 'image'
@@ -335,7 +339,10 @@ function officialRows(official, selection, policy, records, providers, lifecycle
     entries(selection).filter(([key]) => lifecycle.state.get(key)?.state !== 'withdrawn'),
   );
   // Generate from original quotes even when upstream removes a previously associated model.
-  const recordsForCompilation = official.records.map(({ upstreamKey, ...quote }) => quote);
+  const recordsInScope = official.records.filter(
+    ({ provider }) => !providers[policy.providerAliases[provider] ?? provider]?.subscription,
+  );
+  const recordsForCompilation = recordsInScope.map(({ upstreamKey, ...quote }) => quote);
   const compiled = generateCny({
     upstream: { providers: {} },
     records: recordsForCompilation,
@@ -350,7 +357,7 @@ function officialRows(official, selection, policy, records, providers, lifecycle
   }
   for (const [index, entry] of compiled.catalog.entries()) {
     const { diagnostic, cnyCost } = entry;
-    const quote = official.records[index];
+    const quote = recordsInScope[index];
     if (
       quote.upstreamKey &&
       (quote.upstreamKey.model !== quote.model ||
@@ -720,6 +727,9 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
 function catalogFiles(files, snapshots, records, quotes, selected) {
   for (const locale of locales) {
     const providers = Object.assign(Object.create(null), structuredClone(snapshots[locale]));
+    for (const provider of Object.values(providers)) {
+      if (provider.subscription) delete provider.billing;
+    }
     for (const row of records.values()) {
       const { providerId, modelId, status, reason, upstreamPrice, quoteIds } = row;
       if (
@@ -737,48 +747,48 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
-      if (status === 'not-offered') {
+      if (status === 'not-offered' || status === 'subscription') {
         delete model.cost;
-        model.cnyPrice = { status, reason, exported: false, outputKind: 'model' };
+        delete model.sourceCost;
+        model.cnyPrice = {
+          status,
+          reason,
+          exported: false,
+          outputKind: status === 'subscription' ? 'subscription' : 'model',
+        };
         provider.models[modelId] = model;
         continue;
       }
       model.sourceCost = model.cost;
-      if (status === 'subscription') {
-        model.cnyPrice = { status, reason, exported: false, outputKind: 'subscription' };
-      } else {
-        model.cost = {
-          ...(displayPrice?.cnyCost ?? {}),
-          currency: 'CNY',
-          ...(winner
-            ? { publication_expr: winner.billing_expr, publication_unit: winner.unit }
-            : {}),
-        };
-        model.cnyPrice = {
-          status: winner ? 'eligible' : status,
-          reason,
-          sourceCurrency: displayPrice?.sourceCurrency ?? null,
-          exported: Boolean(winner),
-          expr: winner?.billing_expr,
-          outputKind: winner?.outputKind ?? (status === 'validation-held' ? 'task-model' : 'model'),
-          selectedQuoteId: winner?.quoteId ?? null,
-          quotes: [
-            ...quoteIds.map((quoteId) => quotes.get(quoteId)),
-            ...(upstreamPrice
-              ? [
-                  {
-                    ...upstreamPrice,
-                    reason: upstreamPrice.syncable
-                      ? null
-                      : winner
-                        ? 'explicit-official-price-selected'
-                        : reason,
-                  },
-                ]
-              : []),
-          ],
-        };
-      }
+      model.cost = {
+        ...(displayPrice?.cnyCost ?? {}),
+        currency: 'CNY',
+        ...(winner ? { publication_expr: winner.billing_expr, publication_unit: winner.unit } : {}),
+      };
+      model.cnyPrice = {
+        status: winner ? 'eligible' : status,
+        reason,
+        sourceCurrency: displayPrice?.sourceCurrency ?? null,
+        exported: Boolean(winner),
+        expr: winner?.billing_expr,
+        outputKind: winner?.outputKind ?? (status === 'validation-held' ? 'task-model' : 'model'),
+        selectedQuoteId: winner?.quoteId ?? null,
+        quotes: [
+          ...quoteIds.map((quoteId) => quotes.get(quoteId)),
+          ...(upstreamPrice
+            ? [
+                {
+                  ...upstreamPrice,
+                  reason: upstreamPrice.syncable
+                    ? null
+                    : winner
+                      ? 'explicit-official-price-selected'
+                      : reason,
+                },
+              ]
+            : []),
+        ],
+      };
       provider.models[modelId] = model;
     }
     const prefix = 'api/' + (locale === 'en' ? '' : 'i18n/' + locale + '/');

@@ -259,7 +259,7 @@ try {
 
     await goto(select('alibaba-coding-plan-cn'));
     await expectVisible(
-      page.getByText('Subscription plan; not a token tariff', { exact: false }).first(),
+      page.getByText('Subscription pricing is out of scope', { exact: true }).first(),
     );
     // Actually use every provider clipboard that contributes at least one native key.
     const selectedProviders = [

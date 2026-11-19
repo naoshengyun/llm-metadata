@@ -171,6 +171,9 @@ function registeredTargets(adapters, entries, notOfferedModels) {
   const sources = new Set();
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
+  const subscriptionProviders = new Set(
+    entries.filter(({ status }) => status === 'subscription').map(({ quote }) => quote.providerId),
+  );
   for (const source of adapters) {
     if (
       !/^[a-z0-9][a-z0-9-]*$/.test(source.id) ||
@@ -190,7 +193,11 @@ function registeredTargets(adapters, entries, notOfferedModels) {
       httpsUrl(request.url);
     }
     for (const target of source.targets) {
-      if (notOfferedModels?.includes(target.modelId)) continue;
+      if (
+        notOfferedModels?.includes(target.modelId) ||
+        subscriptionProviders.has(target.providerId)
+      )
+        continue;
       if (!target.group || registered.has(target.quoteId)) {
         throw Error('Invalid or duplicate official quote registration: ' + target.quoteId);
       }

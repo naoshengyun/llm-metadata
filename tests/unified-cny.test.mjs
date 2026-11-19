@@ -60,6 +60,69 @@ test('unified candidate covers the researched catalog and exports every selected
   }
 });
 
+test('subscription records keep metadata and omit all prices and official checks', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'cny-subscription-scope-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const candidate = join(dir, 'candidate');
+  run(candidate);
+  const load = (file) => JSON.parse(readFileSync(join(candidate, file)));
+  const coverage = load('coverage.json');
+  const subscriptionRows = coverage.models.filter(
+    ({ outputKind }) => outputKind === 'subscription',
+  );
+  const subscriptions = new Set(subscriptionRows.map(({ providerId }) => providerId));
+  assert.ok(['alibaba-coding-plan-cn', 'alibaba-coding-plan'].every((id) => subscriptions.has(id)));
+  assert.ok(
+    subscriptionRows.every(
+      ({ upstreamPrice, nativeKey, syncable }) =>
+        nativeKey === null &&
+        !syncable &&
+        upstreamPrice.sourcePrice === null &&
+        upstreamPrice.upstreamReportedCost === null,
+    ),
+  );
+  for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
+    const catalog = load(path);
+    for (const { providerId, modelId } of subscriptionRows) {
+      const provider = catalog[providerId];
+      const model = provider.models[modelId];
+      assert.equal(provider.billing, undefined);
+      assert.equal(model.cost, undefined);
+      assert.equal(model.sourceCost, undefined);
+      assert.equal(model.cnyPrice.status, 'subscription');
+      assert.equal(model.cnyPrice.reason, 'subscription-price-out-of-scope');
+      assert.equal(model.cnyPrice.exported, false);
+    }
+  }
+
+  const { upstreamPrice: row } = subscriptionRows[0];
+  const report = await checkOfficialPrices({
+    baseline: candidate,
+    adapters: [
+      {
+        id: 'subscription-test',
+        url: 'https://example.com/pricing',
+        targets: [
+          {
+            quoteId: row.quoteId,
+            providerId: row.providerId,
+            modelId: row.modelId,
+            group: row.modelId,
+          },
+        ],
+      },
+    ],
+    getResponse: async () => assert.fail('Subscription model triggered a network check'),
+  });
+  const result = report.results.find(({ quoteId }) => quoteId === row.quoteId);
+  assert.equal(result.status, 'subscription');
+  assert.equal(result.reason, 'subscription-price-out-of-scope');
+  assert.equal(result.latestAttemptedAt, null);
+  assert.equal(result.selected, false);
+  assert.deepEqual(report.changes, []);
+  assert.ok(load('api/newapi/ratio_config.json').data.billing_expr['MiniMax-M3']);
+});
+
 test('service scope removes only approved native prices and skips their official checks', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'cny-service-scope-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
