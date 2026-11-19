@@ -91,3 +91,20 @@
 | Upstage | `solar-pro2` 与 `solar-pro3` 的官方价卡标记服务于 2026-10-30 韩国时间结束。 | [Upstage API 价格](https://www.upstage.ai/pricing/api) · [型号历史](https://console.upstage.ai/docs/models/history) |
 
 逐原生键的证据网址及原始响应 SHA-256 记录在 [统一构建政策的 `lifecycle`](../../data/cny/unified-policy.json)。
+
+### #61 发布后的 14 条价目复核
+
+公网版本 `8ff03ab541ae38d166acaa6da2f92017e61768b7ff4f24758a99e4f42b48290b` 对应 #61 合并提交。24 个废弃型号在英、中、日目录均有标记，价格 JSON 只移除了这 24 个键与 `MiniMax-M2`，其余 216 条表达式和模式与 #60 逐键一致。
+
+| 模型 | 核查结果 | 官方证据 |
+| --- | --- | --- |
+| `gemini-2.5-flash-image` | 价格页明确标记已废弃，停用日期为 2027-03-15。目录标记废弃，从候选同步 JSON 移除。 | [Google 价格页](https://aistudio.google.com/docs/pricing#gemini-2.5-flash-image) |
+| `mistral-medium-latest` | 官方配置指南将滚动请求 ID 绑定到 Medium 3.5，模型卡同时列出该别名与废弃状态。退役日期为 2027-04-30。目录标记废弃，从候选同步 JSON 移除。 | [Vibe 配置](https://docs.mistral.ai/vibe/code/cli/configuration) · [Medium 3.5](https://docs.mistral.ai/models/mistral-medium-3-5-26-04) |
+| `gemini-2.5-flash-lite`、`gemini-3-flash-preview`、`gemini-3.1-flash-lite` | 缓存音频分别为 0.03、0.10、0.05 USD／百万 Token。显式缓存存储另收 1 USD／百万 Token 小时。原生结算缺独立的音频缓存读及存储计量。 | [Google 价格页](https://aistudio.google.com/docs/pricing) |
+| `gemini-3.1-flash-live-preview`、`gemini-embedding-2` | 各自独立的视频输入费率为 1、12 USD／百万 Token。当前结算参数不能区分视频输入用量。 | [Google 价格页](https://aistudio.google.com/docs/pricing) |
+| `lyria-3-clip-preview`、`lyria-3-pro-preview` | 标准付费分别为 0.04、0.08 USD／首。上一版的零价表达式移除。原版没有这两个模型的生成歌曲计量。 | [Google 价格页](https://aistudio.google.com/docs/pricing#lyria) |
+| `voxtral-small-2507`、`voxtral-small-latest` | 具体型号卡仍标 GA，官方列文本 Token、音频输入分钟及缓存分钟。原生同步缺分钟计量组合。 | [Voxtral Small](https://docs.mistral.ai/models/voxtral-small-25-07) · [Mistral Standard](https://docs.mistral.ai/inference/pricing) |
+| `gpt-realtime-2.1` | 官方标准音频缓存输入为 0.40 USD／百万 Token。原版结算有合计缓存与单列图片缓存，缺单列音频缓存。 | [OpenAI 价格](https://developers.openai.com/api/docs/pricing) |
+| `devstral-latest`、`devstral-medium-latest` | 退役的 Devstral 2 模型卡列出两个别名，公开工具调用指南仍列 `devstral-latest`。公开资料不能确认两者当前 API 指向，匿名模型详情 GET 返回 401，两条待查。 | [Devstral 2](https://docs.mistral.ai/models/devstral-2-25-12) · [工具调用](https://docs.mistral.ai/inference/conversations/function-calling) |
+
+已有官方费率的 10 条保留目录及独立的 USD 报价证据，标记为原生计费不支持并退出候选同步 JSON。能力证据采用固定 [New API rc.50 计量参数](https://github.com/QuantumNous/new-api/blob/f2aa91232ed3e5878a614762ace6736a2b74257f/pkg/billingexpr/types.go) 和[结算映射](https://github.com/QuantumNous/new-api/blob/f2aa91232ed3e5878a614762ace6736a2b74257f/service/tiered_settle.go)。#42 和 #43 仍有范围内价目缺口，#46 以两票验收为前提。

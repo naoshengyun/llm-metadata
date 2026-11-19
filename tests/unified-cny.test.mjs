@@ -44,6 +44,20 @@ test('unified candidate covers the researched catalog and exports every selected
   assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
   const selectedQuoteIds = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
   const english = read('api/all.json');
+  const foreignExclusions = Object.entries(input('unified-policy.json').nativeCapabilityExclusions)
+    .filter(([, price]) => price.currency === 'USD');
+  assert.ok(foreignExclusions.some(([id]) => id === 'lyria-3-clip-preview'));
+  for (const [id, price] of foreignExclusions) {
+    assert.ok(!Object.hasOwn(billing_expr, id), id);
+    const model = english[price.providerId].models[id];
+    assert.equal(model.cnyPrice.status, 'unsupported', id);
+    assert.equal(model.cnyPrice.exported, false, id);
+    const quote = model.cnyPrice.quotes.find(({ source }) => source?.sha256 === price.source.sha256);
+    assert.equal(quote.sourceCurrency, 'USD', id);
+    assert.equal(quote.sourceUnit, price.sourceUnit, id);
+    assert.deepEqual(quote.sourcePrice, price.sourcePrice, id);
+    assert.equal(quote.cnyCost, undefined, id);
+  }
   for (const { modelId, providerId, selectedQuoteId } of syncable) {
     assert.equal(billing_mode[modelId], 'tiered_expr', modelId);
     const published = english[providerId].models[modelId];
