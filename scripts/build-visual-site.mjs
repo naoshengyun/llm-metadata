@@ -50,24 +50,26 @@ const put = (p, b) => {
   );
 };
 for (const [p, b] of Object.entries(snapshot.files)) put(`versions/${snapshot.releaseId}/${p}`, b);
-for (const locale of ['en', 'zh', 'ja']) {
-  const providers = snapshot.datasets[locale].providers;
-  const prefix = 'api/' + (locale === 'en' ? '' : `i18n/${locale}/`);
-  put(prefix + 'all.json', providers);
-  put(prefix + 'providers.json', {
-    providers: Object.values(providers).map(({ models, ...p }) => ({
-      ...p,
-      modelCount: Object.keys(models).length,
-    })),
-  });
-  put(prefix + 'index.json', {
-    models: Object.values(providers)
-      .sort((a, b) => Number(domesticProviders.has(b.id)) - Number(domesticProviders.has(a.id)))
-      .flatMap((p) =>
-        Object.values(p.models).map((m) => ({ id: m.id, name: m.name ?? m.id, providerId: p.id })),
-      ),
-  });
-  for (const p of Object.values(providers)) put(prefix + 'providers/' + p.id + '.json', p);
+if (!unified) {
+  for (const locale of ['en', 'zh', 'ja']) {
+    const providers = snapshot.datasets[locale].providers;
+    const prefix = 'api/' + (locale === 'en' ? '' : `i18n/${locale}/`);
+    put(prefix + 'all.json', providers);
+    put(prefix + 'providers.json', {
+      providers: Object.values(providers).map(({ models, ...p }) => ({
+        ...p,
+        modelCount: Object.keys(models).length,
+      })),
+    });
+    put(prefix + 'index.json', {
+      models: Object.values(providers)
+        .sort((a, b) => Number(domesticProviders.has(b.id)) - Number(domesticProviders.has(a.id)))
+        .flatMap((p) =>
+          Object.values(p.models).map((m) => ({ id: m.id, name: m.name ?? m.id, providerId: p.id })),
+        ),
+    });
+    for (const p of Object.values(providers)) put(prefix + 'providers/' + p.id + '.json', p);
+  }
 }
 const providersForLogos = unified
   ? JSON.parse(unified.files['api/all.json'])

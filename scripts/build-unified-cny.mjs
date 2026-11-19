@@ -188,7 +188,6 @@ function upstreamRows(providers, policy, source) {
     for (const [modelId, model] of entries(provider.models)) {
       if (model.id !== modelId) throw Error('Upstream model identity mismatch: ' + modelId);
       const price = adaptPrice(provider, model);
-      const subscription = price.status === 'subscription';
       const deferred = policy.deferredModels[providerId]?.includes(modelId);
       const deferredEvidence = policy.deferredEvidence[providerId];
       const evidence = deferredEvidence?.models.includes(modelId)
@@ -203,7 +202,6 @@ function upstreamRows(providers, policy, source) {
         (corrected ||
           deferred ||
           evidence ||
-          provider.subscription ||
           exclusion.currency !== 'CNY' ||
           !exclusion.sourceUnit ||
           !exclusion.sourcePrice ||
@@ -222,32 +220,28 @@ function upstreamRows(providers, policy, source) {
           : evidence === 'source-currency'
             ? null
             : (price.sourceCurrency ?? model.cost?.currency ?? (model.cost ? 'USD' : null));
-      const status = subscription
-        ? 'subscription'
-        : deferred || evidence
-          ? 'deferred'
-          : corrected || price.reason?.startsWith('unsupported-source-currency:')
-            ? 'excluded'
+      const status = deferred || evidence
+        ? 'deferred'
+        : corrected || price.reason?.startsWith('unsupported-source-currency:')
+          ? 'excluded'
+          : incapable
+            ? 'unsupported'
+            : price.status;
+      const reason = deferred
+        ? 'approved-deferred-model'
+        : evidence
+          ? 'approved-deferred-evidence:complete-tariff-requires-' + evidence
+          : corrected
+            ? correction.reason
             : incapable
-              ? 'unsupported'
-              : price.status;
-      const reason = subscription
-        ? 'subscription-price-out-of-scope'
-        : deferred
-          ? 'approved-deferred-model'
-          : evidence
-            ? 'approved-deferred-evidence:complete-tariff-requires-' + evidence
-            : corrected
-              ? correction.reason
-              : incapable
-                ? exclusion.reason
-                : (price.reason ?? null);
-      const amount = subscription ? null : originalPrice(model, sourceCurrency);
+              ? exclusion.reason
+              : (price.reason ?? null);
+      const amount = originalPrice(model, sourceCurrency);
       const upstreamPrice = {
         quoteId: 'upstream:' + providerId + ':' + modelId + ':' + (sourceCurrency ?? 'unknown'),
         providerId,
         modelId,
-        nativeKey: provider.subscription ? null : modelId,
+        nativeKey: modelId,
         priceList: 'fixed upstream primary or original CNY sheet',
         endpoint: provider.api ?? null,
         sourceCurrency,
@@ -262,7 +256,7 @@ function upstreamRows(providers, policy, source) {
               ? exclusion.sourcePrice
               : amount,
         ...(incapable && { conditions: exclusion.conditions }),
-        upstreamReportedCost: subscription ? null : (model.cost ?? null),
+        upstreamReportedCost: model.cost ?? null,
         sourceUnit: incapable
           ? exclusion.sourceUnit
           : price.unit === 'image'
@@ -283,7 +277,7 @@ function upstreamRows(providers, policy, source) {
         reason,
         selected: false,
         syncable: false,
-        outputKind: provider.subscription ? 'subscription' : 'model',
+        outputKind: 'model',
         cnyCost: incapable
           ? exclusion.sourcePrice
           : corrected || deferred || evidence
@@ -333,16 +327,21 @@ function requiredShape(quote) {
   }
 }
 
-function officialRows(official, selection, policy, records, providers, lifecycle, previousQuotes) {
+function officialRows(
+  officialRecords,
+  selection,
+  policy,
+  records,
+  providers,
+  lifecycle,
+  previousQuotes,
+) {
   // The offered JSON uses one model-level expression for task and ordinary prices.
   const compileSelection = Object.fromEntries(
     entries(selection).filter(([key]) => lifecycle.state.get(key)?.state !== 'withdrawn'),
   );
   // Generate from original quotes even when upstream removes a previously associated model.
-  const recordsInScope = official.records.filter(
-    ({ provider }) => !providers[policy.providerAliases[provider] ?? provider]?.subscription,
-  );
-  const recordsForCompilation = recordsInScope.map(({ upstreamKey, ...quote }) => quote);
+  const recordsForCompilation = officialRecords.map(({ upstreamKey, ...quote }) => quote);
   const compiled = generateCny({
     upstream: { providers: {} },
     records: recordsForCompilation,
@@ -357,7 +356,7 @@ function officialRows(official, selection, policy, records, providers, lifecycle
   }
   for (const [index, entry] of compiled.catalog.entries()) {
     const { diagnostic, cnyCost } = entry;
-    const quote = recordsInScope[index];
+    const quote = officialRecords[index];
     if (
       quote.upstreamKey &&
       (quote.upstreamKey.model !== quote.model ||
@@ -554,8 +553,7 @@ function addHeldModel(official, policy, records, quotes) {
 function selectPrices(records, quotes, selection, policy, lifecycle) {
   const groups = groupBy(records.values(), (row) => row.modelId);
   const selected = Object.create(null);
-  for (const [modelId, group] of groups) {
-    const current = group.filter(({ status }) => status !== 'subscription');
+  for (const [modelId, current] of groups) {
     if (policy.notOfferedModels?.includes(modelId)) {
       for (const row of current) {
         row.status = 'not-offered';
@@ -600,7 +598,7 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
     }
     if (official && official.outputKind !== 'tool-reference') {
       const record = records.get(providerModel(official.providerId, modelId));
-      if (['subscription', 'deferred'].includes(record.status))
+      if (record.status === 'deferred')
         throw Error(
           'Selected official quote has an excluded catalog identity: ' + official.quoteId,
         );
@@ -727,9 +725,6 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
 function catalogFiles(files, snapshots, records, quotes, selected) {
   for (const locale of locales) {
     const providers = Object.assign(Object.create(null), structuredClone(snapshots[locale]));
-    for (const provider of Object.values(providers)) {
-      if (provider.subscription) delete provider.billing;
-    }
     for (const row of records.values()) {
       const { providerId, modelId, status, reason, upstreamPrice, quoteIds } = row;
       if (
@@ -747,14 +742,14 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
-      if (status === 'not-offered' || status === 'subscription') {
+      if (status === 'not-offered') {
         delete model.cost;
         delete model.sourceCost;
         model.cnyPrice = {
           status,
           reason,
           exported: false,
-          outputKind: status === 'subscription' ? 'subscription' : 'model',
+          outputKind: 'model',
         };
         provider.models[modelId] = model;
         continue;
@@ -922,7 +917,7 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
 
 function buildCandidate({
   source,
-  snapshots,
+  snapshots: upstreamSnapshots,
   inputs,
   official,
   selection,
@@ -935,8 +930,25 @@ function buildCandidate({
 }) {
   validateServiceScope(policy, selection);
   const lifecycle = lifecycleState(policy, selection, legacy.selection, previous);
+  const excludedProviderIds = new Set(policy.outOfScopeProviders);
+  for (const providers of Object.values(upstreamSnapshots))
+    for (const [id, provider] of Object.entries(providers))
+      if (provider.subscription) excludedProviderIds.add(id);
+  const snapshots = Object.fromEntries(
+    locales.map((locale) => [
+      locale,
+      Object.fromEntries(
+        Object.entries(upstreamSnapshots[locale]).filter(([id]) => !excludedProviderIds.has(id)),
+      ),
+    ]),
+  );
+  const officialRecords = official.records.filter(
+    ({ provider }) =>
+      !excludedProviderIds.has(provider) &&
+      !excludedProviderIds.has(policy.providerAliases[provider]),
+  );
   const records = upstreamRows(snapshots.en, policy, source);
-  const quotes = officialRows(official, selection, policy, records, snapshots.en, lifecycle, [
+  const quotes = officialRows(officialRecords, selection, policy, records, snapshots.en, lifecycle, [
     ...legacy.quotes.records,
     ...(previous?.coverage.quotes ?? []).flatMap(({ originalQuote }) =>
       originalQuote ? [originalQuote] : [],
@@ -952,15 +964,13 @@ function buildCandidate({
   const models = [...records.values()].map((row) => ({
     endpoint: snapshots.en[row.providerId]?.api ?? null,
     ...row,
-    nativeKey: row.status === 'subscription' ? null : row.modelId,
+    nativeKey: row.modelId,
     outputKind:
-      row.status === 'subscription'
-        ? 'subscription'
-        : selected[row.modelId]?.providerId === row.providerId
-          ? selected[row.modelId].outputKind
-          : row.status === 'validation-held'
-            ? 'task-model'
-            : 'model',
+      selected[row.modelId]?.providerId === row.providerId
+        ? selected[row.modelId].outputKind
+        : row.status === 'validation-held'
+          ? 'task-model'
+          : 'model',
     selected: Boolean(row.syncable),
     syncable: Boolean(row.syncable),
   }));
@@ -968,6 +978,7 @@ function buildCandidate({
     models,
     quotes: [...quotes.values()],
     toolReferences: official.optionalToolFees ?? [],
+    excludedProviderIds: [...excludedProviderIds].sort(),
   };
   const files = {
     'api/newapi/ratio_config.json': json({
@@ -1002,9 +1013,9 @@ function buildCandidate({
     stats: {
       providers: providerIds.size,
       models: models.length,
-      subscriptions: models.filter(({ outputKind }) => outputKind === 'subscription').length,
+      subscriptions: 0,
       apiModels: Object.keys(billing_expr).length,
-      officialQuotes: official.records.length,
+      officialQuotes: officialRecords.length,
       statuses: Object.fromEntries(
         [...groupBy(models, (row) => row.status)].map(([status, rows]) => [status, rows.length]),
       ),

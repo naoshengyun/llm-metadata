@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -33,10 +33,12 @@ test('unified candidate covers the researched catalog and exports every selected
     manifest.stats.subscriptions,
     coverage.models.filter(({ outputKind }) => outputKind === 'subscription').length,
   );
-  const catalog = input('official-catalog.json');
-  assert.equal(manifest.stats.officialQuotes, catalog.records.length);
+  const officialRecords = input('official-catalog.json').records.filter(
+    ({ provider }) => provider !== 'hunyuan',
+  );
+  assert.equal(manifest.stats.officialQuotes, officialRecords.length);
   const quoteIds = new Set(coverage.quotes.map(({ quoteId }) => quoteId));
-  for (const { id } of catalog.records) assert.ok(quoteIds.has(id), id);
+  for (const { id } of officialRecords) assert.ok(quoteIds.has(id), id);
   assert.equal(manifest.stats.apiModels, Object.keys(billing_expr).length);
   const syncable = coverage.models.filter(({ syncable }) => syncable);
   assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
@@ -60,65 +62,74 @@ test('unified candidate covers the researched catalog and exports every selected
   }
 });
 
-test('subscription records keep metadata and omit all prices and official checks', async (t) => {
+test('subscription and retired providers are omitted from the catalog and official checks', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'cny-subscription-scope-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const candidate = join(dir, 'candidate');
   run(candidate);
   const load = (file) => JSON.parse(readFileSync(join(candidate, file)));
   const coverage = load('coverage.json');
-  const subscriptionRows = coverage.models.filter(
-    ({ outputKind }) => outputKind === 'subscription',
-  );
-  const subscriptions = new Set(subscriptionRows.map(({ providerId }) => providerId));
-  assert.ok(['alibaba-coding-plan-cn', 'alibaba-coding-plan'].every((id) => subscriptions.has(id)));
-  assert.ok(
-    subscriptionRows.every(
-      ({ upstreamPrice, nativeKey, syncable }) =>
-        nativeKey === null &&
-        !syncable &&
-        upstreamPrice.sourcePrice === null &&
-        upstreamPrice.upstreamReportedCost === null,
-    ),
-  );
-  for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
-    const catalog = load(path);
-    for (const { providerId, modelId } of subscriptionRows) {
-      const provider = catalog[providerId];
-      const model = provider.models[modelId];
-      assert.equal(provider.billing, undefined);
-      assert.equal(model.cost, undefined);
-      assert.equal(model.sourceCost, undefined);
-      assert.equal(model.cnyPrice.status, 'subscription');
-      assert.equal(model.cnyPrice.reason, 'subscription-price-out-of-scope');
-      assert.equal(model.cnyPrice.exported, false);
+  const { upstreamDirectory } = input('unified-policy.json');
+  const upstream = JSON.parse(readFileSync(join(upstreamDirectory, 'en.json')));
+  const subscriptions = Object.values(upstream).filter(({ subscription }) => subscription);
+  assert.ok(subscriptions.some(({ id }) => id === 'alibaba-coding-plan-cn'));
+  const excluded = new Set([...subscriptions.map(({ id }) => id), 'hunyuan']);
+  assert.deepEqual(coverage.excludedProviderIds, [...excluded].sort());
+  const removed = new Set([...excluded, 'dashscope-anthropic']);
+  assert.ok(coverage.models.every(({ providerId }) => !removed.has(providerId)));
+  assert.ok(coverage.quotes.every(({ providerId }) => !removed.has(providerId)));
+  for (const prefix of ['api/', 'api/i18n/zh/', 'api/i18n/ja/']) {
+    const catalog = load(prefix + 'all.json');
+    const { providers } = load(prefix + 'providers.json');
+    const { models } = load(prefix + 'index.json');
+    for (const id of removed) {
+      assert.ok(!Object.hasOwn(catalog, id), id);
+      assert.ok(!existsSync(join(candidate, prefix, 'providers', id + '.json')), id);
+    }
+    assert.ok(providers.every(({ id, subscription }) => !removed.has(id) && !subscription));
+    assert.ok(models.every(({ providerId }) => !removed.has(providerId)));
+    assert.ok(models.every(({ id }) => id !== 'hunyuan-a13b'));
+    assert.deepEqual(
+      Object.keys(catalog['tencent-tokenhub'].models).sort(),
+      ['hy3', 'hy3-preview', 'hy4', 'hy4-preview'],
+    );
+    const qwen = catalog['alibaba-cn'].models['qwen3.7-max'].cnyPrice;
+    assert.equal(qwen.selectedQuoteId, 'dashscope--qwen3.7-max--cn-beijing-online-original-implicit');
+    const anthropicQuotes = qwen.quotes.filter(
+      ({ sourceProviderId }) => sourceProviderId === 'dashscope-anthropic',
+    );
+    assert.equal(anthropicQuotes.length, 2);
+    for (const quote of anthropicQuotes) {
+      assert.equal(quote.providerId, 'alibaba-cn');
+      assert.equal(quote.endpoint, 'https://dashscope.aliyuncs.com/apps/anthropic');
+      assert.equal(quote.syncable, false);
     }
   }
 
-  const { upstreamPrice: row } = subscriptionRows[0];
+  const targets = subscriptions.map(({ id, models }) => ({
+    quoteId: 'upstream:' + id + ':test',
+    providerId: id,
+    modelId: Object.keys(models)[0],
+    group: id,
+  }));
+  targets.push({
+    quoteId: 'hunyuan--hunyuan-a13b--mainland-legacy-hunyuan-online-postpaid-published',
+    providerId: 'hunyuan',
+    modelId: 'hunyuan-a13b',
+    group: 'hunyuan-a13b',
+  });
   const report = await checkOfficialPrices({
     baseline: candidate,
     adapters: [
       {
         id: 'subscription-test',
         url: 'https://example.com/pricing',
-        targets: [
-          {
-            quoteId: row.quoteId,
-            providerId: row.providerId,
-            modelId: row.modelId,
-            group: row.modelId,
-          },
-        ],
+        targets,
       },
     ],
-    getResponse: async () => assert.fail('Subscription model triggered a network check'),
+    getResponse: async () => assert.fail('Excluded provider triggered a network check'),
   });
-  const result = report.results.find(({ quoteId }) => quoteId === row.quoteId);
-  assert.equal(result.status, 'subscription');
-  assert.equal(result.reason, 'subscription-price-out-of-scope');
-  assert.equal(result.latestAttemptedAt, null);
-  assert.equal(result.selected, false);
+  assert.ok(report.results.every(({ identity }) => !removed.has(identity.providerId)));
   assert.deepEqual(report.changes, []);
   assert.ok(load('api/newapi/ratio_config.json').data.billing_expr['MiniMax-M3']);
 });
