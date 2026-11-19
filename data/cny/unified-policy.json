@@ -11,8 +11,10 @@
     "research": "https://github.com/naoshengyun/llm-metadata/tree/bc72a2fb5ae08e46739d33a5916243cb8a687c68/docs/planning/price-source-research"
   },
   "providerAliases": {
-    "dashscope": "alibaba-cn"
+    "dashscope": "alibaba-cn",
+    "dashscope-anthropic": "alibaba-cn"
   },
+  "outOfScopeProviders": ["hunyuan"],
   "notOfferedModels": [
     "MiniMax-M2.1",
     "MiniMax-M2.1-highspeed",

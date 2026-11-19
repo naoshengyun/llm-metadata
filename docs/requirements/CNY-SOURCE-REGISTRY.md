@@ -71,4 +71,8 @@
 
 核价结果与目录状态标记为 `not-offered`。同名供应商价目不参与自动或显式选价。模型目录保留名称和元数据并标明脑生云未提供，价格差异和既有证据保留审计用途。适用范围按脑生云业务决定执行。历史发布、厂商退役、正式撤价和 #35 延期各按原契约追溯。#42 与 #43 按更新后的范围验收，之后启动 #46。
 
-国内外 Coding Plan、Token Plan、Step Plan 等订阅套餐的价格不在本项目范围。统一候选按上游 `subscription` 标记识别套餐，保留端点和模型元数据，清除对客目录及当前覆盖清单的套餐金额，跳过官方核价与 New API 同步。同型号的官方按量价目继续按既有规则处理。已归档发布按原版本保留。
+国内外 Coding Plan、Token Plan、Step Plan 等订阅套餐整体退出当前目录。统一候选按上游 `subscription` 标记移除供应商及其模型，覆盖清单、三语目录和供应商详情统一执行此范围，并跳过官方核价。同型号的官方按量价目继续按既有规则处理。固定上游输入和已归档发布按原身份保留。
+
+`dashscope-anthropic` 归入阿里云百炼中国站 `alibaba-cn`，两条官方价目引用仍区分 Anthropic 端点和原始报价身份。[阿里云接入地址](https://help.aliyun.com/zh/model-studio/base-url)
+
+旧混元平台已下线，`hunyuan` 和其 `hunyuan-a13b` 模型退出当前目录。腾讯 TokenHub 使用 `tencent-tokenhub`，旧 A13B 的报价留作历史证据。[腾讯下线公告](https://cloud.tencent.com/announce/detail/2287) · [TokenHub 迁移指南](https://cloud.tencent.com/document/product/1823/131382)

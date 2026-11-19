@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const bootstrap = {
   sourceSha: '19af68518c9bbe5551093e961f081d6c411dacf4',
@@ -23,14 +24,21 @@ async function remote(origin, path) {
   assert.ok(validPath(path), 'Invalid site path: ' + path);
   const url = new URL(path, origin);
   assert.ok(url.protocol === 'https:' || url.hostname === '127.0.0.1', 'Use HTTPS for Pages');
-  url.searchParams.set('cny-release-check', randomUUID());
-  const response = await fetch(url, {
-    cache: 'no-store',
-    redirect: 'error',
-    signal: AbortSignal.timeout(30_000),
-  });
-  assert.ok(response.ok, `HTTP ${response.status} for ${path}`);
-  return Buffer.from(await response.arrayBuffer());
+  for (let attempt = 1; ; attempt++) {
+    url.searchParams.set('cny-release-check', randomUUID());
+    const response = await fetch(url, {
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (response.status === 503 && attempt < 3) {
+      await response.body?.cancel();
+      await delay(attempt * 500);
+      continue;
+    }
+    assert.ok(response.ok, `HTTP ${response.status} for ${path}`);
+    return Buffer.from(await response.arrayBuffer());
+  }
 }
 
 function checked(bytes, entry, path) {

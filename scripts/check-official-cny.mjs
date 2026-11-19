@@ -167,13 +167,13 @@ function coverageEntries(coverage, selection) {
   ];
 }
 
-function registeredTargets(adapters, entries, notOfferedModels) {
+function registeredTargets(adapters, entries, notOfferedModels, excludedProviderIds = []) {
   const sources = new Set();
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
-  const subscriptionProviders = new Set(
-    entries.filter(({ status }) => status === 'subscription').map(({ quote }) => quote.providerId),
-  );
+  const excludedProviders = new Set(excludedProviderIds);
+  for (const { status, quote } of entries)
+    if (status === 'subscription') excludedProviders.add(quote.providerId);
   for (const source of adapters) {
     if (
       !/^[a-z0-9][a-z0-9-]*$/.test(source.id) ||
@@ -195,7 +195,7 @@ function registeredTargets(adapters, entries, notOfferedModels) {
     for (const target of source.targets) {
       if (
         notOfferedModels?.includes(target.modelId) ||
-        subscriptionProviders.has(target.providerId)
+        excludedProviders.has(target.providerId)
       )
         continue;
       if (!target.group || registered.has(target.quoteId)) {
@@ -464,6 +464,7 @@ export async function checkOfficialPrices({
     adapters ?? (await loadAdapters()),
     entries,
     policy.notOfferedModels,
+    coverage.excludedProviderIds,
   );
   const responses = new Map();
   const results = [];

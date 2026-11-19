@@ -62,6 +62,7 @@ try {
   assert.deepEqual(Object.keys(data.billing_mode).sort(), names);
   assert.ok(!names.includes('doubao-seedance-2-5-260628'));
   const coverage = JSON.parse(await get(current.fixedBase + 'coverage.json'));
+  const removedProviders = [...coverage.excludedProviderIds, 'dashscope-anthropic'];
   const notOffered = coverage.models.find(({ status }) => status === 'not-offered');
   for (const q of coverage.quotes.filter(({ outputKind }) => outputKind === 'tool-reference'))
     assert.ok(!names.includes(q.modelId));
@@ -73,8 +74,18 @@ try {
     assert.equal(await get(current.fixedBase + allPath), text);
     assert.equal(sha(text), files[allPath].sha256);
     const all = JSON.parse(text);
+    const { providers } = JSON.parse(await get(prefix + 'providers.json'));
+    assert.ok(
+      providers.every(({ id, subscription }) => !removedProviders.includes(id) && !subscription),
+    );
+    for (const id of removedProviders) {
+      assert.ok(!Object.hasOwn(all, id), id);
+      const response = await fetch(origin + '/' + prefix + 'providers/' + id + '.json');
+      assert.equal(response.status, 404, prefix + id);
+    }
     const syncable = new Map();
-    const index = JSON.parse(await get(current.fixedBase + prefix + 'index.json'));
+    const index = JSON.parse(await get(prefix + 'index.json'));
+    assert.ok(index.models.every(({ providerId }) => !removedProviders.includes(providerId)));
     const indexKeys = new Set(
       index.models.map(({ providerId, id }) => JSON.stringify([providerId, id])),
     );
@@ -257,10 +268,6 @@ try {
     await fullTariff.scrollIntoViewIfNeeded();
     await snapshot(page, viewport.width, 'seedance');
 
-    await goto(select('alibaba-coding-plan-cn'));
-    await expectVisible(
-      page.getByText('Subscription pricing is out of scope', { exact: true }).first(),
-    );
     // Actually use every provider clipboard that contributes at least one native key.
     const selectedProviders = [
       ...new Set(
