@@ -11,9 +11,9 @@ gh run list --repo naoshengyun/llm-metadata --workflow naoshengyun-upstream-sync
 
 - `unchanged` 表示上游提交与业务分支的已固定来源一致。运行只留下检查收据。
 - `candidate-ready` 表示用上次固定上游、当前业务提交、本次固定上游三方计算候选，再以实际站点和价格文件验证。已选自有价目和表达式、币种政策、正式撤价、延期和恢复状态必须保持。上游工作流变更保留在隔离目录。失败原因在作业日志和检查产物中。
-- `created` 或 `reused` 表示同一上游提交对应的候选分支和 App 审核 PR 已创建或复用。已有 PR 关闭时保留该决定。业务分支前进后，如已有 PR 需要更新到新基线，审核人可按常规 PR 流程更新并重跑必需检查。
+- `created`、`reused` 或 `refreshed` 分别表示创建、复用或更新同一上游提交的 App 审核 PR。业务基线前进时，仅更新仍与原收据一致的机器人分支。更新使用草稿状态，完成后重新标为可审核，触发必需检查并要求审核最新提交。人工更新的分支和已关闭的 PR 保留现状。
 
-打开运行的 Summary 和 `cny-upstream-check-*` / `cny-upstream-proposal-*` 产物，可查固定提交、候选、产物差异和 PR 链接。PR 要通过 [CNY reviewed build 和人工门禁](CNY-REVIEWED-PAGES.md)，人工合并后才由现有 Pages 工作流发布。
+打开运行的 Summary 和 `cny-upstream-check-*` / `cny-upstream-proposal-*` 产物，可查固定提交、候选、完整产物差异和 PR 链接。PR 正文记录逐项价格变化，超出正文容量时附完整差异产物。PR 要通过 [CNY reviewed build 和人工门禁](CNY-REVIEWED-PAGES.md)，人工合并后才由现有 Pages 工作流发布。
 
 ## 仓库配置
 
