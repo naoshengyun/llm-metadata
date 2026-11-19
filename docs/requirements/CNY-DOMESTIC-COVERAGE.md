@@ -71,3 +71,18 @@
 `doubao-seed-1-8-251228` 的官方型号页列出四档在线 CNY 价。输入在 32,000 Token 内时，输出不超过 200 Token 的单价为 2 CNY/百万 Token，超过 200 时为 8 CNY/百万 Token。另两档按输入量计价，输出单价为 16 和 24 CNY/百万 Token。每档的缓存存储为 0.017 CNY/百万 Token·小时。批量价在原表独立列示，核查报告也独立保留。[官方型号及价目](https://docs.volcengine.com/docs/ark/bytedance-seed-1-8?lang=zh)
 
 2026-11-19 的公开核价收到 HTTP 200，响应 SHA-256 为 `5792e1ca6dd068b67864829f2be60f980287a3031af1740b9355bd8ec3bdb8e7`。夹具保留该响应的标题、价格区块和版本标识，解压后 SHA-256 为 `f8664c5e7f49965d4b37a37af79d1182243782c497f6c3d076cb26dc746f145a`。现有原生模型同步缺少缓存存储时长收费项，核查将完整原价保留为参考，继续使用此前审核的同步 JSON。
+
+## MiMo V2.5 历史原价与方舟下线
+
+小米永久调价公告的中文价目图明确标出 CNY/百万 Token。2026-05-27 00:00（北京时间）起，取消旧有按输入长度定价，后续历史价如下。
+
+| 精确 API ID | 输入未命中 | 输出 | 输入缓存命中 |
+| --- | ---: | ---: | ---: |
+| `mimo-v2.5` | 1 | 2 | 0.020 |
+| `mimo-v2.5-pro` | 3 | 6 | 0.025 |
+
+核价入口同时记录调价前 256K 两档。图价由人工读回，核价以原始图片 SHA-256 `35e1d42f2d81c94307dff70c6cf75b1c044f3dbe65e10563b5869fb60eaa0d40` 绑定转录。图片更换时须重新核对。两条 API ID 均于 2026-10-21 10:00（北京时间）下线。官方下线文档的替换表和附注分别写 10 月 14 日 10:00 和 18:00，自动核价使用一致且明确的 10 月 21 日终止时间。两个结果均为历史参考，未报通用缓存写入或将替代型号费率用于旧 ID。[小米永久调价公告](https://mimo.mi.com/docs/zh-CN/news/latest/v2.5-price-update) · [中文原价图](https://aistudio-cdn.xiaomimimo.com/xiaomimimo-static/mimo-docs-figures/display/KdqUbJSGzohXwhxRBjEcCQuOn77.webp) · [官方下线说明](https://mimo.mi.com/static/docs/updates/deprecate.md)
+
+方舟第九批公告确认 `doubao-seed-1-6-251015`、`doubao-seed-1-6-flash-250828`、`doubao-seed-1-6-vision-250815` 于 2026-09-21 14:00（北京时间）下线。未迁移接入点的官方替代版本分别为 Seed 2.0 Lite LTS、Seed 2.0 Mini LTS、Seed 2.0 Lite LTS。11 月 19 日回读的公告原始响应 SHA-256 `2e2a34e6133302829f1c1ec0342d99abcbdd5ecbad72149c59b963f043192afc`。同次回读的现行价表没有列出这三个原版本。接入点迁移和需审查的现有上游选价分别记录。[方舟下线公告](https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh) · [方舟现行价表](https://docs.volcengine.com/docs/ark/model-pricing?lang=zh)
+
+MiniMax 发布公告给出原 M2 的历史 CNY 输入 2.10、输出 8.40 元/百万 Token。另一个官方公告给出了 `MiniMax-M2-Stable` 的缓存读取价，适用的是该具名模型。当前仍缺本矩阵所选七个旧 M2 系列 ID 在中国 Anthropic 兼容端点适用的完整人民币价格与缓存计费。智谱旧 ID 和北京百炼部分旧型号的精确收费条件仍待证。[MiniMax M2 发布公告](https://www.minimax.io/news/minimax-m2)

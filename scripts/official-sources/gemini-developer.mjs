@@ -48,6 +48,16 @@ const uniformAudio = new Set([
   'gemini-4-carbon',
   'gemini-4-hydrogen',
 ]);
+const splitAudioCache = new Set([
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+]);
+const music = {
+  'lyria-3-clip-preview': { label: 'Lyria 3 Clip Preview (30s)', durationSeconds: 30 },
+  'lyria-3-pro-preview': { label: 'Lyria 3 Pro Preview (Full Song)' },
+};
 const markdocTable = /\{% table %\}([\s\S]*?)\{% \/table %\}/g;
 const escaped = (id) => id.replaceAll('.', '\\.');
 
@@ -68,6 +78,11 @@ export function geminiDeveloperTarget(modelId) {
     currency,
     group: modelId,
     baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
+    ...((Object.hasOwn(music, modelId) || splitAudioCache.has(modelId)) && {
+      referenceOnlyReason: Object.hasOwn(music, modelId)
+        ? 'Native Gemini model sync has no generated-song usage'
+        : 'Native Gemini model sync has no dedicated audio cache read or hourly cache storage charge',
+    }),
   };
 }
 
@@ -84,7 +99,7 @@ export function markdocRows(body) {
     );
 }
 
-function paidRows(modelSection) {
+function paidRows(modelSection, unit) {
   const standard = [
     ...modelSection.matchAll(/\{% tab title="Standard" %\}([\s\S]*?)\{% \/tab %\}/g),
   ];
@@ -98,7 +113,7 @@ function paidRows(modelSection) {
   )
     throw Error('Missing or ambiguous Gemini Standard tariff');
   const [header, ...rows] = markdocRows(tables[0][1]);
-  if (header.join('|') !== 'Feature|Free Tier|Paid Tier, per 1M tokens in USD') {
+  if (header.join('|') !== 'Feature|Free Tier|Paid Tier, per ' + unit + ' in USD') {
     throw Error('Gemini paid tariff uses a different unit or service tier: ' + header.join(', '));
   }
   return rows;
@@ -234,6 +249,8 @@ function plainPrices(rows, modelId, checkedAt) {
     }
   }
   const caching = rowCost(rows, /^Context caching price$/);
+  if (splitAudioCache.has(modelId) && !caching)
+    throw Error('Missing advertised Gemini audio cache tariff: ' + modelId);
   if (caching) {
     const lines = caching
       .split('\n')
@@ -246,10 +263,17 @@ function plainPrices(rows, modelId, checkedAt) {
         !storage.includes(line) &&
         line !== 'Implicit caching only (explicit caching is not supported).',
     );
-    if (usage.some((line) => line.endsWith('(audio)')))
-      throw Error(
-        'Gemini publishes a separate audio cache rate with no native fee field: ' + modelId,
+    if (splitAudioCache.has(modelId)) {
+      const rates = /^(\$[\d.]+) \(text \/ image \/ video\)\n(\$[\d.]+) \(audio\)$/.exec(
+        usage.join('\n'),
       );
+      if (!rates || implicit || storage.length !== 1 || !Object.hasOwn(sourcePrice, 'input_audio'))
+        throw Error('Missing Gemini modality or hourly cache storage tariff: ' + modelId);
+      read(rates[1], 'cache_read');
+      conditions.audioCacheRead = { amount: usd(rates[2]), currency, unit: 'per_million_tokens' };
+    } else {
+      read(usage.join('\n'), 'cache_read');
+    }
     if (implicit) conditions.cacheMode = 'implicit-only';
     if (storage.length) {
       const recurring = storage
@@ -266,7 +290,6 @@ function plainPrices(rows, modelId, checkedAt) {
         }),
       };
     }
-    read(usage.join('\n'), 'cache_read');
   }
   const required = Object.keys(sourcePrice);
   if (result.tierSize !== undefined) {
@@ -302,12 +325,28 @@ export function standardTariffs(text, checkedAt) {
       throw Error(
         'Exact model ID absent from Gemini Developer API price sections: ' + priceModelId,
       );
-    const tariff = plainPrices(paidRows(matches[0]), priceModelId, checkedAt);
+    const song = Object.hasOwn(music, priceModelId) ? music[priceModelId] : undefined;
+    let tariff;
+    if (song) {
+      const rows = paidRows(matches[0], 'request');
+      const rate = rows.filter(([label]) => label === song.label);
+      if (rate.length !== 1 || rate[0].length !== 3 || rate[0][1] !== 'Not available')
+        throw Error('Missing exact Lyria paid song tariff: ' + priceModelId);
+      tariff = {
+        sourcePrice: { output: usd(rate[0][2], /^\$(\d+(?:\.\d+)?) per song$/) },
+        required: ['output'],
+        conditions: song.durationSeconds
+          ? { durationSeconds: song.durationSeconds }
+          : { fullSong: true },
+      };
+    } else {
+      tariff = plainPrices(paidRows(matches[0], '1M tokens'), priceModelId, checkedAt);
+    }
     if (routed) tariff.conditions.routedModelId = priceModelId;
     return {
       identity: { providerId, endpoint, modelId, priceList, currency },
       recordId: 'us-google-' + modelId + '-developer-standard',
-      sourceUnit: 'per_million_tokens',
+      sourceUnit: song ? 'per_song' : 'per_million_tokens',
       ...tariff,
     };
   };
