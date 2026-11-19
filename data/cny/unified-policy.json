@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-19T17:37:55+08:00",
+  "asOf": "2026-11-19T18:26:41+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -25,6 +25,8 @@
     "MiniMax-M2.7-highspeed",
     "deep-research-max-preview-04-2026",
     "deep-research-preview-04-2026",
+    "devstral-latest",
+    "devstral-medium-latest",
     "doubao-seed-1-6-251015",
     "doubao-seed-1-6-flash-250828",
     "doubao-seed-1-6-vision-250815",
@@ -32,12 +34,15 @@
     "fugu-ultra-20260615",
     "gemini-2.5-computer-use-preview-10-2025",
     "gemini-3.1-flash-lite-preview",
+    "gemini-embedding-001",
+    "gemini-embedding-2",
     "gemini-flash-latest",
     "gemini-flash-lite-latest",
     "gemini-pro-latest",
     "gemma-4-26b-a4b-it",
     "gemma-4-31b-it",
     "glm-4.5-flash",
+    "glm-4.6",
     "glm-5-turbo",
     "gpt-4o-2024-05-13",
     "gpt-4o-2024-08-06",
@@ -46,11 +51,16 @@
     "gpt-daybreak-blue-latest",
     "gpt-daybreak-red-latest",
     "grok-4.7-build-fast",
+    "image-01",
     "labs-leanstral-1-5-1",
+    "mistral-embed",
     "mistral-large-4-0-8",
     "mistral-medium-2604",
     "pixtral-12b",
-    "qwen3-livetranslate-flash-realtime"
+    "qwen3-livetranslate-flash-realtime",
+    "text-embedding-3-large",
+    "text-embedding-3-small",
+    "text-embedding-ada-002"
   ],
   "deferredModels": {
     "sensenova": ["sensenova-6.8-flash-lite"],
@@ -765,6 +775,62 @@
   },
   "upstreamSelection": {},
   "lifecycle": {
+    "glm-4.5": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:26:41+08:00",
+        "quoteId": "upstream:zhipuai:glm-4.5:USD",
+        "evidence": {
+          "url": "https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5.md",
+          "sha256": "fdd0bf2740f0c09ba5138fb5a66c2063e004b2b5f141e367b7078e172e8fb4b8",
+          "checkedAt": "2026-11-19",
+          "detail": "BigModel announces upcoming retirement for GLM-4.5 and GLM-4.5-X and recommends GLM-4.7. Naoshengyun has withdrawn this exact model from its catalog pricing."
+        }
+      }
+    ],
+    "glm-4.5-x": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:26:41+08:00",
+        "quoteId": "upstream:zhipuai:glm-4.5-x:unknown",
+        "evidence": {
+          "url": "https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5.md",
+          "sha256": "fdd0bf2740f0c09ba5138fb5a66c2063e004b2b5f141e367b7078e172e8fb4b8",
+          "checkedAt": "2026-11-19",
+          "detail": "BigModel announces upcoming retirement for GLM-4.5 and GLM-4.5-X and recommends GLM-4.7. This exact model is excluded from Naoshengyun pricing even if it reappears in upstream data."
+        }
+      }
+    ],
+    "qwen3-max": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:08:44+08:00",
+        "quoteId": "upstream:alibaba-cn:qwen3-max:USD",
+        "evidence": {
+          "url": "https://www.alibabacloud.com/en/notice/model_studio_notice_on_the_postponed_retirement_of_selected_legacy_models_7d0?_p_lc=1",
+          "sha256": "ffef16bb374238a63ab99174ee58939ea31e38af9348b9db3ebba29e12ad337f",
+          "checkedAt": "2026-11-19",
+          "detail": "Alibaba Cloud Model Studio explicitly includes qwen3-max in the Qwen3 mainline group that ceased service on 2026-10-10 at 00:00 UTC+08."
+        }
+      }
+    ],
+    "qwen3.6-max-preview": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:08:44+08:00",
+        "quoteId": "upstream:alibaba-cn:qwen3.6-max-preview:USD",
+        "evidence": {
+          "url": "https://www.alibabacloud.com/en/notice/model_studio_notice_on_the_postponed_retirement_of_selected_legacy_models_7d0?_p_lc=1",
+          "sha256": "ffef16bb374238a63ab99174ee58939ea31e38af9348b9db3ebba29e12ad337f",
+          "checkedAt": "2026-11-19",
+          "detail": "Alibaba Cloud Model Studio explicitly includes qwen3.6-max-preview in the Qwen3 mainline group that ceased service on 2026-10-10 at 00:00 UTC+08."
+        }
+      }
+    ],
     "gpt-image-1-mini": [
       {
         "state": "withdrawn",
