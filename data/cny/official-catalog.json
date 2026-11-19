@@ -5,6 +5,1334 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "dashscope--qwen-flash--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "19320c7ed2947ef5727e4fe6004e6f2b077b4f69fa2efa9c84c37c7648951e57",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.05,
+        "output": 0.4,
+        "cache_read": 0.01,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 0.25,
+            "output": 2,
+            "cache_read": 0.05
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "19320c7ed2947ef5727e4fe6004e6f2b077b4f69fa2efa9c84c37c7648951e57",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 0.05,
+        "output": 0.4,
+        "cache_read": 0.005,
+        "cache_write": 0.063,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 0.25,
+            "output": 2,
+            "cache_read": 0.025,
+            "cache_write": 0.313
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-max--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen-max",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "68a31eef2fe05e5463744cb4433147c4e1519e1c93ce4f8859448892db6b9ee4",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1.6,
+        "output": 6.4,
+        "cache_read": 0.32
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-plus--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "c73e8b8043ce7cf47ce0c5895706f9e5fb5cc896ec86d0cf75cbdc2c592c114c",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          },
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/deep-thinking.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "474010ef2cc94c0f0b596468c007a327f21a67c37cdba8dfc39915fd8c5d3297"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "reasoning",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.reasoning"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 1.2,
+        "cache_read": 0.08,
+        "reasoning": 4,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 3.6,
+            "cache_read": 0.24,
+            "reasoning": 12
+          }
+        ]
+      },
+      "thinkingToggle": {
+        "param": "enable_thinking",
+        "value": true
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "thinkingToggle": {
+          "param": "enable_thinking",
+          "value": true,
+          "default": false
+        },
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-plus--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "c73e8b8043ce7cf47ce0c5895706f9e5fb5cc896ec86d0cf75cbdc2c592c114c",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          },
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/deep-thinking.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "474010ef2cc94c0f0b596468c007a327f21a67c37cdba8dfc39915fd8c5d3297"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.reasoning"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 1.2,
+        "cache_read": 0.04,
+        "cache_write": 0.5,
+        "reasoning": 4,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 3.6,
+            "cache_read": 0.12,
+            "cache_write": 1.5,
+            "reasoning": 12
+          }
+        ]
+      },
+      "thinkingToggle": {
+        "param": "enable_thinking",
+        "value": true
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "thinkingToggle": {
+          "param": "enable_thinking",
+          "value": true,
+          "default": false
+        },
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-coder-flash--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3-coder-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-coder-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "d53bbe9393c7aa443ad0994e8c885115ab60285a0d89e4bbe33a015d16bab31f",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.2.input",
+        "tiers.2.output",
+        "tiers.2.cache_read"
+      ],
+      "cost": {
+        "input": 0.3,
+        "output": 1.5,
+        "cache_read": 0.06,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.5,
+            "output": 2.5,
+            "cache_read": 0.1
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.8,
+            "output": 4,
+            "cache_read": 0.16
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.6,
+            "output": 9.6,
+            "cache_read": 0.32
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-coder-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3-coder-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-coder-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "d53bbe9393c7aa443ad0994e8c885115ab60285a0d89e4bbe33a015d16bab31f",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write",
+        "tiers.2.input",
+        "tiers.2.output",
+        "tiers.2.cache_read",
+        "tiers.2.cache_write"
+      ],
+      "cost": {
+        "input": 0.3,
+        "output": 1.5,
+        "cache_read": 0.03,
+        "cache_write": 0.375,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.5,
+            "output": 2.5,
+            "cache_read": 0.05,
+            "cache_write": 0.625
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.8,
+            "output": 4,
+            "cache_read": 0.08,
+            "cache_write": 1
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.6,
+            "output": 9.6,
+            "cache_read": 0.16,
+            "cache_write": 2
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-vl-plus--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3-vl-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-vl-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "fa2c601d21bc4a71b7441e34f3ee596abbb965767942a309709b1fae856e4697",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read"
+      ],
+      "cost": {
+        "input": 0.2,
+        "output": 1.6,
+        "cache_read": 0.04,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.3,
+            "output": 2.4,
+            "cache_read": 0.06
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.6,
+            "output": 4.8,
+            "cache_read": 0.12
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-vl-plus--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3-vl-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-vl-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "fa2c601d21bc4a71b7441e34f3ee596abbb965767942a309709b1fae856e4697",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 0.2,
+        "output": 1.6,
+        "cache_read": 0.02,
+        "cache_write": 0.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.3,
+            "output": 2.4,
+            "cache_read": 0.03,
+            "cache_write": 0.375
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.6,
+            "output": 4.8,
+            "cache_read": 0.06,
+            "cache_write": 0.75
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.5-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.5-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "f57c10b34612d8d52df58bd690122c410e1f32eaad47ae3dd728e40f9eb871db",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.01,
+        "cache_write": 0.125
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.5-plus--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.5-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "872e74415a21521dcc42eadd1689841b560f2a93b7636f074364bda78bd2dca6",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 2.4,
+        "cache_read": 0.04,
+        "cache_write": 0.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 0.5,
+            "output": 3,
+            "cache_read": 0.05,
+            "cache_write": 0.625
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.6-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.6-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "82572aad21fa681b8139752aea7e6baaafac59d7d8427176fec83c9874bfec4f",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "cache_read": 0.025,
+        "cache_write": 0.3125,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1,
+            "output": 4,
+            "cache_read": 0.1,
+            "cache_write": 1.25
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.6-plus--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.6-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "6589ed07a7d7525cb4898169e017585d9253c916247be4d3f63a8d0fb0504335",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05,
+        "cache_write": 0.625,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 2,
+            "output": 6,
+            "cache_read": 0.2,
+            "cache_write": 2.5
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-flash--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "c35a3e414c7d55452b5bf3021300882705d54f4aa53c2dc348e5cc6bfd1cbb8e",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read"
+      ],
+      "cost": {
+        "input": 0.03,
+        "output": 0.13,
+        "cache_read": 0.006,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.1,
+            "output": 0.4,
+            "cache_read": 0.02
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 0.2,
+            "output": 0.8,
+            "cache_read": 0.04
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "c35a3e414c7d55452b5bf3021300882705d54f4aa53c2dc348e5cc6bfd1cbb8e",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 0.03,
+        "output": 0.13,
+        "cache_read": 0.003,
+        "cache_write": 0.038,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 0.1,
+            "output": 0.4,
+            "cache_read": 0.01,
+            "cache_write": 0.125
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 0.2,
+            "output": 0.8,
+            "cache_read": 0.02,
+            "cache_write": 0.25
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-max--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-max",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "0b7e6d26342ec8df3ae8d7edd7443fac209fcc9c1a8700c499392884686b586f",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2.5,
+        "output": 7.5,
+        "cache_read": 0.5
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-max--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-max",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "0b7e6d26342ec8df3ae8d7edd7443fac209fcc9c1a8700c499392884686b586f",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 2.5,
+        "output": 7.5,
+        "cache_read": 0.25,
+        "cache_write": 3.125
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-plus--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "2f2d39ba0321f9e2d2ff572c8b7cffad27bde28a16697162fe2a771fe7d966a6",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 1.6,
+        "cache_read": 0.08,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 4.8,
+            "cache_read": 0.24
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.7-plus--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.7-plus",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-plus.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "2f2d39ba0321f9e2d2ff572c8b7cffad27bde28a16697162fe2a771fe7d966a6",
+        "supplemental": [
+          {
+            "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 1.6,
+        "cache_read": 0.04,
+        "cache_write": 0.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 4.8,
+            "cache_read": 0.12,
+            "cache_write": 1.5
+          }
+        ]
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
       "id": "dashscope--qwen3.8-flash--cn-beijing-online-original-implicit",
       "provider": "alibaba-cn",
       "model": "qwen3.8-flash",

@@ -65,3 +65,22 @@ Upstage 官方价格卡仍列两条旧 Solar Pro，且将精确别名写在卡�
 - 百炼新加坡的其他分档和视觉型号，例如 `qwen-plus`、`qwen3-vl-plus`，已有可读的官方地区价，仍需接入精确收费条件。Z.AI 的旧 GLM 须明确限时免费存储与旧缓存写入字段的关系。
 - Gemini 的三个 Flash 型号仍缺独立的 Token 小时存储计量，`gemini-3.1-flash-live-preview`、`gemini-embedding-2` 仍缺独立视频输入计量。音频补证延期另行记录。xAI `grok-imagine-image` 的生成和编辑图分别计费，MiniMax 国际 `image-01` 需绑定独立图片生成端点。[Gemini 官方定价](https://aistudio.google.com/docs/pricing) · [Grok Imagine Image](https://docs.x.ai/developers/models/grok-imagine-image) · [MiniMax 国际定价](https://platform.minimax.io/docs/pricing/overview)
 - 已选价目的核价差异仍需逐条审查。例如 OpenAI 的 12 小时缓存与 Gemini 图片输出须核实独立计量，不能从核价报告直接应用到同步 JSON。真实旧、新响应夹具及按当前业务范围更新的逐型号矩阵仍待补齐。
+
+## 新加坡国际部署的 12 款百炼型号
+
+按用户确认，接入以下型号的 19 条在线原始 USD 报价。各型号使用独立官方型号页，读取新加坡国际部署的金额、输入阶梯和适用缓存模式。价格仍由统一构建做一次 USD 转换。北京报价继续供 New API 同步。
+
+| 型号 | 新加坡报价 |
+| --- | --- |
+| `qwen-flash`、`qwen3-coder-flash`、`qwen3-vl-plus`、`qwen3.7-flash`、`qwen3.7-plus` | 隐式和显式缓存，按官方输入阶梯计费 |
+| `qwen-plus` | 隐式和显式缓存，按官方输入阶梯区分思考与非思考输出费率 |
+| `qwen3.7-max` | 隐式和显式缓存 |
+| `qwen-max` | 隐式缓存 |
+| `qwen3.5-flash` | 显式缓存 |
+| `qwen3.5-plus`、`qwen3.6-flash`、`qwen3.6-plus` | 显式缓存，按官方输入阶梯计费 |
+
+固定夹具来自 2026-11-19 取得的十二份型号页、缓存说明和思考模式说明。通过核价入口校验同价、金额变化、缺收费项、阶梯断档、缓存加价和未知生效条件。[新加坡端点](https://www.alibabacloud.com/help/en/model-studio/singapore-regional-access-information) · [原币价表](https://www.alibabacloud.com/help/en/model-studio/model-pricing) · [缓存条件](https://www.alibabacloud.com/help/en/model-studio/context-cache) · [思考模式](https://www.alibabacloud.com/help/en/model-studio/deep-thinking)
+
+`qwen3.5-plus` 已停止新购，计划于北京时间 2027-01-19 10:00 停用。本轮记录停用前适用的原始报价。[百炼停用公告](https://www.alibabacloud.com/notice/detail?_p_lc=1&id=2217)
+
+新加坡的 `qwen3-omni-flash`、`qwen3.8-omni-flash` 和 `qwen3-asr-flash` 延期。音频继续延期。Gemini 独立视频输入、显式缓存存储和 Grok 图片编辑等待 New API 验证相应计量与结算后接入。
