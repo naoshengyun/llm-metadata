@@ -409,20 +409,18 @@ function officialRows(official, selection, policy, records, providers, lifecycle
     quoteById.set(quote.id, row);
     if (!tool) {
       const identity = providerModel(providerId, quote.model);
-      if (key && !records.has(identity)) {
-        if (!providers[providerId])
-          throw Error('Selected official provider missing from catalog: ' + providerId);
+      if (!records.has(identity)) {
         records.set(identity, {
           providerId,
           modelId: quote.model,
           origin: 'official-addition',
-          status: 'missing',
-          reason: 'no-upstream-model',
+          status: 'not-selected',
+          reason: 'official-price-not-selected',
           domestic: quote.origin === 'domestic',
           quoteIds: [],
         });
       }
-      records.get(identity)?.quoteIds.push(quote.id);
+      records.get(identity).quoteIds.push(quote.id);
     }
     if (!key) continue;
     if (key !== quote.model)
@@ -570,7 +568,7 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
       }
       continue;
     }
-    const domestic = current.filter((row) => row.domestic);
+    const domestic = current.filter((row) => row.domestic && row.upstreamPrice);
     const pool = domestic.length ? domestic : current;
     const explicit = policy.upstreamSelection[modelId];
     const eligible = (explicit ? current : pool).filter((row) => row.status === 'eligible');
@@ -631,11 +629,66 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
   }
 }
 
+function checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle) {
+  if (!previous) return;
+  const formerModels = new Map(
+    previous.coverage.models.filter(({ syncable }) => syncable).map((row) => [row.nativeKey, row]),
+  );
+  const formerQuotes = new Map(previous.coverage.quotes.map((row) => [row.quoteId, row]));
+  const identityFields = [
+    'providerId',
+    'sourceProviderId',
+    'modelId',
+    'endpoint',
+    'priceList',
+    'sourceCurrency',
+    'outputKind',
+  ];
+  for (const [key, quoteId] of entries(previous.selected)) {
+    const formerUpstream = formerModels.get(key)?.upstreamPrice;
+    const former = formerUpstream?.syncable ? formerUpstream : formerQuotes.get(quoteId);
+    if (former?.quoteId !== quoteId) throw Error('Missing previous selected identity: ' + key);
+    const current = selected[key];
+    if (!current) {
+      if (lifecycle.state.get(key)?.state === 'withdrawn') continue;
+      const row = records.get(providerModel(former.providerId, former.modelId))?.upstreamPrice;
+      if (former === formerUpstream && row && row.endpoint === former.endpoint) {
+        const capability = policy.nativeCapabilityExclusions?.[key];
+        const correction = policy.ineligibleUpstream[key];
+        if (
+          row.quoteId === quoteId &&
+          (row.status === 'deferred' ||
+            (row.status === 'unsupported' && capability?.providerId === former.providerId))
+        )
+          continue;
+        if (row.status === 'excluded' && correction?.providerId === former.providerId) continue;
+      }
+      throw Error('Selected price removed without withdrawal or replacement: ' + key);
+    }
+    if (current.quoteId === quoteId) {
+      if (identityFields.some((field) => former[field] !== current[field]))
+        throw Error('Selected price identity changed under the same quote ID: ' + key);
+    } else if (
+      selection[key] !== current.quoteId &&
+      policy.upstreamSelection[key] !== current.quoteId
+    ) {
+      throw Error('Selected price identity changed without explicit replacement: ' + key);
+    }
+  }
+}
+
 function catalogFiles(files, snapshots, records, quotes, selected) {
   for (const locale of locales) {
-    const providers = structuredClone(snapshots[locale]);
+    const providers = Object.assign(Object.create(null), structuredClone(snapshots[locale]));
     for (const row of records.values()) {
       const { providerId, modelId, status, reason, upstreamPrice, quoteIds } = row;
+      if (
+        !providers[providerId] &&
+        row.origin === 'official-addition' &&
+        !Object.hasOwn(snapshots.en, providerId)
+      ) {
+        providers[providerId] = { id: providerId, name: providerId, models: Object.create(null) };
+      }
       const provider = providers[providerId];
       if (!provider) throw Error('Missing localized provider: ' + locale + '/' + providerId);
       const existing = provider.models[modelId];
@@ -830,12 +883,13 @@ function buildCandidate({
   ]);
   addHeldModel(official, policy, records, quotes);
   const selected = selectPrices(records, quotes, selection, policy, lifecycle);
+  checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle);
   const billing_mode = Object.fromEntries(entries(selected).map(([key]) => [key, 'tiered_expr']));
   const billing_expr = Object.fromEntries(
     entries(selected).map(([key, row]) => [key, row.billing_expr]),
   );
   const models = [...records.values()].map((row) => ({
-    endpoint: snapshots.en[row.providerId].api ?? null,
+    endpoint: snapshots.en[row.providerId]?.api ?? null,
     ...row,
     nativeKey: row.status === 'subscription' ? null : row.modelId,
     outputKind:
@@ -873,6 +927,10 @@ function buildCandidate({
     ),
   };
   catalogFiles(files, snapshots, records, quotes, selected);
+  const providerIds = new Set([
+    ...Object.keys(snapshots.en),
+    ...models.map(({ providerId }) => providerId),
+  ]);
   const base = {
     schemaVersion: 1,
     sourceSha,
@@ -881,7 +939,7 @@ function buildCandidate({
     inputs,
     policy: { ...CNY_POLICY, domesticFallback: false, asOf: policy.asOf },
     stats: {
-      providers: Object.keys(snapshots.en).length,
+      providers: providerIds.size,
       models: models.length,
       subscriptions: models.filter(({ outputKind }) => outputKind === 'subscription').length,
       apiModels: Object.keys(billing_expr).length,

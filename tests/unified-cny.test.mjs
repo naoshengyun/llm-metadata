@@ -317,3 +317,128 @@ test('a newly withdrawn key and its selection remain sticky against the last fix
     /Lifecycle history was removed or rewritten/,
   );
 });
+
+test('an automatic upstream selection cannot disappear or switch providers without review', (t) => {
+  const { policy, build, upstream } = fixture(t);
+  const key = 'kimi-k2.6';
+  const domestic = 'upstream:moonshotai-cn:kimi-k2.6:CNY';
+  const international = 'upstream:moonshotai:kimi-k2.6:USD';
+  assert.equal(build('reviewed')('selection.json')[key], domestic);
+
+  upstream((catalog) => {
+    delete catalog['moonshotai-cn'].models[key];
+    delete catalog.moonshotai.models[key];
+  });
+  assert.throws(
+    () => build('missing', 'reviewed'),
+    /Selected price removed without withdrawal or replacement: kimi-k2.6/,
+  );
+
+  upstream((catalog) => {
+    delete catalog['moonshotai-cn'].models[key];
+  });
+  assert.throws(
+    () => build('automatic-replacement', 'reviewed'),
+    /Selected price identity changed without explicit replacement: kimi-k2.6/,
+  );
+  policy.upstreamSelection[key] = international;
+  assert.equal(build('explicit-replacement', 'reviewed')('selection.json')[key], international);
+
+  delete policy.upstreamSelection[key];
+  policy.lifecycle[key] = [
+    {
+      state: 'withdrawn',
+      quoteId: domestic,
+      at: '2026-11-17T09:00:00+08:00',
+      evidence: {
+        url: 'https://example.com/withdrawal',
+        checkedAt: '2026-11-17',
+        sha256: '5'.repeat(64),
+      },
+    },
+  ];
+  const withdrawn = build('withdrawn', 'reviewed');
+  assert.ok(!Object.hasOwn(withdrawn('api/newapi/ratio_config.json').data.billing_expr, key));
+  assert.equal(
+    withdrawn('price-diff.json').changes.find((row) => row.nativeKey === key).reason,
+    'formal-withdrawal',
+  );
+});
+
+test('an upstream endpoint cannot drift under an unchanged quote ID', (t) => {
+  const { policy, build, upstream } = fixture(t);
+  const key = 'kimi-k2.6';
+  const read = build('reviewed');
+  upstream((catalog) => {
+    catalog['moonshotai-cn'].api = 'https://different.example.com/v1';
+  });
+  assert.throws(
+    () => build('automatic-endpoint-change', 'reviewed'),
+    /Selected price identity changed under the same quote ID: kimi-k2.6/,
+  );
+  policy.upstreamSelection[key] = read('selection.json')[key];
+  assert.throws(
+    () => build('explicit-same-quote-id', 'reviewed'),
+    /Selected price identity changed under the same quote ID: kimi-k2.6/,
+  );
+});
+
+test('unselected official models and providers stay searchable in every locale without exporting a price', (t) => {
+  const { catalog, build } = fixture(t);
+  const template = catalog.records.find((row) => row.id === 'cn-zhipu-glm-5.3-standard');
+  const associations = [
+    { provider: template.provider, model: 'fixture-new-model', quoteCount: 1 },
+    { provider: 'fixture-new-provider', model: 'fixture-new-endpoint-model', quoteCount: 2 },
+  ];
+  for (const { provider, model, quoteCount } of associations) {
+    for (let index = 0; index < quoteCount; index++) {
+      const { upstreamKey, ...quote } = structuredClone(template);
+      catalog.records.push({
+        ...quote,
+        id: model + '-' + index,
+        provider,
+        model,
+        priceList: 'Fixture price list ' + index,
+        endpoint: 'https://endpoint-' + index + '.example.com/v1',
+      });
+    }
+  }
+
+  const read = build('official-associations');
+  const coverage = read('coverage.json');
+  const config = read('api/newapi/ratio_config.json').data;
+  const { stats } = read('manifest.json');
+  for (const prefix of ['api/', 'api/i18n/zh/', 'api/i18n/ja/']) {
+    assert.equal(read(prefix + 'providers.json').providers.length, stats.providers);
+  }
+  for (const { provider, model, quoteCount } of associations) {
+    const row = coverage.models.find(
+      ({ providerId, modelId }) => providerId === provider && modelId === model,
+    );
+    assert.equal(row?.status, 'not-selected', provider + '/' + model);
+    assert.equal(row.syncable, false);
+    assert.equal(row.quoteIds.length, quoteCount);
+    assert.ok(!Object.hasOwn(config.billing_mode, model));
+    assert.ok(!Object.hasOwn(config.billing_expr, model));
+    for (const prefix of ['api/', 'api/i18n/zh/', 'api/i18n/ja/']) {
+      assert.ok(read(prefix + 'providers.json').providers.some(({ id }) => id === provider));
+      assert.ok(
+        read(prefix + 'index.json').models.some(
+          ({ id, providerId }) => id === model && providerId === provider,
+        ),
+      );
+      const detail = read(prefix + 'providers/' + provider + '.json').models[model];
+      assert.deepEqual(detail, read(prefix + 'all.json')[provider].models[model]);
+      assert.equal(detail.cnyPrice.status, 'not-selected');
+      assert.equal(detail.cnyPrice.exported, false);
+      assert.deepEqual(
+        detail.cnyPrice.quotes.map(({ quoteId }) => quoteId),
+        row.quoteIds,
+      );
+      assert.equal(
+        new Set(detail.cnyPrice.quotes.map(({ endpoint }) => endpoint)).size,
+        quoteCount,
+      );
+    }
+  }
+});

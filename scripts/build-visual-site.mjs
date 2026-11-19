@@ -72,12 +72,20 @@ for (const locale of ['en', 'zh', 'ja']) {
 const providersForLogos = unified
   ? JSON.parse(unified.files['api/all.json'])
   : snapshot.datasets.en.providers;
+const upstreamLogoIds = new Set(Object.keys(snapshot.datasets.en.providers));
+if (unified) {
+  for (const { providerId, origin } of JSON.parse(unified.files['coverage.json']).models) {
+    if (origin === 'upstream') upstreamLogoIds.add(providerId);
+  }
+}
 for (const id of Object.keys(providersForLogos)) {
   const path = `dist/api/logos/${id}.svg`;
   try {
     mkdirSync(join(out, 'api/logos'), { recursive: true });
     copyFileSync(path, join(out, 'api/logos', id + '.svg'));
-  } catch {
+  } catch (error) {
+    // Providers introduced by the official catalog can use the site's initials fallback.
+    if (error.code === 'ENOENT' && !upstreamLogoIds.has(id)) continue;
     throw Error('Missing checked-in upstream logo ' + id);
   }
 }
