@@ -1,5 +1,7 @@
 # #43 国外官方价目覆盖证据
 
+最新状态与当前报价请看[联合验收和逐条证据](CNY-ACCEPTANCE.md)。以下记录保留各轮候选和当时的核价结果。
+
 [逐价目矩阵](CNY-FOREIGN-COVERAGE.tsv)有 442 条数据、20 列，使用 UTF-8 和带引号的 TSV 单元格。首轮检查绑定代码 `04da3c13cdb01ecaf3c0fa584f41069a0a6044ff`、固定候选 `74048b76dc422eddc9a1b5a784a0851c90e18d859892d755572a53e8c6a3209f` 与覆盖文件 SHA-256 `9358d52bcacfe9daa5fea4354611960523d24f772623b34460220270ce9b052b`。首轮矩阵 SHA-256 为 `cb668fa71cf7e8a872276913acc8998cd2640ba15b65413dd4a2f93c02aab408`。上一轮矩阵更新了两条 Gemini 路由的参考结果，SHA-256 为 `7a87a543629db97bb58f60a4ecd17058eecabd9b8ca1a89871a66b5978557aad`。
 
 `npm run cny:unified:build` 生成固定候选。首次 `npm run cny:official:check` 于 2026-11-18T13:21:11.795Z 返回 29 份官方响应，8 个来源发生连接故障。回执 SHA-256 为 `3670b111adb8403dc7c054b50437e839f31c0c1f83e5732564751922c072457f`。使用同一候选、首次报告和 `NODE_OPTIONS=--dns-result-order=ipv4first` 于 2026-11-18T13:22:04.552Z 重试，57 份公开 HTTP GET 全部返回 200。下表记录首轮结果，回执 SHA-256 为 `96484305751a62229fa58b95dc5d2e0e483e61bae09b071e5bc487f5d1eb7fd3`。本轮使用公开资料，没有使用凭据或调用推理。
@@ -85,3 +87,11 @@ Upstage 官方价格卡仍列两条旧 Solar Pro，且将精确别名写在卡�
 `qwen3.5-plus` 已停止新购，计划于北京时间 2027-01-19 10:00 停用。本轮记录停用前适用的原始报价。[百炼停用公告](https://www.alibabacloud.com/notice/detail?_p_lc=1&id=2217)
 
 新加坡的 `qwen3-omni-flash`、`qwen3.8-omni-flash` 和 `qwen3-asr-flash` 延期。音频继续延期。Gemini 独立视频输入、显式缓存存储和 Grok 图片编辑等待 New API 验证相应计量与结算后接入。
+
+## #65 公网复核后的 xAI 长上下文边界
+
+中、英、日公网目录均实取到新加坡 12 款型号的 19 条源 USD 报价。价目 ID、金额、缓存条件和原始响应哈希与审核输入一致。
+
+xAI 全球文本价表的八个已选型号明确从输入上下文达到 200,000 Token 起按长档收取整笔请求费用。本次采用各自的全球 Standard 原始 USD 价目，保留短档和长档的输入、缓存读取与输出金额。候选 New API 表达式将短档上限订正为 199,999；美元费率和统一归一系数与此前一致。区域端点和套餐价目各有独立身份。[xAI 全球官方价表](https://docs.x.ai/developers/pricing#text-api)
+
+11 月 18 日和 19 日两次独立取得的官方价格页都可固定回放，且保留了从“达到”改为“超过”时的回归。此前延期的 Gemini 视频及缓存存储和 Grok 图片编辑仍等待 New API 计量能力。其余已选差异继续核对图像输出、长时缓存等收费形状，真实历史响应及完整逐型号矩阵仍需补齐。

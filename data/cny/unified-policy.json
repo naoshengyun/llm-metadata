@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-19T18:26:41+08:00",
+  "asOf": "2026-11-19T19:38:56+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -776,6 +776,48 @@
   },
   "upstreamSelection": {},
   "lifecycle": {
+    "gemini-2.5-pro": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T19:38:56+08:00",
+        "quoteId": "upstream:google:gemini-2.5-pro:USD",
+        "evidence": {
+          "url": "https://aistudio.google.com/docs/deprecations.md",
+          "sha256": "92c195006e7eb922a9caa131670551885a63bbf1b7f6d95bcfa9de12d47a2518",
+          "checkedAt": "2026-11-19",
+          "detail": "Google marks the exact model deprecated, removed it from AI Studio, and will route its API ID to Gemini 3.8 Flash from 2026-12-01."
+        }
+      }
+    ],
+    "gpt-image-1.5": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T19:38:56+08:00",
+        "quoteId": "upstream:openai:gpt-image-1.5:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations.md",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI marks the exact model deprecated and lists 2026-12-01 as its shutdown date."
+        }
+      }
+    ],
+    "chatgpt-image-latest": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T19:38:56+08:00",
+        "quoteId": "upstream:openai:chatgpt-image-latest:USD",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations.md",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "OpenAI marks the exact model deprecated and lists 2026-12-01 as its shutdown date."
+        }
+      }
+    ],
     "glm-4.5": [
       {
         "state": "withdrawn",

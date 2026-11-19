@@ -68,6 +68,21 @@ const music = {
 const markdocTable = /\{% table %\}([\s\S]*?)\{% \/table %\}/g;
 const escaped = (id) => id.replaceAll('.', '\\.');
 
+const reviewedStandardModels = new Set([
+  'gemini-3-pro-image',
+  'gemini-3.1-flash-image',
+  'gemini-3.1-flash-lite-image',
+  'gemini-3.1-pro-preview-customtools',
+  'gemini-3.1-pro-preview',
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-live-translate-preview',
+  'gemini-3.6-flash',
+  'gemini-3.8-flash',
+  'gemini-4-argon',
+  'gemini-4-carbon',
+  'gemini-4-hydrogen',
+]);
+
 export const adapter = {
   id: 'gemini-developer',
   url: 'https://aistudio.google.com/docs/pricing.md',
@@ -77,14 +92,21 @@ export const adapter = {
 
 export function geminiDeveloperTarget(modelId) {
   return {
-    quoteId: 'upstream:google:' + modelId + ':USD',
+    quoteId: reviewedStandardModels.has(modelId)
+      ? 'us-google-' + modelId + '-developer-standard'
+      : 'upstream:google:' + modelId + ':USD',
     providerId,
     endpoint,
     modelId,
     priceList,
     currency,
     group: modelId,
-    baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
+    ...(!reviewedStandardModels.has(modelId) && {
+      baselineIdentity: {
+        endpoint: null,
+        priceList: 'fixed upstream primary or original CNY sheet',
+      },
+    }),
     ...(Object.hasOwn(mediaReferences, modelId) && {
       referenceOnlyReason: mediaReferences[modelId],
     }),

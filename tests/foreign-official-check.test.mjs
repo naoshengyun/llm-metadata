@@ -234,18 +234,42 @@ test('Cohere verifies five priced production IDs and preserves the exact deferre
 });
 
 test('xAI global long context starts at exactly 200,000 tokens', async () => {
-  const report = await run();
-  const rows = report.results.filter(({ sourceId }) => sourceId === 'xai-text');
-  assert.equal(rows.length, 9);
-  assert.equal(rows.filter(({ status }) => status === 'changed').length, 8);
-  const change = report.changes.find(({ id }) => id === 'upstream:xai:grok-4.7:USD');
+  const reviewedId = 'us-xai-grok-4.7-global-standard';
+  const recent = {
+    fixtures: { 'xai-text': 'xai-text-2026-11-19' },
+    attemptedAt: '2026-11-19T11:18:40.561Z',
+  };
+  for (const options of [{}, recent]) {
+    const report = await run(undefined, options);
+    const rows = report.results.filter(({ sourceId }) => sourceId === 'xai-text');
+    assert.equal(rows.length, 9);
+    assert.equal(
+      rows.filter(({ status, selected }) => status === 'unchanged' && selected).length,
+      8,
+    );
+    assert.equal(
+      rows.find(({ id }) => id === reviewedId).observed.sourcePrice.tiers[0].tier.comparison,
+      'gte',
+    );
+    const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
+    assert.equal(old.status, 'failed');
+    assert.match(old.reason, /Exact xAI text price row/);
+  }
+  const config = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.match(config.data.billing_expr['grok-4.7'], /len <= 199999 \?/);
+
+  const report = await run(
+    (body, id) =>
+      id === 'xai-text'
+        ? replaceEvidence(body, 'Long context ≥ <!-- -->200k', 'Long context &gt; <!-- -->200k')
+        : body,
+    recent,
+  );
+  const change = report.changes.find(({ id }) => id === reviewedId);
   assert.equal(change.difference.amounts, undefined);
-  assert.equal(change.observed.sourcePrice.tiers[0].tier.comparison, 'gte');
-  assert.match(change.candidate.expression, /len <= 199999 \?/);
-  assert.equal(change.candidate.record.id, 'us-xai-grok-4.7-global-standard');
-  const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
-  assert.equal(old.status, 'failed');
-  assert.match(old.reason, /Exact xAI text price row/);
+  assert.equal(change.observed.sourcePrice.tiers[0].tier.comparison, undefined);
+  assert.match(change.candidate.expression, /len <= 200000 \?/);
+  assert.equal(change.candidate.record.id, reviewedId);
 });
 
 test('Mistral binds active global USD rates to exact API IDs, and reports older missing IDs', async () => {
@@ -377,7 +401,10 @@ test('Routed Gemini pricing requires an hourly storage tariff or explicit implic
       return Buffer.from(page.slice(0, start) + updated + page.slice(end));
     }, googleRoutingEvidence);
     const result = (model) =>
-      report.results.find(({ id }) => id === 'upstream:google:' + model + ':USD');
+      report.results.find(
+        ({ sourceId, nativeKey }) =>
+          ['gemini-routed', 'gemini-developer'].includes(sourceId) && nativeKey === model,
+      );
     const routed = result('gemini-3.5-flash');
     assert.equal(routed.status, expected, routed.reason);
     if (expected === 'failed') {
@@ -462,7 +489,9 @@ test('Sakana reports a formal future Namazu rate without treating it as currentl
 test('OpenAI upstream models use the correct Standard tables and retain explicit old ID gaps', async () => {
   const report = await run();
   const row = (model) =>
-    report.results.find(({ id }) => id === 'upstream:openai:' + model + ':USD');
+    report.results.find(
+      ({ sourceId, nativeKey }) => sourceId === 'openai-upstream' && nativeKey === model,
+    );
   assert.equal(row('gpt-5').status, 'unchanged');
   assert.equal(row('gpt-5.4').observed.sourcePrice.tiers[0].output, 22.5);
   assert.equal(row('gpt-6.2-astra').observed.sourcePrice.cache_write_12h, 20);
@@ -471,6 +500,46 @@ test('OpenAI upstream models use the correct Standard tables and retain explicit
   assert.equal(row('gpt-image-1.5').observed.sourcePrice.output_image, 32);
   assert.match(row('gpt-4o-2024-05-13').reason, /Shut down/);
   assert.match(row('gpt-5.3-codex-spark').reason, /Exact price row/);
+});
+
+test('fixed current official responses confirm separately metered Gemini image output and OpenAI 12-hour writes', async () => {
+  const report = await run(undefined, {
+    attemptedAt: '2026-11-19T11:30:38Z',
+    fixtures: {
+      'gemini-developer': 'gemini-developer-2026-11-19',
+      'openai-upstream': 'openai-upstream-2026-11-19',
+      'openai-upstream--gpt-5-6': 'openai-upstream--gpt-5-6-2026-11-19',
+    },
+  });
+  const { billing_expr } = JSON.parse(
+    readFileSync(join(baseline, 'api/newapi/ratio_config.json')),
+  ).data;
+  for (const [model, rate] of Object.entries({
+    'gemini-3-pro-image': 120,
+    'gemini-3.1-flash-image': 60,
+    'gemini-3.1-flash-lite-image': 30,
+  })) {
+    const row = report.results.find(
+      ({ id }) => id === 'us-google-' + model + '-developer-standard',
+    );
+    assert.equal(row.selected, true);
+    assert.equal(row.status, 'unchanged', row.reason);
+    assert.equal(row.observed.sourcePrice.output_image, rate);
+    assert.ok(billing_expr[model].includes('img_o * ' + rate * 7));
+  }
+  for (const [model, rate] of Object.entries({
+    'gpt-5.6': 10,
+    'gpt-6.2-astra': 20,
+    'gpt-6.2-sol': 5,
+  })) {
+    const row = report.results.find(({ id }) => id === 'us-openai-' + model + '-global-standard');
+    assert.equal(row.selected, true);
+    assert.equal(row.status, 'unchanged', row.reason);
+    assert.equal(row.observed.sourcePrice.cache_write_12h, rate);
+    assert.equal(row.observed.sourcePrice.tiers[0].cache_write_12h, rate * 2);
+    assert.ok(billing_expr[model].includes('cc12h * ' + rate * 7));
+    assert.ok(billing_expr[model].includes('cc12h * ' + rate * 14));
+  }
 });
 
 test('Alibaba International uses the Singapore service scope and preserves mode tariffs', async () => {

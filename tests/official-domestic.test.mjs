@@ -13,15 +13,25 @@ after(() => rmSync(directory, { recursive: true, force: true }));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
 const attemptedAt = '2026-11-18T13:00:00Z';
 
-function check(sourceName, transform = (body) => body, status = 200, supplementalStatus = 200) {
+function check(
+  sourceName,
+  transform = (body) => body,
+  status = 200,
+  supplementalStatus = 200,
+  captureAt = attemptedAt,
+) {
+  const captureDate = captureAt.slice(0, 10);
   const body = gunzipSync(
     readFileSync(
-      new URL(`./fixtures/official-check/domestic/${sourceName}-2026-11-18.gz`, import.meta.url),
+      new URL(
+        `./fixtures/official-check/domestic/${sourceName}-${captureDate}.gz`,
+        import.meta.url,
+      ),
     ),
   );
   return checkOfficialPrices({
     baseline,
-    attemptedAt,
+    attemptedAt: captureAt,
     getResponse: async ({ id, url }) => {
       const supplementNames = {
         'tencent-cn--migration': 'tencent-migration',
@@ -40,17 +50,18 @@ function check(sourceName, transform = (body) => body, status = 200, supplementa
         ? 'stepfun-audio'
         : id.startsWith(sourceName + '-cn--') && supplementNames[id];
       if (supplement) {
+        const supplementDate = supplement === 'volcengine-models' ? captureDate : '2026-11-18';
         return {
           body: gunzipSync(
             readFileSync(
               new URL(
-                `./fixtures/official-check/domestic/${supplement}-2026-11-18.gz`,
+                `./fixtures/official-check/domestic/${supplement}-${supplementDate}.gz`,
                 import.meta.url,
               ),
             ),
           ),
           url,
-          obtainedAt: attemptedAt,
+          obtainedAt: captureAt,
           status: supplementalStatus,
         };
       }
@@ -59,7 +70,7 @@ function check(sourceName, transform = (body) => body, status = 200, supplementa
         url === 'https://platform.stepfun.com/docs/zh/guides/pricing/details.md';
       if (!stepfunPricing && id !== `${sourceName}-cn`)
         throw Error('Response outside fixture scope');
-      return { body: transform(body), url, obtainedAt: attemptedAt, status };
+      return { body: transform(body), url, obtainedAt: captureAt, status };
     },
   });
 }
@@ -86,11 +97,14 @@ test('Bailing and LongCat review original RMB prices from tables that also quote
 });
 
 test('BigModel China reads cache storage and model modalities as conditions alongside CNY charges', async () => {
-  const result = resultFor(await check('zhipu'), 'cn-zhipu-glm-5.3-flash-standard');
-  assert.equal(result.status, 'changed');
-  assert.deepEqual(result.observed.sourcePrice, { input: 0.8, output: 2.8, cache_read: 0.23 });
-  assert.equal(result.observed.conditions.cacheStorage, 'limited-time-free');
-  assert.deepEqual(result.observed.conditions.inputModalities, ['图片', '视频', '文件', '文本']);
+  for (const captureAt of [attemptedAt, '2026-11-19T11:18:39.857Z']) {
+    const report = await check('zhipu', undefined, 200, 200, captureAt);
+    const result = resultFor(report, 'cn-zhipu-glm-5.3-flash-standard');
+    assert.equal(result.status, 'unchanged');
+    assert.deepEqual(result.observed.sourcePrice, { input: 0.8, output: 2.8, cache_read: 0.23 });
+    assert.equal(result.observed.conditions.cacheStorage, 'limited-time-free');
+    assert.deepEqual(result.observed.conditions.inputModalities, ['图片', '视频', '文件', '文本']);
+  }
 });
 
 test('Ark keeps implicit token tiers and image task charges distinct', async () => {
@@ -98,7 +112,7 @@ test('Ark keeps implicit token tiers and image task charges distinct', async () 
   const text = report.results.find(({ quoteId }) =>
     quoteId?.startsWith('volcengine--doubao-seed-2-0-pro-'),
   );
-  assert.equal(text.status, 'changed', text.reason);
+  assert.equal(text.status, 'unchanged', text.reason);
   assert.deepEqual(text.observed.sourcePrice.tiers[1], {
     tier: { size: 128000 },
     input: 9.6,
@@ -108,7 +122,7 @@ test('Ark keeps implicit token tiers and image task charges distinct', async () 
   const image = report.results.find(({ quoteId }) =>
     quoteId?.startsWith('volcengine--doubao-seedream-5-0-flash-'),
   );
-  assert.equal(image.status, 'changed');
+  assert.equal(image.status, 'unchanged');
   assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.12);
   assert.equal(image.observed.sourcePrice[0].charges[2].amount, 0);
   assert.equal(
@@ -174,7 +188,7 @@ test('Ark reviews real video Token tariffs and keeps the #32 4K gate', async () 
   const report = await check('volcengine');
   const id = 'volcengine--doubao-seedance-2-0-260128--cn-beijing-task-online-original';
   const result = resultFor(report, id);
-  assert.equal(result.status, 'changed', result.reason);
+  assert.equal(result.status, 'unchanged', result.reason);
   assert.deepEqual(
     result.observed.sourcePrice.slice(0, 2).map((tier) => tier.charges[0].amount),
     [16, 26],
@@ -195,7 +209,7 @@ test('Bailian Beijing tiers use compatible-mode original CNY and distinguish cac
     report,
     'dashscope--qwen3.7-plus--cn-beijing-online-original-explicit',
   );
-  assert.equal(implicit.status, 'changed', implicit.reason);
+  assert.equal(implicit.status, 'unchanged', implicit.reason);
   assert.equal(explicit.status, 'changed', explicit.reason);
   assert.equal(implicit.observed.sourcePrice.input, 2);
   assert.equal(implicit.observed.sourcePrice.tiers[0].cache_read, 1.2);
@@ -462,18 +476,33 @@ test('Bailian Character preserves the native session-cache rate and header condi
 });
 
 test('Ark model IDs bind evolving text, character tariffs and the published Seedream alias', async () => {
-  const report = await check('volcengine');
-  const evolving = resultFor(report, 'upstream:volcengine:doubao-seed-evolving:CNY');
-  assert.equal(evolving.status, 'changed', evolving.reason);
+  const report = await check('volcengine', undefined, 200, 200, '2026-11-19T11:30:38Z');
+  const evolving = resultFor(
+    report,
+    'volcengine--doubao-seed-evolving--cn-beijing-online-regular-implicit-original',
+  );
+  assert.equal(evolving.status, 'unchanged', evolving.reason);
   assert.equal(evolving.observed.sourcePrice.input, 6);
-  const character = resultFor(report, 'upstream:volcengine:doubao-seed-character-260628:CNY');
-  assert.equal(character.status, 'changed', character.reason);
+  const character = resultFor(
+    report,
+    'volcengine--doubao-seed-character-260628--cn-beijing-online-regular-implicit-original',
+  );
+  assert.equal(character.status, 'unchanged', character.reason);
   assert.equal(character.observed.sourcePrice.tiers[0].output, 6);
+  assert.equal(character.observed.sourcePrice.tiers[0].cache_read, 0.16);
+  assert.equal(
+    character.observed.conditions.separateExplicitCacheStorage.unit,
+    'per_million_token_hours',
+  );
+  const { billing_expr } = JSON.parse(
+    readFileSync(join(baseline, 'api/newapi/ratio_config.json')),
+  ).data;
+  assert.match(billing_expr['doubao-seed-character-260628'], /p \* 1\.2 \+ cr \* 0\.16 \+ c \* 6/);
   const image = resultFor(
     report,
     'volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original',
   );
-  assert.equal(image.status, 'changed', image.reason);
+  assert.equal(image.status, 'unchanged', image.reason);
   assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.22);
   assert.equal(image.observed.conditions.publicPriceName, 'doubao-seedream-5-0-lite');
 });

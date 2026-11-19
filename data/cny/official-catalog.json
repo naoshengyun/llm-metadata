@@ -5,6 +5,1448 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "us-google-gemini-3-pro-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3-pro-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "output_image": 120
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-flash-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-flash-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "output_image": 60
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-flash-lite-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-flash-lite-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "output_image": 30
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-pro-preview-customtools-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-pro-preview-customtools",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "context_over_200k.input",
+        "tiers.0.output",
+        "context_over_200k.output",
+        "tiers.0.cache_read",
+        "context_over_200k.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 4.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-pro-preview-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-pro-preview",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "context_over_200k.input",
+        "tiers.0.output",
+        "context_over_200k.output",
+        "tiers.0.cache_read",
+        "context_over_200k.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 4.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.5-flash-lite-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.03
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.5-live-translate-preview-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.5-live-translate-preview",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "output_audio"
+      ],
+      "cost": {
+        "input": 3.5,
+        "input_audio": 3.5,
+        "output": 21,
+        "output_audio": 21
+      },
+      "conditions": {
+        "modalities": "audio-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.6-flash-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.6-flash",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.75,
+        "input_audio": 0.75,
+        "output": 3.75,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 1.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "output": {
+            "amount": 7.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "cache_read": {
+            "amount": 0.15,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        },
+        "explicitCacheStorage": {
+          "amount": 0.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour",
+          "announcedPrice": {
+            "amount": 1,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.8-flash-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.8-flash",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.75,
+        "input_audio": 0.75,
+        "output": 3.75,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 1.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "output": {
+            "amount": 7.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "cache_read": {
+            "amount": 0.15,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        },
+        "explicitCacheStorage": {
+          "amount": 0.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour",
+          "announcedPrice": {
+            "amount": 1,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-argon-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-argon",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "input_audio": 2,
+        "output": 10,
+        "cache_read": 0.1
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 4,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "output": {
+            "amount": 20,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "cache_read": {
+            "amount": 0.2,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          }
+        },
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-carbon-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-carbon",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "input_audio": 2,
+        "output": 10,
+        "cache_read": 0.1
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 4,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "output": {
+            "amount": 20,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "cache_read": {
+            "amount": 0.2,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          }
+        },
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-hydrogen-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-hydrogen",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1.5,
+        "input_audio": 1.5,
+        "output": 7.5,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-openai-gpt-5.6-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-5.6",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.4,
+        "cache_write": 5,
+        "cache_write_12h": 10,
+        "context_over_200k": {
+          "input": 8,
+          "output": 30,
+          "cache_read": 0.8,
+          "cache_write": 10
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.8,
+            "cache_write": 10,
+            "cache_write_12h": 20
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-openai-gpt-6.2-astra-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 8,
+        "output": 40,
+        "cache_read": 0.4,
+        "cache_write": 10,
+        "cache_write_12h": 20,
+        "context_over_200k": {
+          "input": 16,
+          "output": 60,
+          "cache_read": 0.8,
+          "cache_write": 20
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 16,
+            "output": 60,
+            "cache_read": 0.8,
+            "cache_write": 20,
+            "cache_write_12h": 40
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-openai-gpt-6.2-sol-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 0.1,
+        "cache_write": 2.5,
+        "cache_write_12h": 5,
+        "context_over_200k": {
+          "input": 4,
+          "output": 15,
+          "cache_read": 0.2,
+          "cache_write": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 15,
+            "cache_read": 0.2,
+            "cache_write": 5,
+            "cache_write_12h": 10
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "volcengine--doubao-seed-character-260628--cn-beijing-online-regular-implicit-original",
+      "provider": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seed-character-260628",
+      "priceList": "cn-beijing-online-regular-implicit-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.16,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.2,
+            "output": 6,
+            "cache_read": 0.16
+          }
+        ]
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "49ddd0c4fc4f4474c6cdd68d99d232475981d191a232aabef93fc9ba2c3f9824",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "volcengine--doubao-seed-evolving--cn-beijing-online-regular-implicit-original",
+      "provider": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seed-evolving",
+      "priceList": "cn-beijing-online-regular-implicit-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 30,
+        "cache_read": 1.2
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 1024000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "49ddd0c4fc4f4474c6cdd68d99d232475981d191a232aabef93fc9ba2c3f9824",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.20-0309-non-reasoning-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.20-0309-non-reasoning",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1.25,
+        "cache_read": 0.2,
+        "output": 2.5,
+        "context_over_200k": {
+          "input": 2.5,
+          "cache_read": 0.4,
+          "output": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 2.5,
+            "cache_read": 0.4,
+            "output": 5
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.20-0309-reasoning-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.20-0309-reasoning",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1.25,
+        "cache_read": 0.2,
+        "output": 2.5,
+        "context_over_200k": {
+          "input": 2.5,
+          "cache_read": 0.4,
+          "output": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 2.5,
+            "cache_read": 0.4,
+            "output": 5
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.20-multi-agent-0309-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.20-multi-agent-0309",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1.25,
+        "cache_read": 0.2,
+        "output": 2.5,
+        "context_over_200k": {
+          "input": 2.5,
+          "cache_read": 0.4,
+          "output": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 2.5,
+            "cache_read": 0.4,
+            "output": 5
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.3-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.3",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1.25,
+        "cache_read": 0.2,
+        "output": 2.5,
+        "context_over_200k": {
+          "input": 2.5,
+          "cache_read": 0.4,
+          "output": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 2.5,
+            "cache_read": 0.4,
+            "output": 5
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.5-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.5",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 2,
+        "cache_read": 0.3,
+        "output": 6,
+        "context_over_200k": {
+          "input": 4,
+          "cache_read": 0.6,
+          "output": 12
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 4,
+            "cache_read": 0.6,
+            "output": 12
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.6-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.6",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 2,
+        "cache_read": 0.5,
+        "output": 6,
+        "context_over_200k": {
+          "input": 4,
+          "cache_read": 1,
+          "output": 12
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 4,
+            "cache_read": 1,
+            "output": 12
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-4.7-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-4.7",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 2,
+        "cache_read": 0.5,
+        "output": 6,
+        "context_over_200k": {
+          "input": 4,
+          "cache_read": 1,
+          "output": 12
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 4,
+            "cache_read": 1,
+            "output": 12
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-build-0.1-global-standard",
+      "provider": "xai",
+      "endpoint": "https://api.x.ai/v1",
+      "model": "grok-build-0.1",
+      "priceList": "xAI API / global text standard",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output",
+        "context_over_200k.input",
+        "context_over_200k.cache_read",
+        "context_over_200k.output",
+        "tiers.0.input",
+        "tiers.0.cache_read",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1,
+        "cache_read": 0.2,
+        "output": 2,
+        "context_over_200k": {
+          "input": 2,
+          "cache_read": 0.4,
+          "output": 4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context",
+              "comparison": "gte"
+            },
+            "input": 2,
+            "cache_read": 0.4,
+            "output": 4
+          }
+        ]
+      },
+      "conditions": {
+        "cacheMode": "automatic",
+        "tierAppliesTo": "entire-request"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "sha256": "745ab06708a5a055deef091e5a5a7cad952ab9386f802d01052220f24228ea39",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+            "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
       "id": "dashscope--qwen-flash--sg-international-online-original-implicit",
       "provider": "alibaba",
       "model": "qwen-flash",
@@ -4183,7 +5625,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "5853d435bb2f5fdc50bdc824b989a539c03629d818a43c3cbb4a37eee961f826",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -4197,7 +5640,7 @@
       },
       "description": "Published standard API list, excluding GLM Coding Plan and resource packs. Reasoning tokens count as output; cache storage is temporarily free, with no post-promotion price or end date published. No cache-write token fee is invented. For GLM-5.3-Flash, model-guide marketing mentions a limited discount but the current pricing table publishes 0.8/2.8/0.23; this record preserves the actual price-list figures and does not infer an extra discount.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens",
+      "unit": "per_million_tokens",
       "feeDeclarations": [
         {
           "key": "cache_storage",
@@ -4210,7 +5653,15 @@
             "checkedAt": "2026-11-16"
           }
         }
-      ]
+      ],
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "1M",
+        "inputModalities": [
+          "文本"
+        ]
+      }
     },
     {
       "id": "cn-zhipu-glm-5.3-flash-standard",
@@ -4221,7 +5672,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "5853d435bb2f5fdc50bdc824b989a539c03629d818a43c3cbb4a37eee961f826",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -4235,7 +5687,7 @@
       },
       "description": "Published standard API list, excluding GLM Coding Plan and resource packs. Reasoning tokens count as output; cache storage is temporarily free, with no post-promotion price or end date published. No cache-write token fee is invented. For GLM-5.3-Flash, model-guide marketing mentions a limited discount but the current pricing table publishes 0.8/2.8/0.23; this record preserves the actual price-list figures and does not infer an extra discount.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens",
+      "unit": "per_million_tokens",
       "feeDeclarations": [
         {
           "key": "cache_storage",
@@ -4248,7 +5700,18 @@
             "checkedAt": "2026-11-16"
           }
         }
-      ]
+      ],
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "1M",
+        "inputModalities": [
+          "图片",
+          "视频",
+          "文件",
+          "文本"
+        ]
+      }
     },
     {
       "id": "cn-zhipu-glm-5.2-standard",
@@ -4259,7 +5722,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "5853d435bb2f5fdc50bdc824b989a539c03629d818a43c3cbb4a37eee961f826",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -4273,7 +5737,7 @@
       },
       "description": "Published standard API list, excluding GLM Coding Plan and resource packs. Reasoning tokens count as output; cache storage is temporarily free, with no post-promotion price or end date published. No cache-write token fee is invented. For GLM-5.3-Flash, model-guide marketing mentions a limited discount but the current pricing table publishes 0.8/2.8/0.23; this record preserves the actual price-list figures and does not infer an extra discount.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens",
+      "unit": "per_million_tokens",
       "feeDeclarations": [
         {
           "key": "cache_storage",
@@ -4286,7 +5750,12 @@
             "checkedAt": "2026-11-16"
           }
         }
-      ]
+      ],
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "1M"
+      }
     },
     {
       "id": "dashscope--qwen3.7-max--cn-beijing-online-original-implicit",
@@ -4297,7 +5766,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7d2bdaa30d8c43813099804309c39fe40af49b3725d2b6ca6aeebbb3eb49e8a3",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "a37dabd606b67c14afaeb6661446849e3189de2359deb7e6b2992c1852d8be20",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "9f8c768fa8363c6dd1d04210d8b3ee751a7f0031341743da38a2c95b983da136",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "73f3406bc5275bc8c5592a7f5704eb33196dbf3c187df87dab74218f69687a8d",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "b65cb18a6790e4bf695d424e16cdd4727d6b7685ad87afa84169a5b6475ce593",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4333,7 +5825,22 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "dashscope--qwen3.7-max--cn-beijing-online-original-explicit",
@@ -4491,7 +5998,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7d2bdaa30d8c43813099804309c39fe40af49b3725d2b6ca6aeebbb3eb49e8a3",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "a37dabd606b67c14afaeb6661446849e3189de2359deb7e6b2992c1852d8be20",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "9f8c768fa8363c6dd1d04210d8b3ee751a7f0031341743da38a2c95b983da136",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "73f3406bc5275bc8c5592a7f5704eb33196dbf3c187df87dab74218f69687a8d",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "b65cb18a6790e4bf695d424e16cdd4727d6b7685ad87afa84169a5b6475ce593",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4540,7 +6070,26 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "dashscope--qwen3.7-plus--cn-beijing-online-original-explicit",
@@ -4615,7 +6164,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7d2bdaa30d8c43813099804309c39fe40af49b3725d2b6ca6aeebbb3eb49e8a3",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "a37dabd606b67c14afaeb6661446849e3189de2359deb7e6b2992c1852d8be20",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "9f8c768fa8363c6dd1d04210d8b3ee751a7f0031341743da38a2c95b983da136",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "73f3406bc5275bc8c5592a7f5704eb33196dbf3c187df87dab74218f69687a8d",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "b65cb18a6790e4bf695d424e16cdd4727d6b7685ad87afa84169a5b6475ce593",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4675,7 +6247,30 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "dashscope--qwen3.7-flash--cn-beijing-online-original-explicit",
@@ -4762,8 +6357,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4799,7 +6402,23 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/context-cache?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 1024000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "volcengine--doubao-seed-2-1-turbo-260628--cn-beijing-online-regular-implicit-original",
@@ -4809,8 +6428,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4846,7 +6473,23 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/context-cache?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "volcengine--doubao-seed-2-0-pro-260215--cn-beijing-online-regular-implicit-original",
@@ -4856,8 +6499,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4917,7 +6568,33 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/context-cache?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "volcengine--doubao-seed-2-0-code-preview-260215--cn-beijing-online-regular-implicit-original",
@@ -4927,8 +6604,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -4988,7 +6673,33 @@
           "note": "Implicit cache: no separate storage charge. Normal input already pays cache creation.",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/context-cache?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "volcengine--doubao-seedance-1-0-pro-250528--cn-beijing-task-online-original",
@@ -4998,8 +6709,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5029,7 +6748,11 @@
           "unit": "per_million_tokens",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "billingUsage": "usage.completion_tokens"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedance-2-0-260128--cn-beijing-task-online-original",
@@ -5039,8 +6762,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5144,7 +6875,12 @@
           "unit": "per_million_tokens",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "billingUsage": "usage.completion_tokens",
+        "videoInputTokenMinimum": true
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedance-2-0-fast-260128--cn-beijing-task-online-original",
@@ -5154,8 +6890,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5199,7 +6943,12 @@
           "unit": "per_million_tokens",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "billingUsage": "usage.completion_tokens",
+        "videoInputTokenMinimum": true
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedance-2-0-mini-260615--cn-beijing-task-online-original",
@@ -5209,8 +6958,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5254,7 +7011,12 @@
           "unit": "per_million_tokens",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "billingUsage": "usage.completion_tokens",
+        "videoInputTokenMinimum": true
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedream-5-0-flash-260915--cn-beijing-task-online-original",
@@ -5264,8 +7026,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5319,7 +7089,12 @@
           "unit": "per_count",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputImages": "free",
+        "outputUnit": "per_image"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedream-5-0-lite-260128--cn-beijing-task-online-original",
@@ -5329,8 +7104,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5372,7 +7155,12 @@
           "unit": "per_count",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputImages": "free",
+        "outputUnit": "per_image"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original",
@@ -5382,8 +7170,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5425,7 +7221,13 @@
           "unit": "per_count",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputImages": "free",
+        "outputUnit": "per_image",
+        "publicPriceName": "doubao-seedream-5-0-lite"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedream-4-5-251128--cn-beijing-task-online-original",
@@ -5435,8 +7237,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5478,7 +7288,12 @@
           "unit": "per_count",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputImages": "free",
+        "outputUnit": "per_image"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "volcengine--doubao-seedream-4-0-250828--cn-beijing-task-online-original",
@@ -5488,8 +7303,16 @@
       "origin": "domestic",
       "currency": "CNY",
       "source": {
-        "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "dd3bf93b850f26ccd0e9cac9b246afb1186e13d79282526c347422b96ca2cf00",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [],
       "cost": {},
@@ -5543,7 +7366,12 @@
           "unit": "per_count",
           "sourceUrl": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
         }
-      ]
+      ],
+      "conditions": {
+        "inputImages": "free",
+        "outputUnit": "per_image"
+      },
+      "unit": "per-charge"
     },
     {
       "id": "hunyuan--hunyuan-a13b--mainland-legacy-hunyuan-online-postpaid-published",
