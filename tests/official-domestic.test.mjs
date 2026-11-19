@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { gunzipSync } from 'node:zlib';
 import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
+import { readHistoricalOfficialInputs } from './fixtures/november-2026-cny.mjs';
 
 const directory = mkdtempSync(join(tmpdir(), 'official-domestic-'));
 const baseline = join(directory, 'baseline');
@@ -13,13 +14,40 @@ after(() => rmSync(directory, { recursive: true, force: true }));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
 const attemptedAt = '2026-11-18T13:00:00Z';
 
+const bailianExplicitReference = 'dashscope--qwen3.7-plus--cn-beijing-online-original-explicit';
+const kimiProBatchReference = 'cn-moonshot-kimi-k3.1-pro-batch';
+const historicalReferenceBaseline = join(directory, 'historical-reference-baseline');
+const currentCatalog = JSON.parse(readFileSync('data/cny/official-catalog.json'));
+const historicalReferences = new Map(
+  readHistoricalOfficialInputs()
+    .catalog.records.filter(({ id }) =>
+      [bailianExplicitReference, kimiProBatchReference].includes(id),
+    )
+    .map((record) => [record.id, record]),
+);
+assert.equal(historicalReferences.size, 2);
+const historicalReferenceCatalog = join(directory, 'historical-reference-catalog.json');
+writeFileSync(
+  historicalReferenceCatalog,
+  JSON.stringify({
+    ...currentCatalog,
+    records: currentCatalog.records.map((record) => historicalReferences.get(record.id) ?? record),
+  }),
+);
+execFileSync(process.execPath, [
+  'scripts/build-unified-cny.mjs',
+  historicalReferenceBaseline,
+  'data/cny/unified-policy.json',
+  historicalReferenceCatalog,
+]);
+
 function check(
   sourceName,
   transform = (body) => body,
   status = 200,
   supplementalStatus = 200,
   captureAt = attemptedAt,
-  sourceFixtures = {},
+  { sourceFixtures = {}, comparison = baseline } = {},
 ) {
   const captureDate = captureAt.slice(0, 10);
   const body = gunzipSync(
@@ -31,7 +59,7 @@ function check(
     ),
   );
   return checkOfficialPrices({
-    baseline,
+    baseline: comparison,
     attemptedAt: captureAt,
     getResponse: async ({ id, url }) => {
       const supplementNames = {
@@ -199,15 +227,14 @@ test('Ark reviews real video Token tariffs and keeps the #32 4K gate', async () 
 });
 
 test('Bailian Beijing tiers use compatible-mode original CNY and distinguish cache modes', async () => {
-  const report = await check('alibaba');
+  const report = await check('alibaba', undefined, 200, 200, attemptedAt, {
+    comparison: historicalReferenceBaseline,
+  });
   const implicit = resultFor(
     report,
     'dashscope--qwen3.7-plus--cn-beijing-online-original-implicit',
   );
-  const explicit = resultFor(
-    report,
-    'dashscope--qwen3.7-plus--cn-beijing-online-original-explicit',
-  );
+  const explicit = resultFor(report, bailianExplicitReference);
   assert.equal(implicit.status, 'unchanged', implicit.reason);
   assert.equal(explicit.status, 'changed', explicit.reason);
   assert.equal(implicit.observed.sourcePrice.input, 2);
@@ -558,7 +585,7 @@ test('Ark model IDs bind evolving text, character tariffs and the published Seed
 
 test('Ark uses the real model list on the client-rendered response', async () => {
   const report = await check('volcengine', undefined, 200, 200, '2026-11-19T12:13:00Z', {
-    'volcengine-cn--model-list': 'volcengine-models-reader-2026-11-19',
+    sourceFixtures: { 'volcengine-cn--model-list': 'volcengine-models-reader-2026-11-19' },
   });
   const ark = report.results.filter(
     ({ sourceId, selected }) => sourceId === 'volcengine-cn' && selected,
@@ -597,10 +624,12 @@ test('Ark official Markdown and rendered HTML produce the same selected rates', 
 });
 
 test('Kimi China Batch reads four independent, unselected official references', async () => {
-  const report = await check('kimi-batch');
+  const report = await check('kimi-batch', undefined, 200, 200, attemptedAt, {
+    comparison: historicalReferenceBaseline,
+  });
   const rows = report.results.filter((row) => row.sourceId === 'kimi-batch-cn');
   assert.equal(rows.length, 4);
-  const pro = resultFor(report, 'cn-moonshot-kimi-k3.1-pro-batch');
+  const pro = resultFor(report, kimiProBatchReference);
   assert.equal(pro?.status, 'changed', pro?.reason);
   assert.equal(pro.selected, false);
   assert.equal(
