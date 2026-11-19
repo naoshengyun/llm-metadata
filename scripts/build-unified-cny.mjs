@@ -568,7 +568,7 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
       }
       continue;
     }
-    const domestic = current.filter((row) => row.domestic && row.upstreamPrice);
+    const domestic = current.filter((row) => row.domestic);
     const pool = domestic.length ? domestic : current;
     const explicit = policy.upstreamSelection[modelId];
     const eligible = (explicit ? current : pool).filter((row) => row.status === 'eligible');

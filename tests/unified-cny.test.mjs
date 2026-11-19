@@ -383,6 +383,35 @@ test('an upstream endpoint cannot drift under an unchanged quote ID', (t) => {
   );
 });
 
+test('an incomplete domestic official quote blocks an automatic international fallback', (t) => {
+  const { policy, catalog, build, upstream } = fixture(t);
+  const model = 'fixture-kimi-missing-domestic';
+  const id = 'fixture-missing-domestic-quote';
+  const international = 'upstream:moonshotai:' + model + ':USD';
+  const template = catalog.records.find((row) => row.id === 'cn-moonshot-kimi-k3.1-pro-standard');
+  const { upstreamKey, ...quote } = structuredClone(template);
+  build('reviewed');
+  catalog.records.push({ ...quote, id, model, cost: {} });
+  upstream((providers) => {
+    providers.moonshotai.models[model] = { id: model, cost: { input: 1, output: 2 } };
+  });
+
+  const candidate = build('unselected', 'reviewed');
+  const { models, quotes } = candidate('coverage.json');
+  assert.equal(quotes.find(({ quoteId }) => quoteId === id).status, 'incomplete');
+  assert.deepEqual(
+    models
+      .filter(({ modelId }) => modelId === model)
+      .map(({ providerId }) => providerId)
+      .sort(),
+    ['moonshotai', 'moonshotai-cn'],
+  );
+  assert.ok(!Object.hasOwn(candidate('api/newapi/ratio_config.json').data.billing_expr, model));
+
+  policy.upstreamSelection[model] = international;
+  assert.equal(build('explicit', 'reviewed')('selection.json')[model], international);
+});
+
 test('unselected official models and providers stay searchable in every locale without exporting a price', (t) => {
   const { catalog, build } = fixture(t);
   const template = catalog.records.find((row) => row.id === 'cn-zhipu-glm-5.3-standard');
