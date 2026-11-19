@@ -82,6 +82,9 @@ export const adapter = {
   parse,
 };
 
+const promotionNote =
+  /^(?:(?:Permanent |Limited-time )?\d{1,2}(?:\.\d+)?% off|(?:Limited-time )?(?:Offer|Promotion)(?: through (?:[A-Z][a-z]+ \d{1,2}(?:, \d{4})?|\d{4}-\d{2}-\d{2}))?)$/;
+
 function textPrice(text, modelId) {
   const llm = text.match(/^## LLM\n([\s\S]*?)^## Video$/m)?.[1];
   if (!llm) throw Error('Missing MiniMax international text pricing section');
@@ -104,16 +107,17 @@ function textPrice(text, modelId) {
     throw Error('Exact MiniMax International LLM price absent: ' + modelId);
   const standard = tabs.split('> [tab] Priority')[0].replace(/^> ?/gm, '');
   const rows = table(standard, columns);
-  const threshold = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens(?: .+)?$/;
-  const low = exactRow(rows, ([cell]) => threshold.test(cell), modelId + ' ordinary', 4);
-  const sizeText = threshold.exec(low[0])[1];
-  const high = exactRow(
-    rows,
-    ([cell]) =>
-      /^\*\*MiniMax-M3\*\* > (\d+)k input tokens(?:\\\*)?(?: .+)?$/.exec(cell)?.[1] === sizeText,
-    modelId + ' long context',
-    4,
-  );
+  const lower = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens(?: (.+))?$/;
+  const upper = /^\*\*MiniMax-M3\*\* > (\d+)k input tokens(?:\\\*)?(?: (.+))?$/;
+  const low = exactRow(rows, ([cell]) => lower.test(cell), modelId + ' ordinary', 4);
+  const high = exactRow(rows, ([cell]) => upper.test(cell), modelId + ' long context', 4);
+  const [, sizeText, lowerNote] = lower.exec(low[0]);
+  const [, upperSizeText, upperNote] = upper.exec(high[0]);
+  if (sizeText !== upperSizeText) throw Error('Discontinuous MiniMax M3 input bands');
+  for (const note of [lowerNote, upperNote]) {
+    if (note && !promotionNote.test(note))
+      throw Error('Unsupported MiniMax M3 Standard pricing condition: ' + note);
+  }
   const [base, long] = [low, high].map((row) =>
     Object.fromEntries(
       charges.map((key, index) => [key, usdAmount(row[index + 1].replace(/^~~[^~]+~~\s+/, ''))]),

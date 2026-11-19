@@ -440,14 +440,6 @@ test('MiniMax international preserves the Standard threshold and charges H3 only
   assert.equal(llm.observed.sourcePrice.tiers[0].tier.size, 512000);
   assert.equal(llm.observed.sourcePrice.input, 0.3);
   assert.deepEqual(llm.observed.conditions, {});
-  const relabelled = await run((body, source) =>
-    source === 'minimax-international'
-      ? Buffer.from(body.toString().replaceAll(' Permanent 50% off', ' Offer through Dec 7'))
-      : body,
-  );
-  const reviewed = relabelled.results.find(({ id }) => id === llm.id);
-  assert.equal(reviewed.status, llm.status, reviewed.reason);
-  assert.deepEqual(reviewed.observed, llm.observed);
   const video = row('us-minimax-minimax-h3-global-video');
   assert.equal(video.status, 'unchanged', video.reason);
   assert.equal(video.observed.identity.endpoint, 'https://api.minimax.io/v2/video_generation');
@@ -466,6 +458,60 @@ test('MiniMax international preserves the Standard threshold and charges H3 only
     /u\("input_images"\) > 6 \? u\("input_images"\) - 6 : 0/,
   );
   assert.equal(change.difference.amounts, undefined);
+});
+
+test('MiniMax international tolerates a promotion deadline or an unlabeled current tariff', async () => {
+  const id = 'upstream:minimax:MiniMax-M3:USD';
+  const original = (await run()).results.find((result) => result.id === id);
+  for (const note of [' Offer through Dec 7', '']) {
+    const report = await run((body, source) => {
+      if (source !== 'minimax-international') return body;
+      const page = body.toString().replaceAll(' Permanent 50% off', note);
+      return Buffer.from(note ? page : page.replace(/~~[^~]+~~ +/g, ''));
+    });
+    const result = report.results.find((result) => result.id === id);
+    assert.equal(result.status, 'unchanged', result.reason);
+    assert.deepEqual(result.observed, original.observed);
+    assert.ok(!report.changes.some((change) => change.id === id));
+  }
+});
+
+test('MiniMax international rejects unrecognized request conditions and formal future prices', async () => {
+  const id = 'upstream:minimax:MiniMax-M3:USD';
+  const cases = [
+    [
+      '≤ 512k input tokens Permanent 50% off',
+      '≤ 512k input tokens Batch requests only',
+      'Batch requests only',
+    ],
+    [
+      '> 512k input tokens\\* Permanent 50% off',
+      '> 512k input tokens\\* Formal price effective December 1, 2026 00:00 UTC',
+      'Formal price effective December 1, 2026',
+    ],
+    [
+      '≤ 512k input tokens Permanent 50% off',
+      '≤ 512k input tokens Permanent 50% off Batch requests only',
+      'Batch requests only',
+    ],
+  ];
+  for (const [original, replacement, reason] of cases) {
+    const report = await run((body, source) => {
+      if (source !== 'minimax-international') return body;
+      const page = body.toString();
+      assert.ok(page.includes(original));
+      return Buffer.from(page.replace(original, replacement));
+    });
+    const result = report.results.find((result) => result.id === id);
+    assert.equal(result.status, 'failed', result.reason);
+    assert.ok(result.reason.includes(reason), result.reason);
+    assert.equal(result.observed, undefined);
+    assert.ok(!report.changes.some((change) => change.id === id));
+    assert.equal(
+      report.results.find(({ id }) => id === 'us-minimax-minimax-h3-global-video').status,
+      'unchanged',
+    );
+  }
 });
 
 test('international Step and Upstage retain USD precision and distinguish retired services', async () => {

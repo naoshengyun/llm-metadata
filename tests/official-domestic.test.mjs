@@ -291,16 +291,45 @@ test('MiniMax uses the current public standard M3 bands and confirms the M3.1 pr
   assert.equal(flash.observed.conditions.cacheMinimumInputTokens, 512);
 });
 
-test('a MiniMax promotion label change does not change the public CNY tariff', async () => {
-  const result = resultFor(
-    await check('minimax', (body) =>
-      Buffer.from(body.toString().replaceAll(' 永久五折', ' 优惠至 2026-12-07')),
-    ),
-    'cn-minimax-MiniMax-M3-standard',
-  );
-  assert.equal(result.status, 'unchanged', result.reason);
-  assert.equal(result.observed.sourcePrice.cache_read, 0.42);
-  assert.equal(result.observed.sourcePrice.tiers[0].cache_read, 0.84);
+test('MiniMax China tolerates a promotion deadline or an unlabeled current tariff', async () => {
+  const id = 'cn-minimax-MiniMax-M3-standard';
+  for (const note of [' 优惠至 2026-12-07', '']) {
+    const report = await check('minimax', (body) => {
+      const page = body.toString().replaceAll(' 永久五折', note);
+      return Buffer.from(note ? page : page.replace(/~~[^~]+~~ +/g, ''));
+    });
+    const result = resultFor(report, id);
+    assert.equal(result.status, 'unchanged', result.reason);
+    assert.equal(result.observed.sourcePrice.cache_read, 0.42);
+    assert.equal(result.observed.sourcePrice.tiers[0].cache_read, 0.84);
+    assert.ok(!report.changes.some((change) => change.id === id));
+  }
+});
+
+test('MiniMax China rejects unrecognized request conditions and formal future prices', async () => {
+  const id = 'cn-minimax-MiniMax-M3-standard';
+  const cases = [
+    ['≤ 512k 输入 tokens 永久五折', '≤ 512k 输入 tokens 仅限批量请求', '仅限批量请求'],
+    [
+      '> 512k 输入 tokens\\* 永久五折',
+      '> 512k 输入 tokens\\* 正式报价自 2026-12-01 00:00 UTC+8 起生效',
+      '正式报价自 2026-12-01',
+    ],
+    ['≤ 512k 输入 tokens 永久五折', '≤ 512k 输入 tokens 永久五折 仅限批量请求', '仅限批量请求'],
+  ];
+  for (const [original, replacement, reason] of cases) {
+    const report = await check('minimax', (body) => {
+      const page = body.toString();
+      assert.ok(page.includes(original));
+      return Buffer.from(page.replace(original, replacement));
+    });
+    const result = resultFor(report, id);
+    assert.equal(result.status, 'failed', result.reason);
+    assert.ok(result.reason.includes(reason), result.reason);
+    assert.equal(result.observed, undefined);
+    assert.ok(!report.changes.some((change) => change.id === id));
+    assert.equal(resultFor(report, 'cn-minimax-MiniMax-H3-video').status, 'unchanged');
+  }
 });
 
 test('a missing active LongCat price cannot fall back to the comparison amount', async () => {
