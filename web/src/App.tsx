@@ -39,6 +39,7 @@ import {
 import { INTL_LOCALES, formatDate } from '@/lib/format';
 import { renderMessage, useI18n } from '@/lib/i18n';
 import { NewApiProvider, providerRatioConfig, useNewApi } from '@/lib/newapi';
+import { useOfficialCheck } from '@/lib/official-check';
 import { cn } from '@/lib/utils';
 import { readStoredViewMode, storeViewMode, type ViewMode } from '@/lib/view-mode';
 
@@ -195,7 +196,12 @@ export default function App() {
 
   return (
     <NewApiProvider exchangeRates={exchangeRates}>
-      <Workspace updatedAt={manifest?.generatedAt ?? null} candidateBase={candidateBase} />
+      <Workspace
+        updatedAt={manifest?.generatedAt ?? null}
+        candidateBase={candidateBase}
+        candidateId={candidateBase ? manifest?.candidateId : undefined}
+        sourceSha={manifest?.sourceSha}
+      />
     </NewApiProvider>
   );
 }
@@ -203,9 +209,13 @@ export default function App() {
 function Workspace({
   updatedAt,
   candidateBase,
+  candidateId,
+  sourceSha,
 }: {
   updatedAt: string | null;
   candidateBase?: string;
+  candidateId?: string;
+  sourceSha?: string;
 }) {
   const { locale, t } = useI18n();
   const { deployment, exchangeRates } = useNewApi();
@@ -349,6 +359,11 @@ function Workspace({
   }, [loadedProvider, selectedModelId]);
 
   const detailOpen = Boolean(selectedModel && selectedMeta);
+  const officialCheck = useOfficialCheck(
+    candidateId,
+    sourceSha,
+    Boolean(selectedModel?.cnyPrice?.quotes?.length),
+  );
 
   return (
     <div className="flex h-dvh flex-col">
@@ -544,6 +559,7 @@ function Workspace({
               model={selectedModel}
               provider={selectedMeta}
               catalogBase={catalogBase}
+              officialCheck={officialCheck}
               providers={providers ?? []}
               onBack={handleCloseModel}
               onOpenModelIn={handleOpenModelIn}

@@ -43,6 +43,111 @@ const get = async (path) => {
 const snapshot = (page, width, name) =>
   page.screenshot({ path: `${evidenceDir}/${width}-${name}.png` });
 const results = { browser: browser.version(), viewports: [] };
+const checkStatusUrl =
+  'https://raw.githubusercontent.com/naoshengyun/llm-metadata/cny-official-check-state/official-check.json';
+
+async function checkStatusDisplay(page, goto, path, current, display, respond) {
+  const [firstQuote, secondQuote] = display.cnyPrice.quotes;
+  assert.ok(secondQuote, 'Use multiple tariffs to check individual status');
+  const selectQuote = (quote) =>
+    page.locator('article').filter({ has: page.getByText(quote.quoteId, { exact: true }) });
+  const firstCard = selectQuote(firstQuote);
+  const secondCard = selectQuote(secondQuote);
+  const state = (card, status) => card.locator(`[data-official-check="${status}"]`);
+  const times = (locator) =>
+    locator.locator('time').evaluateAll((nodes) => nodes.map((node) => node.dateTime));
+  const publishedVersion = { candidateId: current.releaseId, sourceSha: current.sourceSha };
+  const runtime = { url: 'https://github.com/naoshengyun/llm-metadata/actions/runs/1' };
+  const rows = (attemptedAt, lastSuccess = attemptedAt, updates = {}) =>
+    [firstQuote, secondQuote].map(({ quoteId }, index) => ({
+      quoteId,
+      identity: { providerId: 'moonshotai-cn', modelId: display.id },
+      status: 'unchanged',
+      latestAttemptedAt: attemptedAt,
+      latestSuccessfulAt: index ? attemptedAt : lastSuccess,
+      ...(index ? {} : updates),
+    }));
+  const report = (attemptedAt, results, version = publishedVersion) => ({
+    schemaVersion: 1,
+    publishedVersion: version,
+    attemptedAt,
+    runtime,
+    results,
+  });
+  const refresh = async (snapshot) => {
+    respond(snapshot);
+    const next = page.waitForResponse(checkStatusUrl);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await (await next).finished();
+  };
+
+  await goto(path);
+  await page.getByText('Check results are unavailable', { exact: true }).waitFor();
+  const published = await firstCard.locator('pre').allTextContents();
+  const evidence = await firstCard.getByText(/Evidence date/).innerText();
+
+  const first = '2026-11-16T01:47:00.000Z';
+  await refresh(report(first, rows(first)));
+  await state(firstCard, 'unchanged').waitFor();
+  assert.deepEqual(await times(state(firstCard, 'unchanged')), [first, first]);
+
+  const second = '2026-11-17T01:47:00.000Z';
+  const secondSnapshot = report(second, rows(second));
+  await refresh(secondSnapshot);
+  await state(firstCard, 'unchanged').locator(`time[datetime="${second}"]`).first().waitFor();
+  assert.deepEqual(await times(state(firstCard, 'unchanged')), [second, second]);
+
+  const third = '2026-11-18T01:47:00.000Z';
+  const failure = 'Official source response could not be parsed';
+  await refresh(report(third, rows(third, second, { status: 'failed', reason: failure })));
+  await state(firstCard, 'failed').getByText(failure).waitFor();
+  assert.deepEqual(await times(state(firstCard, 'failed')), [third, second]);
+  assert.deepEqual(await times(state(secondCard, 'unchanged')), [third, third]);
+  await refresh(secondSnapshot);
+  // Let the older response finish its render cycle before checking the visible latest attempt.
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+  );
+  assert.deepEqual(await times(state(firstCard, 'failed')), [third, second]);
+
+  const fourth = '2026-11-19T01:47:00.000Z';
+  const review = 'https://github.com/naoshengyun/llm-metadata/pull/69';
+  await refresh(
+    report(
+      fourth,
+      rows(fourth, fourth, {
+        status: 'changed',
+        proposal: { status: 'opened', number: 69, url: review },
+      }),
+    ),
+  );
+  const pending = state(firstCard, 'changed').getByRole('link', { name: 'Awaiting review' });
+  await pending.waitFor();
+  assert.equal(await pending.getAttribute('href'), review);
+
+  await refresh(null);
+  await page.getByText(/Showing the last results received/).waitFor();
+  assert.equal(await pending.count(), 1);
+  const fifth = '2026-11-20T01:47:00.000Z';
+  await refresh(report(fifth, rows(fifth), { ...publishedVersion, sourceSha: 'a'.repeat(40) }));
+  const mismatch = page.getByText('No check results for this published version yet', {
+    exact: true,
+  });
+  await mismatch.waitFor();
+  assert.equal(await firstCard.locator('[data-official-check]').count(), 0);
+  assert.equal(await secondCard.locator('[data-official-check]').count(), 0);
+  assert.deepEqual(await firstCard.locator('pre').allTextContents(), published);
+  assert.equal(await firstCard.getByText(/Evidence date/).innerText(), evidence);
+  return {
+    input: 'controlled status responses',
+    samePrice: 2,
+    failure: true,
+    staleRejected: true,
+    pendingReview: true,
+    transportFailure: true,
+    mismatchedVersion: true,
+  };
+}
 try {
   const current = JSON.parse(await get('current.json'));
   assert.equal(current.schemaVersion, 3);
@@ -141,6 +246,14 @@ try {
       permissions: ['clipboard-read', 'clipboard-write'],
       acceptDownloads: true,
     });
+    let statusResponse = null;
+    await context.route(checkStatusUrl, (route) =>
+      route.fulfill({
+        status: statusResponse ? 200 : 503,
+        headers: { 'access-control-allow-origin': '*' },
+        ...(statusResponse && { json: statusResponse }),
+      }),
+    );
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
@@ -322,6 +435,21 @@ try {
     await snapshot(page, viewport.width, 'export');
     await page.keyboard.press('Escape');
 
+    const officialChecks = await checkStatusDisplay(
+      page,
+      goto,
+      select('moonshotai-cn', display.id),
+      current,
+      display,
+      (response) => {
+        statusResponse = response;
+      },
+    );
+    assert.equal(await get(current.modelSource), canonical);
+    assert.equal(await get('api/newapi/ratio_config.json'), canonical);
+    assert.equal(await get(current.fixedBase + 'manifest.json'), fixedManifest);
+    await goto(select('moonshotai-cn'));
+
     await page.getByRole('button', { name: 'Change language' }).click();
     await page.getByRole('menuitemradio', { name: '中文' }).click();
     await expectVisible(page.getByRole('button', { name: '表格视图' }));
@@ -337,6 +465,7 @@ try {
       providersCopied: selectedProviders.length,
       modelsCompared: names.length,
       languages: ['en', 'zh', 'ja'],
+      officialChecks,
       errors,
     });
     await context.close();
