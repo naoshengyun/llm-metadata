@@ -119,7 +119,7 @@ test('verifies precise OpenAI Standard and direct image quotes, Claude global qu
   const report = await run();
   for (const [sourceId, count] of Object.entries({
     'openai-standard': 11,
-    'anthropic-global': 17,
+    'anthropic-global': 18,
     'morph-list': 11,
   })) {
     const scoped = report.results.filter(
@@ -476,7 +476,7 @@ test('OpenAI upstream models use the correct Standard tables and retain explicit
 test('Alibaba International uses the Singapore service scope and preserves mode tariffs', async () => {
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'alibaba-international');
-  assert.equal(rows.length, 49);
+  assert.equal(rows.length, 47);
   const id = (model) => rows.find(({ nativeKey }) => nativeKey === model);
   assert.equal(id('qwen3.6-35b-a3b').observed.sourcePrice.input, 0.375);
   assert.equal(id('qwen3.6-35b-a3b').observed.cnyCost.output, 15.75);
@@ -486,10 +486,16 @@ test('Alibaba International uses the Singapore service scope and preserves mode 
 
 test('the selected Claude Opus 4.5 API alias has its own reviewed identity and complete cache TTLs', async () => {
   const report = await run();
-  const change = report.changes.find(({ id }) => id === 'upstream:anthropic:claude-opus-4-5:USD');
-  assert.equal(change?.selected, true);
-  assert.equal(change.observed.sourcePrice.cache_write_1h, 10);
-  assert.equal(change.observed.cnyCost.cache_write_1h, 70);
+  const alias = report.results.find(({ id }) => id === 'us-anthropic-claude-opus-4-5-standard');
+  assert.equal(alias.selected, true);
+  assert.equal(alias.status, 'unchanged');
+  assert.equal(alias.observed.sourcePrice.cache_write, 6.25);
+  assert.equal(alias.observed.sourcePrice.cache_write_1h, 10);
+  assert.equal(alias.observed.cnyCost.cache_write_1h, 70);
+  assert.deepEqual(alias.observed.conditions.cacheWriteTtlSeconds, {
+    cache_write: 300,
+    cache_write_1h: 3600,
+  });
 });
 
 function replaceEvidence(body, from, to) {

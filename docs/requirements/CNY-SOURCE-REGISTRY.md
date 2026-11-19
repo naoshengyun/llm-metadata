@@ -108,3 +108,11 @@
 | `devstral-latest`、`devstral-medium-latest` | 退役的 Devstral 2 模型卡列出两个别名，公开工具调用指南仍列 `devstral-latest`。公开资料不能确认两者当前 API 指向，匿名模型详情 GET 返回 401，两条待查。 | [Devstral 2](https://docs.mistral.ai/models/devstral-2-25-12) · [工具调用](https://docs.mistral.ai/inference/conversations/function-calling) |
 
 已有官方费率的 10 条保留目录及独立的 USD 报价证据，标记为原生计费不支持并退出候选同步 JSON。能力证据采用固定 [New API rc.50 计量参数](https://github.com/QuantumNous/new-api/blob/f2aa91232ed3e5878a614762ace6736a2b74257f/pkg/billingexpr/types.go) 和[结算映射](https://github.com/QuantumNous/new-api/blob/f2aa91232ed3e5878a614762ace6736a2b74257f/service/tiered_settle.go)。#42 和 #43 仍有范围内价目缺口，#46 以两票验收为前提。
+
+### #62 发布后的核价范围
+
+用户确认，音频业务的核价和计量补证延期至脑生云计划接入时。现有官方报价证据保留，先前移出的音频价目继续排除在 New API 同步 JSON 外。混合模态模型的非音频计量条件仍按 #42 和 #43 的验收标准核对。
+
+百炼 `qwen3.8-flash` 和 `qwen3.8-max` 使用各自的官方型号页，分别保留北京人民币和新加坡国际站原始美元费率及两种缓存模式。北京区域的在线隐式缓存报价进入统一候选。其他报价保留区域和缓存模式身份。完整来源和逐费率见 [官方报价目录](../../data/cny/official-catalog.json)。[北京 Flash](https://help.aliyun.com/zh/model-studio/qwen3-8-flash) · [北京 Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max) · [新加坡 Flash](https://www.alibabacloud.com/help/en/model-studio/qwen3-8-flash#pricing) · [新加坡 Max](https://www.alibabacloud.com/help/en/model-studio/qwen3-8-max#pricing) · [缓存条件](https://help.aliyun.com/zh/model-studio/context-cache)
+
+OpenAI 已将 `gpt-image-1-mini` 标为废弃，并列出 2026-12-01 停用日期。目录采用统一的已废弃状态，该模型继续排除在同步 JSON 外。[OpenAI 下线公告](https://developers.openai.com/api/docs/deprecations)

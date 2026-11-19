@@ -56,21 +56,13 @@ export const adapter = {
     },
   ],
   targets: Object.keys(labels).map((modelId) => ({
-    quoteId:
-      modelId === 'claude-opus-4-5'
-        ? 'upstream:anthropic:claude-opus-4-5:USD'
-        : 'us-anthropic-' + modelId + '-standard',
+    quoteId: 'us-anthropic-' + modelId + '-standard',
     providerId,
     endpoint,
     modelId,
     priceList,
     currency,
-    baselineIdentity: {
-      endpoint: null,
-      ...(modelId === 'claude-opus-4-5' && {
-        priceList: 'fixed upstream primary or original CNY sheet',
-      }),
-    },
+    ...(modelId !== 'claude-opus-4-5' && { baselineIdentity: { endpoint: null } }),
     baselineConditions: conditions,
     group: 'global-standard',
   })),
