@@ -43,8 +43,6 @@ const fixtures = {
   'gemini-routed': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--archive-medium': 'm-model-mistral-medium-3-5-26-04',
-  'mistral-standard--archive-largex': 'm-model-mistral-large-3-25-12',
-  'mistral-standard--archive-devstral': 'm-model-devstral-2-25-12',
   'mistral-standard--alias-embed': 'm-model-mistral-embed-23-12',
   'mistral-standard--alias-small': 'm-model-mistral-small-4-0-26-03',
   'mistral-standard--alias-large': 'm-model-mistral-large-4-0',
@@ -70,6 +68,24 @@ const fixtures = {
   'morph-list--api-docs': 'morph-docs',
   'kimi-global--currency': 'kimi-balance',
 };
+const mistralLegacyFixtures = Object.fromEntries(
+  [
+    'devstral-small-2-25-12',
+    'zai-glm-5-2',
+    'magistral-medium-1-2-25-09',
+    'mistral-medium-3-25-05',
+    'mistral-medium-3-1-25-08',
+    'mistral-small-3-2-25-06',
+    'mistral-nemo-12b-24-07',
+  ].map((id) => ['mistral-legacy-' + id, 'm-legacy-' + id + '-2026-11-19']),
+);
+Object.assign(mistralLegacyFixtures, {
+  'mistral-legacy-devstral-2-25-12': 'm-model-devstral-2-25-12-2026-11-18',
+  'mistral-legacy-mistral-large-3-25-12': 'm-model-mistral-large-3-25-12-2026-11-18',
+  'mistral-legacy-mistral-medium-3-5-26-04': 'm-model-mistral-medium-3-5-26-04-2026-11-18',
+  'mistral-voxtral': 'mistral-2026-11-18',
+  'mistral-voxtral--model': 'm-legacy-voxtral-small-25-07-2026-11-19',
+});
 const attemptedAt = '2026-11-18T12:44:58Z';
 
 function run(mutate = (body) => body, options = {}) {
@@ -227,7 +243,7 @@ test('xAI global long context starts at exactly 200,000 tokens', async () => {
 test('Mistral binds active global USD rates to exact API IDs, and reports older missing IDs', async () => {
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'mistral-standard');
-  assert.equal(rows.length, 34);
+  assert.equal(rows.length, 19);
   assert.equal(rows.filter(({ status }) => status === 'unchanged').length, 14);
   assert.equal(
     rows.find(({ nativeKey }) => nativeKey === 'mistral-embed').observed.sourcePrice.cache_read,
@@ -236,7 +252,7 @@ test('Mistral binds active global USD rates to exact API IDs, and reports older 
   const row = rows.find(({ nativeKey }) => nativeKey === 'ministral-3b-2512');
   assert.equal(row.observed.sourcePrice.cache_read, 0.01);
   assert.equal(row.observed.cnyCost.cache_read, 0.07);
-  assert.equal(rows.find(({ nativeKey }) => nativeKey === 'mistral-medium-2505').status, 'failed');
+  assert.equal(rows.find(({ nativeKey }) => nativeKey === 'pixtral-12b').status, 'failed');
 });
 test('Z.AI explicit Free rows are distinct from limited-time free storage and missing Turbo IDs', async () => {
   const report = await run();
@@ -627,4 +643,137 @@ test('Upstage keeps a future or mismatched retired card out of historical result
   );
   assert.equal(result(altered).status, 'failed');
   assert.match(result(altered).reason, /Exact Upstage alias/);
+});
+
+test('Mistral exact model cards supply archival fees and distinguish future retirement', async () => {
+  const report = await run(undefined, { fixtures: mistralLegacyFixtures });
+  const historical = report.results.filter(({ sourceId }) =>
+    sourceId?.startsWith('mistral-legacy-'),
+  );
+  assert.equal(historical.length, 13);
+  assert.ok(historical.every(({ status }) => status === 'unsupported'));
+  const find = (model) => historical.find(({ nativeKey }) => nativeKey === model).observed;
+  assert.deepEqual(find('devstral-medium-latest').sourcePrice, { input: 0.4, output: 2 });
+  assert.equal(find('devstral-medium-latest').conditions.historical, true);
+  assert.equal(find('mistral-medium-latest').conditions.historical, false);
+  assert.equal(find('mistral-medium-latest').conditions.retirementDate, '2027-04-30');
+  assert.equal(find('glm-5-2').sourcePrice.cache_read, 0.14);
+  assert.equal(find('mistral-small-2506').conditions.cacheReadRatePublished, false);
+  for (const model of ['voxtral-small-2507', 'voxtral-small-latest']) {
+    const quote = report.results.find(({ nativeKey }) => nativeKey === model);
+    assert.equal(quote.status, 'unsupported', quote.reason);
+    assert.deepEqual(quote.observed.sourcePrice.cachedAudioInput, {
+      amount: 0.0004,
+      unit: 'per_minute',
+    });
+    assert.equal(quote.observed.sourcePrice.output, 0.4);
+  }
+  const named = await run(
+    (body, id) =>
+      id === 'mistral-legacy-zai-glm-5-2'
+        ? Buffer.from(body.toString().replace('`glm-5-2`', '`another-id`'))
+        : body,
+    { fixtures: mistralLegacyFixtures },
+  );
+  assert.equal(named.results.find(({ nativeKey }) => nativeKey === 'glm-5-2').status, 'failed');
+  assert.equal(
+    named.results.find(({ nativeKey }) => nativeKey === 'zai-glm-5-2').status,
+    'unsupported',
+  );
+  assert.ok(!report.changes.some(({ id }) => historical.some((row) => row.id === id)));
+
+  const outage = await run(
+    (body, id) => {
+      if (id === 'mistral-legacy-zai-glm-5-2') throw Error('Official model card unavailable');
+      return body;
+    },
+    { fixtures: mistralLegacyFixtures },
+  );
+  assert.equal(
+    outage.results.find(({ nativeKey }) => nativeKey === 'zai-glm-5-2').status,
+    'failed',
+  );
+  assert.equal(
+    outage.results.find(({ nativeKey }) => nativeKey === 'devstral-2512').status,
+    'unsupported',
+  );
+});
+
+test('OpenAI shutdown tariffs and Realtime cache evidence cannot create a price candidate', async () => {
+  const report = await run();
+  const result = (model) =>
+    report.results.find(({ id }) => id === 'upstream:openai:' + model + ':USD');
+  const old = result('gpt-4.1-nano');
+  assert.equal(old.status, 'unsupported', old.reason);
+  assert.deepEqual(old.observed.sourcePrice, { input: 0.1, output: 0.4, cache_read: 0.025 });
+  assert.deepEqual(old.observed.conditions, { historical: true, status: 'shut-down' });
+  const realtime = result('gpt-realtime-2.1');
+  assert.equal(realtime.status, 'unsupported', realtime.reason);
+  assert.equal(realtime.observed.sourcePrice.input_audio, 32);
+  assert.equal(realtime.observed.conditions.audioCacheRead.amount, 0.4);
+  assert.ok(!report.changes.some(({ id }) => [old.id, realtime.id].includes(id)));
+
+  const renamed = await run((body, id) =>
+    id === 'openai-upstream--gpt-4-1-nano'
+      ? replaceEvidence(body, 'Status: Shut down', 'Status: Available')
+      : body,
+  );
+  assert.equal(renamed.results.find(({ id }) => id === old.id).status, 'failed');
+});
+
+test('Gemini preserves independent media amounts and units without using a partial price', async () => {
+  const report = await run(undefined, {
+    fixtures: { 'gemini-developer': 'gemini-reference-2026-11-19' },
+  });
+  const row = (model) => report.results.find(({ nativeKey }) => nativeKey === model);
+  const image = row('gemini-2.5-flash-image');
+  const live = row('gemini-3.1-flash-live-preview');
+  const embed = row('gemini-embedding-2');
+  assert.equal(image.status, 'unsupported', image.reason);
+  assert.equal(image.observed.conditions.imageEquivalent.amount, 0.039);
+  assert.equal(image.observed.conditions.imageEquivalent.outputTokens, 1290);
+  assert.equal(image.observed.conditions.textOutputTariffReference, 'gemini-2.5-flash');
+  assert.equal(live.status, 'unsupported', live.reason);
+  assert.equal(live.observed.conditions.videoInput.amount, 1);
+  assert.equal(embed.status, 'unsupported', embed.reason);
+  assert.equal(embed.observed.conditions.videoInput.amount, 12);
+  assert.ok(!report.changes.some(({ id }) => [image.id, live.id, embed.id].includes(id)));
+});
+
+test('Gemini verifies the complete official text tariff link for the image model', async () => {
+  const statement =
+    'Text input and output is priced the same as [2.5\nFlash](/docs/pricing#gemini-2.5-flash).';
+  const alternate =
+    'Text input and output is priced the same as [3.1 Flash Lite](/docs/pricing#gemini-3.1-flash-lite).';
+  const quoteId = 'upstream:google:gemini-2.5-flash-image:USD';
+  const check = async (replacement) => {
+    const report = await run(
+      (body, id) =>
+        id === 'gemini-developer' ? replaceEvidence(body, statement, replacement) : body,
+      { fixtures: { 'gemini-developer': 'gemini-reference-2026-11-19' } },
+    );
+    assert.ok(!report.changes.some(({ id }) => id === quoteId));
+    return report.results.find(({ id }) => id === quoteId);
+  };
+
+  const changed = await check(alternate);
+  assert.equal(changed.status, 'unsupported');
+  assert.equal(changed.observed.conditions.textOutputTariffReference, 'gemini-3.1-flash-lite');
+  assert.equal(
+    changed.difference.chargingConditions.after.declared.textOutputTariffReference,
+    'gemini-3.1-flash-lite',
+  );
+
+  for (const invalid of [
+    '',
+    'Text input and output is priced the same as 2.5 Flash.',
+    statement.replace('#gemini-2.5-flash', '#gemini-does-not-exist'),
+    statement.replace('/docs/pricing', 'https://example.com/docs/pricing'),
+    statement + ' ' + alternate,
+  ]) {
+    const result = await check(invalid);
+    assert.equal(result.status, 'failed', invalid);
+    assert.match(result.reason, /Gemini image text tariff reference/);
+    assert.equal(result.observed, undefined);
+  }
 });

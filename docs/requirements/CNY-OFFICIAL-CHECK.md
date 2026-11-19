@@ -14,7 +14,7 @@ npm run cny:official:check -- /tmp/cny-unified /tmp/cny-official-recheck /tmp/cn
 
 ## 新增适配器
 
-为每份官方响应在 `scripts/official-sources/` 添加独立模块并导出 `adapter`。模块声明唯一的 `id`、官方公开 GET `url`、可选的重定向 URL 清单 `allowedFinalUrls`，以及 `targets`。目标填写固定覆盖清单里的 `quoteId`、`providerId`、`endpoint`、`modelId`、`priceList`、`currency` 和共享收费表的 `group`。`baselineIdentity` 可以声明经过核实的旧目录映射，例如同一官方端点的上游通用价目名。`baselineConditions` 可以声明旧版本仅以文字保留的收费条件。
+为每份官方响应在 `scripts/official-sources/` 添加独立模块并导出 `adapter`。模块声明唯一的 `id`、官方公开 GET `url`、可选的重定向 URL 清单 `allowedFinalUrls`，以及 `targets`。目标填写固定覆盖清单里的 `quoteId`、`providerId`、`endpoint`、`modelId`、`priceList`、`currency` 和共享收费表的 `group`。`baselineIdentity` 可以声明经过核实的旧目录映射，例如同一官方端点的上游通用价目名。`baselineConditions` 可以声明旧版本仅以文字保留的收费条件。 同一厂商的独立官方型号页也可以由一个模块导出 `adapter` 数组。每个适配器分别获取和校验响应，单页不可用只影响该页的目标。
 
 `parse({ body, evidence })` 从响应字节静态提取，返回以 `quoteId` 为键的 `Map`。每条报价包含精确 `identity`、完整 `sourcePrice`、`sourceUnit`、适用收费项 `required` 和结构化 `conditions`。金额保留官方币种。任务价按现有任务用量契约提供完整收费阶梯。`effectiveAt` 必须带时区。正式撤价须返回精确身份及 `withdrawal.statement`，引文须能在实际响应中找到并明确撤销该价目。某条解析失败可以返回 `{ error }`，缺行也会被核价入口判为失败。一个共享收费表的选中报价验证失败时，该表的候选整体被拒绝，独立的报价仍可参与核查。
 

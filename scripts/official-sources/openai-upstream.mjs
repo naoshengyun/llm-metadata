@@ -70,6 +70,16 @@ const docs = [
   'gpt-image-1.5',
   'chatgpt-image-latest',
 ];
+const historicalModels = new Set([
+  'gpt-3.5-turbo',
+  'gpt-4',
+  'gpt-4-turbo',
+  'gpt-4.1-nano',
+  'o1',
+  'o1-pro',
+  'o3-mini',
+  'o4-mini',
+]);
 const supportId = (id) => id.replaceAll('.', '-');
 const modelDocUrl = (name) => 'https://developers.openai.com/api/docs/models/' + name + '.md';
 const textCharges = ['input', 'output', 'cache_read'];
@@ -115,6 +125,12 @@ export const adapter = {
     currency,
     group: modelId,
     baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
+    ...(historicalModels.has(modelId) && {
+      referenceOnlyReason: 'OpenAI shut down this exact API model; these are historical rates',
+    }),
+    ...(modelId === 'gpt-realtime-2.1' && {
+      referenceOnlyReason: 'Native realtime pricing has no dedicated cached audio charge',
+    }),
   })),
   parse,
 };
@@ -136,8 +152,9 @@ function modelPage(page, modelId) {
       );
   }
   requireText(page, 'Model ID: `' + modelId + '`');
-  if (page.includes('Status: Shut down'))
-    throw Error('OpenAI marks exact model Shut down; the model page retains historical price');
+  const historical = historicalModels.has(modelId);
+  if (historical !== /^Status: Shut down$/m.test(page))
+    throw Error('OpenAI model lifecycle differs from the registered tariff: ' + modelId);
   const textKeys = { Input: 'input', Output: 'output', 'Cached input': 'cache_read' };
   const prices = {};
   for (const [heading, keys] of [
@@ -155,13 +172,45 @@ function modelPage(page, modelId) {
   return prices;
 }
 
-function currentRates(text, supplemental, modelId, current) {
-  if (modelId === 'gpt-realtime-2.1') {
-    requireText(text, '| gpt-realtime-2.1 | Audio |');
-    throw Error(
-      'OpenAI Realtime 2.1 lists a separate cached-audio rate with no matching native fee field',
+function realtimeRates(text, modelId) {
+  const headers = ['Model', 'Modality', 'Input', 'Output', 'Cached input'];
+  const marker = '\n| ' + headers.join(' | ') + ' |\n';
+  const candidates = text
+    .split(marker)
+    .slice(1)
+    .map((block) => block.split(/\n\s*\n/, 1)[0]);
+  const grouped = candidates.filter((block) => block.includes('| ' + modelId + ' |'));
+  if (grouped.length !== 1) throw Error('Missing or ambiguous OpenAI Realtime pricing table');
+  const rows = table(marker + grouped[0], headers);
+  const price = {};
+  for (const [modality, keys] of [
+    ['Audio', ['input_audio', 'output_audio', 'cachedAudio']],
+    ['Text', textCharges],
+    ['Image', ['input_image', 'output_image', 'cache_read_image']],
+  ]) {
+    const row = exactRow(
+      rows,
+      ([name, type]) => name === modelId && type === modality,
+      modelId + ' ' + modality,
+      headers.length,
     );
+    const [, , input, output, cached] = row;
+    if (modality === 'Image' && output !== '-')
+      throw Error('Unexpected OpenAI Realtime image output tariff');
+    Object.assign(price, rateCells([input, output, cached], keys));
   }
+  const { cachedAudio, ...sourcePrice } = price;
+  if (Object.keys(sourcePrice).length !== 7 || cachedAudio === undefined)
+    throw Error('Incomplete OpenAI Realtime modality tariff');
+  return {
+    sourcePrice,
+    conditions: { audioCacheRead: { amount: cachedAudio, currency, unit: 'per_million_tokens' } },
+  };
+}
+
+function currentRates(text, supplemental, modelId, current) {
+  if (historicalModels.has(modelId))
+    return modelPage(markdown(supplemental.get(supportId(modelId)).body), modelId);
   if (modelId === 'gpt-5.6') {
     const alias = markdown(supplemental.get(supportId('gpt-5.6')).body);
     requireText(alias, 'The `gpt-5.6` alias routes requests to GPT-5.6 Sol.');
@@ -220,7 +269,20 @@ function parse({ body, supplemental }) {
   return new Map(
     adapter.targets.map(({ quoteId, modelId }) => {
       try {
-        const sourcePrice = currentRates(text, supplemental, modelId, standard);
+        const { sourcePrice, conditions } =
+          modelId === 'gpt-realtime-2.1'
+            ? realtimeRates(text, modelId)
+            : {
+                sourcePrice: currentRates(text, supplemental, modelId, standard),
+                conditions: historicalModels.has(modelId)
+                  ? { historical: true, status: 'shut-down' }
+                  : {},
+              };
+        if (
+          historicalModels.has(modelId) &&
+          (!Object.hasOwn(sourcePrice, 'input') || !Object.hasOwn(sourcePrice, 'output'))
+        )
+          throw Error('Incomplete OpenAI historical text tariff: ' + modelId);
         const required = Object.keys(sourcePrice).filter(
           (key) => !['tiers', 'context_over_200k'].includes(key),
         );
@@ -241,7 +303,7 @@ function parse({ body, supplemental }) {
             recordId: 'us-openai-' + modelId + '-global-standard',
             sourcePrice,
             required,
-            conditions: {},
+            conditions,
             sourceUnit: 'per_million_tokens',
           },
         ];

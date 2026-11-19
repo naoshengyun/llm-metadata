@@ -54,6 +54,13 @@ const splitAudioCache = new Set([
   'gemini-3-flash-preview',
   'gemini-3.1-flash-lite',
 ]);
+const mediaReferences = {
+  'gemini-2.5-flash-image':
+    'Native Gemini model sync cannot represent per-image rules and token rates together',
+  'gemini-3.1-flash-live-preview':
+    'Native Gemini model sync has no distinct Live video input meter',
+  'gemini-embedding-2': 'Native Gemini model sync has no distinct embedding video input meter',
+};
 const music = {
   'lyria-3-clip-preview': { label: 'Lyria 3 Clip Preview (30s)', durationSeconds: 30 },
   'lyria-3-pro-preview': { label: 'Lyria 3 Pro Preview (Full Song)' },
@@ -78,6 +85,9 @@ export function geminiDeveloperTarget(modelId) {
     currency,
     group: modelId,
     baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
+    ...(Object.hasOwn(mediaReferences, modelId) && {
+      referenceOnlyReason: mediaReferences[modelId],
+    }),
     ...((Object.hasOwn(music, modelId) || splitAudioCache.has(modelId)) && {
       referenceOnlyReason: Object.hasOwn(music, modelId)
         ? 'Native Gemini model sync has no generated-song usage'
@@ -204,16 +214,6 @@ function plainPrices(rows, modelId, checkedAt) {
       conditions: { modalities: 'audio-only' },
     };
   }
-  if (modelId === 'gemini-3.1-flash-live-preview') {
-    throw Error(
-      'Gemini Live Standard has distinct audio and video input rates; native video input meter unavailable',
-    );
-  }
-  if (modelId === 'gemini-2.5-flash-image') {
-    throw Error(
-      'Gemini Standard publishes token input and per-image output; native model quote cannot combine both units',
-    );
-  }
   const read = (text, key) => listedRate(text, key, result, modelId, checkedAt);
   const input = stripEquivalents(rowCost(rows, /^Input price(?: \(text, image, video\))?$/));
   if (!input)
@@ -304,6 +304,100 @@ function plainPrices(rows, modelId, checkedAt) {
   return { sourcePrice, required, conditions };
 }
 
+function modalityRates(rows, label, expected) {
+  const cell = rowCost(rows, label);
+  const lines = cell?.split('\n').map((line) => line.trim()) ?? [];
+  if (lines.length !== expected.length) throw Error('Incomplete Gemini modality tariff: ' + label);
+  return expected.map((pattern, index) => usd(lines[index], pattern));
+}
+
+function imageTextTariffReference(sectionText, sections, modelId) {
+  const parts = sectionText.split('Text input and output is priced the same as');
+  if (parts.length !== 2) throw Error('Missing or ambiguous Gemini image text tariff reference');
+  const reference =
+    /^\s+\[[^\[\]]+\]\(\/docs\/pricing#(gemini-[a-z0-9]+(?:[.-][a-z0-9]+)*)\)\.(?=\s|$)/.exec(
+      parts[1],
+    )?.[1];
+  if (!reference || reference === modelId)
+    throw Error('Invalid Gemini image text tariff reference');
+  const anchor = '{% id="' + reference + '" %}';
+  const destination = sections.filter((section) => section.split('\n', 1)[0].includes(anchor));
+  if (destination.length !== 1)
+    throw Error('Missing or ambiguous Gemini image text tariff reference target: ' + reference);
+  return reference;
+}
+
+function mediaTariff(modelId, sectionText, sections) {
+  const rows = paidRows(sectionText, '1M tokens');
+  const inputRow = /^Input price$/;
+  const outputRow = /^Output price(?: \(including thinking tokens\))?$/;
+  let sourcePrice;
+  let conditions;
+  if (modelId === 'gemini-2.5-flash-image') {
+    const textOutputTariffReference = imageTextTariffReference(sectionText, sections, modelId);
+    const [input] = modalityRates(rows, inputRow, [/^\$(\d+(?:\.\d+)?) \(text \/ image\)$/]);
+    const [perImage] = modalityRates(rows, outputRow, [
+      /^\$(\d+(?:\.\d+)?) per image\{% sup %\}\*\{% \/sup %\}$/,
+    ]);
+    const image =
+      /Image output is priced at \$(\d+(?:\.\d+)?) per 1,000,000 tokens\. Output\s+images up to (\d+)x(\d+)px consume (\d+) tokens/.exec(
+        sectionText,
+      );
+    if (!image) throw Error('Missing Gemini image output token equivalence');
+    sourcePrice = { input, input_image: input, output_image: Number(image[1]) };
+    conditions = {
+      imageEquivalent: {
+        amount: perImage,
+        currency,
+        unit: 'per_image',
+        maximumWidth: Number(image[2]),
+        maximumHeight: Number(image[3]),
+        outputTokens: Number(image[4]),
+      },
+      textOutputTariffReference,
+    };
+  } else if (modelId === 'gemini-3.1-flash-live-preview') {
+    const [input, inputAudio, inputMedia] = modalityRates(rows, inputRow, [
+      /^\$(\d+(?:\.\d+)?) \(text\)$/,
+      /^\$(\d+(?:\.\d+)?) or \$[\d.]+\/min \(audio\)$/,
+      /^\$(\d+(?:\.\d+)?) or \$[\d.]+\/min \(image\/video\)$/,
+    ]);
+    const [output, outputAudio] = modalityRates(rows, outputRow, [
+      /^\$(\d+(?:\.\d+)?) \(text\)$/,
+      /^\$(\d+(?:\.\d+)?) or \$[\d.]+\/min \(audio\)$/,
+    ]);
+    sourcePrice = {
+      input,
+      input_audio: inputAudio,
+      input_image: inputMedia,
+      output,
+      output_audio: outputAudio,
+    };
+    conditions = { videoInput: { amount: inputMedia, currency, unit: 'per_million_tokens' } };
+  } else {
+    sourcePrice = {
+      input: usd(rowCost(rows, /^Text input price$/)),
+      input_image: usd(
+        rowCost(rows, /^Image input price$/),
+        /^\$(\d+(?:\.\d+)?) \(\$[\d.]+ per image\)$/,
+      ),
+      input_audio: usd(
+        rowCost(rows, /^Audio input price$/),
+        /^\$(\d+(?:\.\d+)?) \(\$[\d.]+ per second\)$/,
+      ),
+    };
+    const amount = usd(
+      rowCost(rows, /^Video input price$/),
+      /^\$(\d+(?:\.\d+)?) \(\$[\d.]+ per frame\)$/,
+    );
+    conditions = {
+      output: 'embeddings',
+      videoInput: { amount, currency, unit: 'per_million_tokens' },
+    };
+  }
+  return { sourcePrice, conditions, required: Object.keys(sourcePrice) };
+}
+
 function modelPriceSections(sections, modelId) {
   const key = 'id="' + modelId + '"';
   const explicitLink = new RegExp('\\[`' + escaped(modelId) + '`\\]\\(/docs/models/');
@@ -339,6 +433,8 @@ export function standardTariffs(text, checkedAt) {
           ? { durationSeconds: song.durationSeconds }
           : { fullSong: true },
       };
+    } else if (Object.hasOwn(mediaReferences, priceModelId)) {
+      tariff = mediaTariff(priceModelId, matches[0], sections);
     } else {
       tariff = plainPrices(paidRows(matches[0], '1M tokens'), priceModelId, checkedAt);
     }

@@ -43,3 +43,13 @@ Sakana 的模型文档将 `fugu-ultra` 映射到 v2.0，将 `fugu-ultra-20260615
 Upstage 官方价格卡仍列两条旧 Solar Pro，且将精确别名写在卡片链接中。两者历史原价均为输入 0.15、缓存输入 0.015、输出 0.60 USD/百万 Token，2026-10-30（韩国时间）终止服务。两条以 `unsupported` 记录历史价和终止日期，未生成候选。价格页 11 月 18 日和 19 日的核价证据 SHA-256 均为 `7ff062961d52a3183dd821824d56ed58b5c440b6e7993ec49985f2f5b41461d0`。[Upstage API 价目](https://www.upstage.ai/pricing/api) · [官方模型历史](https://console.upstage.ai/docs/models/history)
 
 官方 xAI 价表将 Grok 4.7 Fast 限于 Cursor 和 Grok Build，费率按独立通道计划结算。公开 API 表仍无 `grok-4.7-build-fast` 精确 ID 和适用费率。MiniMax 国际旧系发布材料仍可提供部分历史费率，实际公开价表跳转到现行页后未返回所选旧版的完整缓存与端点条款。Sakana v1.0 精确费率、Gemini 旧请求 ID 的计费条款，以及多组已退役 Mistral 模型的独立历史费率仍待证。[xAI 官方定价](https://docs.x.ai/developers/pricing) · [MiniMax M2.5 发布公告](https://www.minimax.io/news/MiniMax-m25)
+
+## 已选价目复核
+
+以 PR #57 的 62 条已选核查失败或缺适配器价目为固定复核范围。国外 51 条中，有 27 条新增官方报价或计费参考，另有 24 条仍失败或缺适配器。[逐条矩阵](CNY-FOREIGN-COVERAGE.tsv)
+
+- **Mistral 15 条参考。** 13 条从官方型号卡读取精确请求 ID、输入输出 USD 和退役日期。GLM 5.2 两个 ID 共用官方明确列出的三项收费。缺少缓存价的旧卡保留原字段缺口。Mistral Large 3 与 Medium 3.5 的卡片列 2027-04-30 退役，当前无法从 Standard 价表独立确认完整条件，因此仍是参考。Voxtral Small 的版本和别名使用同一官方型号卡，标准价为文本 USD 0.10 输入、0.40 输出每百万 Token，音频 USD 0.004 输入、0.0004 缓存输入每分钟。两个计量单位分别保留。其余四个 Mistral 已选 ID 缺精确收费映射。Pixtral 的历史变更日志提到短名，官方价目卡仅给版本 `pixtral-12b-2409`。[官方型号与生命周期](https://docs.mistral.ai/models) · [Voxtral Small 型号卡](https://docs.mistral.ai/models/voxtral-small-25-07)
+- **OpenAI 9 条参考。** 八个已下线型号由各自官方型号页提供历史 USD，缓存仅在明确标价时记录。Realtime 2.1 保留文本、音频及图片模态，含独立 USD 0.40/百万 Token 音频缓存输入。三条 GPT-4o 快照记录官方退役状态和时点，快照专属 Standard 费率仍待证。另有 Codex-Spark 的账户订阅试用范围，以及两条 Daybreak 别名的独立计划和账户适用条件待核，常规 Standard 表不能验证这三条当前费率。[OpenAI API 价目](https://developers.openai.com/api/docs/pricing) · [下线公告](https://developers.openai.com/api/docs/deprecations) · [Codex-Spark 发布资料](https://openai.com/index/introducing-gpt-5-3-codex-spark/)
+- **Gemini 3 条参考。** Gemini 2.5 Flash Image 的 Standard 图片输出保留官方 USD 30/百万 Token，以及 1,290 Token 约 USD 0.039 的适用尺寸。Gemini 3.1 Flash Live Preview 和 Gemini Embedding 2 保留独立视频输入价。两个 Deep Research Preview ID 采用代理底层模型、循环中间 Token 和工具用量的计价规则。另有两个已停用预览 ID 欠独立历史价，三条滚动别名和两条 Gemma 4 欠精确 Developer API 付费费率。[Gemini Developer API 价目](https://aistudio.google.com/docs/pricing) · [官方退役记录](https://aistudio.google.com/docs/deprecations)
+
+这些参考价不进入改价候选。剩余国外价目中另有 Alibaba 新加坡旧实时翻译、两个 Sakana 版本、xAI Fast 和 Z.AI Turbo，分别在矩阵保留端点或适用条款的缺口。

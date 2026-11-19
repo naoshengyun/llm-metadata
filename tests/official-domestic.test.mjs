@@ -593,3 +593,34 @@ test('Kimi China Batch rejects missing amount fields and an unexpected table hea
   assert.equal(resultFor(translated, id).status, 'failed');
   assert.match(resultFor(translated, id).reason, /Unexpected Kimi Batch tariff headers/);
 });
+
+test('MiniMax M2 launch evidence preserves exact original CNY without inventing cache rates', async () => {
+  const id = 'upstream:minimax-cn:MiniMax-M2:CNY';
+  const fixture = gunzipSync(
+    readFileSync(
+      new URL(
+        './fixtures/official-check/domestic/minimax-m2-launch-2026-11-19.gz',
+        import.meta.url,
+      ),
+    ),
+  );
+  const run = (body) =>
+    checkOfficialPrices({
+      baseline,
+      attemptedAt,
+      getResponse: async ({ id, url }) => {
+        if (id !== 'minimax-m2-cn-launch') throw Error('Outside MiniMax launch fixture scope');
+        return { url, body, obtainedAt: attemptedAt };
+      },
+    });
+  const report = await run(fixture);
+  const price = resultFor(report, id);
+  assert.equal(price.status, 'unsupported', price.reason);
+  assert.equal(price.selected, true);
+  assert.deepEqual(price.observed.sourcePrice, { input: 2.1, output: 8.4 });
+  assert.deepEqual(price.observed.cnyCost, price.observed.sourcePrice);
+  assert.equal(price.observed.conditions.cacheRatesUnverified, true);
+  assert.ok(!report.changes.some((row) => row.id === id));
+  const edited = await run(Buffer.from(fixture.toString().replaceAll('¥2.1 RMB', '$2.1 USD')));
+  assert.equal(resultFor(edited, id).status, 'failed');
+});
