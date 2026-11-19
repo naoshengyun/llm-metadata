@@ -86,3 +86,9 @@
 方舟第九批公告确认 `doubao-seed-1-6-251015`、`doubao-seed-1-6-flash-250828`、`doubao-seed-1-6-vision-250815` 于 2026-09-21 14:00（北京时间）下线。未迁移接入点的官方替代版本分别为 Seed 2.0 Lite LTS、Seed 2.0 Mini LTS、Seed 2.0 Lite LTS。11 月 19 日回读的公告原始响应 SHA-256 `2e2a34e6133302829f1c1ec0342d99abcbdd5ecbad72149c59b963f043192afc`。同次回读的现行价表没有列出这三个原版本。接入点迁移和需审查的现有上游选价分别记录。[方舟下线公告](https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh) · [方舟现行价表](https://docs.volcengine.com/docs/ark/model-pricing?lang=zh)
 
 MiniMax 发布公告给出原 M2 的历史 CNY 输入 2.10、输出 8.40 元/百万 Token。另一个官方公告给出了 `MiniMax-M2-Stable` 的缓存读取价，适用的是该具名模型。当前仍缺本矩阵所选七个旧 M2 系列 ID 在中国 Anthropic 兼容端点适用的完整人民币价格与缓存计费。智谱旧 ID 和北京百炼部分旧型号的精确收费条件仍待证。[MiniMax M2 发布公告](https://www.minimax.io/news/minimax-m2)
+
+## 已选价目复核
+
+PR #57 追踪的 62 条已选缺项中有 11 条属国内。公开回读了 MiniMax M2 官方发布公告，核价入口可重复提取每百万 Token 输入 2.10、输出 8.40 的原始人民币报价。公告说明按量 API 的限时试用和挂牌金额，公开资料仍缺这条选价在 Anthropic 兼容端点的缓存读写价及 TTL。核价标记为参考，不生成改价候选。[MiniMax M2 发布公告](https://www.minimax.io/news/minimax-m2)
+
+六条国内 M2.1、M2.5、M2.7 标准或高速型号逐条核对了公开身份与缓存说明。已有发布资料能确认部分速度档或自动缓存，未取得适用中国兼容端点的完整人民币读写费。剩余国内 10 条为上述六条、三个方舟已下线旧版本和一个智谱旧型号，保留在 [逐条矩阵](CNY-DOMESTIC-COVERAGE.tsv)。[MiniMax M2.1 发布说明](https://www.minimax.cn/news/minimax-m21) · [M2.5 国内模型页](https://www.minimax.cn/models/text) · [M2.7 国内模型页](https://www.minimax.cn/models/text/m27)

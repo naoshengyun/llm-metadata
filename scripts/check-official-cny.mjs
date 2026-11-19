@@ -59,12 +59,13 @@ function readBaseline(directory) {
 
 async function loadAdapters() {
   const directory = new URL('./official-sources/', import.meta.url);
-  return Promise.all(
+  const sources = await Promise.all(
     readdirSync(directory)
       .filter((name) => name.endsWith('.mjs'))
       .sort()
       .map(async (name) => (await import(new URL(name, directory))).adapter),
   );
+  return sources.flat();
 }
 
 function httpsUrl(raw) {
