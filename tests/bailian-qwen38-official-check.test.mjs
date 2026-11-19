@@ -60,4 +60,60 @@ test('Qwen3.8 cards verify both cache modes and original regional currencies', a
   );
   assert.equal(incomplete.results.find(({ id }) => id === cnId).status, 'failed');
   assert.deepEqual(incomplete.changes, []);
+
+  const cnFlashSource = 'bailian-cny-qwen3-8-flash';
+  const flashCharges = (report) =>
+    report.results.filter(({ sourceId }) => sourceId === cnFlashSource);
+
+  await t.test('rejects additional charges in the regional price table', async () => {
+    const lastRow =
+      '<td><p>显式缓存命中</p></td><td><p>0.1</p></td><td><p>每百万tokens</p></td></tr>';
+    const storage = '<tr><td>缓存存储</td><td>0.5</td><td>每百万tokens/小时</td></tr>';
+    const report = await run((body, id) =>
+      id === cnFlashSource ? replaceEvidence(body, lastRow, lastRow + storage) : body,
+    );
+    assert.deepEqual(
+      flashCharges(report).map(({ status }) => status),
+      ['failed', 'failed'],
+    );
+    assert.deepEqual(report.changes, []);
+  });
+
+  await t.test('rejects implicit cache creation premiums', async () => {
+    const report = await run((body, id) =>
+      id.endsWith('--cache')
+        ? replaceEvidence(body, '输入 Token 单价的100%', '输入 Token 单价的150%')
+        : body,
+    );
+    const scoped = report.results.filter(({ sourceId }) => sourceId?.startsWith('bailian-'));
+    assert.equal(scoped.length, 8);
+    assert.ok(scoped.every(({ status }) => status === 'failed'));
+    assert.deepEqual(report.changes, []);
+  });
+
+  await t.test('rejects an unrecognized effective date in the shared price preface', async () => {
+    const report = await run((body, id) => {
+      if (id !== cnFlashSource) return body;
+      const pricePreface = '查看活动优惠。\n\n<Tabs>';
+      return replaceEvidence(
+        replaceEvidence(
+          body,
+          pricePreface,
+          '查看活动优惠。\n\n以下价格自北京时间2026年12月1日00:00起生效。\n\n<Tabs>',
+        ),
+        '>0.8<',
+        '>0.9<',
+      );
+    });
+    assert.deepEqual(
+      flashCharges(report).map(({ status }) => status),
+      ['failed', 'failed'],
+    );
+    assert.deepEqual(report.changes, []);
+  });
 });
+
+function replaceEvidence(body, before, after) {
+  assert.ok(body.includes(before), before);
+  return body.replace(before, after);
+}
