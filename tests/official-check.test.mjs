@@ -398,11 +398,12 @@ test('official automation stages only effective lifecycle events with explicit e
     required: ['input', 'output', 'cache_read', 'cache_write', 'cache_write_1h'],
     conditions: target.baselineConditions,
   };
-  function observe(parsed, candidate = baseline, at = '2026-11-20T08:00:00Z') {
+  function observe(parsed, candidate = baseline, at = '2026-11-20T08:00:00Z', previous) {
     const body = Buffer.from(JSON.stringify(parsed));
     return check(body, {
       baseline: candidate,
       adapters: [source],
+      previous,
       attemptedAt: at,
       getResponse: async () => ({ body, url, obtainedAt: at }),
     });
@@ -426,16 +427,68 @@ test('official automation stages only effective lifecycle events with explicit e
     prepareOfficialChanges(inactiveSnapshot, reappeared, withdrawal).plan.changes.length,
     0,
   );
-  const restored = await observe(
+  const notice = 'The Standard tariff for kimi-k3.1-pro is restored.';
+  const returned = { ...row, restoration: { statement: notice } };
+  const rejected = await observe(returned);
+  assert.equal(rejected.results.find(({ id }) => id === pro).status, 'failed');
+
+  const restored = await observe(returned, inactive, next);
+  const restoration = prepareOfficialChanges(inactiveSnapshot, restored, withdrawal);
+  const event = restoration.policy.lifecycle['kimi-k3.1-pro'].at(-1);
+  assert.equal(event.state, 'restored');
+  assert.equal(restoration.selection.selection['kimi-k3.1-pro'], pro);
+  const unreviewed = structuredClone(restoration);
+  const forged = unreviewed.catalog.records.find(({ id }) => id === pro);
+  forged.restorationEvidence = event.evidence;
+  forged.source.sha256 = 'a'.repeat(64);
+  assert.throws(
+    () => buildProposal(unreviewed, inactiveSnapshot, 'unreviewed-restore'),
+    /Restored quote needs matching new official evidence/,
+  );
+
+  const active = buildProposal(restoration, inactiveSnapshot, 'automatic-restored');
+  const activeSnapshot = publishedSnapshot(active, 'automatic-lifecycle-active');
+  const sameTime = '2026-11-22T08:00:00Z';
+  const same = await observe(returned, active, sameTime);
+  const result = (report) => report.results.find(({ id }) => id === pro);
+  assert.equal(result(same).status, 'unchanged', result(same).reason);
+  assert.equal(result(same).latestSuccessfulAt, sameTime);
+  assert.equal(prepareOfficialChanges(activeSnapshot, same, restoration).plan.changes.length, 0);
+
+  const changedTime = '2026-11-23T08:00:00Z';
+  const updated = { ...returned, sourcePrice: { ...row.sourcePrice, output: 69 } };
+  const changed = await observe(updated, active, changedTime, same);
+  assert.equal(result(changed).status, 'changed', result(changed).reason);
+  assert.equal(result(changed).latestSuccessfulAt, changedTime);
+  assert.equal(result(changed).difference.amounts.after.output, 69);
+  const repriced = prepareOfficialChanges(activeSnapshot, changed, restoration);
+  assert.deepEqual(repriced.policy.lifecycle, restoration.policy.lifecycle);
+  const after = buildProposal(repriced, activeSnapshot, 'automatic-restored-reprice');
+  assert.match(
+    JSON.parse(readFileSync(join(after, 'api/newapi/ratio_config.json'))).data.billing_expr[
+      'kimi-k3.1-pro'
+    ],
+    /c \* 69/,
+  );
+  const standalone = join(directory, 'automatic-restored-standalone');
+  execFileSync(process.execPath, [
+    'scripts/build-unified-cny.mjs',
+    standalone,
+    ...['policy', 'catalog', 'selection'].map((field) =>
+      join(directory, 'automatic-restored-reprice-' + field + '.json'),
+    ),
+  ]);
+
+  const invalid = await observe(
     {
       ...row,
-      restoration: { statement: 'The Standard tariff for kimi-k3.1-pro is restored.' },
+      restoration: { statement: 'A different restoration announcement.' },
     },
-    inactive,
-    next,
+    active,
+    '2026-11-24T08:00:00Z',
+    changed,
   );
-  const restoration = prepareOfficialChanges(inactiveSnapshot, restored, withdrawal);
-  assert.equal(restoration.policy.lifecycle['kimi-k3.1-pro'].at(-1).state, 'restored');
-  assert.equal(restoration.selection.selection['kimi-k3.1-pro'], pro);
-  buildProposal(restoration, inactiveSnapshot, 'automatic-restored');
+  assert.equal(result(invalid).status, 'failed');
+  assert.equal(result(invalid).latestSuccessfulAt, changedTime);
+  assert.equal(invalid.changes.length, 0);
 });

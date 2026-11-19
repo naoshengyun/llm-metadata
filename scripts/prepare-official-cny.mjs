@@ -181,7 +181,17 @@ export function prepareOfficialChanges(published, report, inputs) {
         assert.equal(record.id, existing.id, 'An existing official price cannot change identity');
       if (!existing && records.has(record.id))
         throw Error('Official quote collides with an existing record: ' + record.id);
-      records.set(record.id, record);
+      const reviewedRestoration = published.policy.lifecycle[nativeKey]?.at(-1);
+      if (
+        selected &&
+        reviewedRestoration?.state === 'restored' &&
+        reviewedRestoration.quoteId === record.id
+      ) {
+        // Keep the lifecycle evidence when a later price has a new response hash.
+        records.set(record.id, { ...record, restorationEvidence: reviewedRestoration.evidence });
+      } else {
+        records.set(record.id, record);
+      }
       if (selected || status === 'restoration') selection.selection[nativeKey] = record.id;
     }
     if (selected || lifecycle) {

@@ -11,6 +11,9 @@ const api = '/repos/' + repo;
 const url = 'https://github.com/' + repo;
 const base = 'naoshengyun';
 const bot = 'naoshengyun-cny-pr-codex[bot]';
+const actionsBot = 'github-actions[bot]';
+const actionsBotId = 41898282;
+const actionsBotEmail = '41898282+github-actions[bot]@users.noreply.github.com';
 const ref = (name) => 'refs/heads/' + name;
 const inputPaths = new Set([
   'data/cny/official-catalog.json',
@@ -56,6 +59,47 @@ function reviewBody(plan, runId) {
   }
   if (omitted) lines.push('', '另有 ' + omitted + ' 项变更，请在完整运行产物核对。');
   return lines.join('\n');
+}
+
+function isActionsCommitIdentity(account, identity) {
+  return (
+    account?.type === 'Bot' &&
+    account.login === actionsBot &&
+    account.id === actionsBotId &&
+    identity?.name === actionsBot &&
+    identity.email === actionsBotEmail
+  );
+}
+
+async function checkInterruptedCandidate(github, current, parent, digest) {
+  const existing = await github('read interrupted official proposal', '/commits/' + current);
+  const previousParent = existing.parents?.[0]?.sha;
+  assert.ok(
+    existing.sha === current &&
+      existing.commit?.message?.trimEnd() ===
+        'Review current official prices\n\n' + marker(digest) &&
+      isActionsCommitIdentity(existing.author, existing.commit.author) &&
+      isActionsCommitIdentity(existing.committer, existing.commit.committer) &&
+      existing.parents.length === 1 &&
+      /^[a-f0-9]{40}$/.test(previousParent ?? '') &&
+      existing.files?.length > 0 &&
+      existing.files.every(
+        ({ filename, status }) => status === 'modified' && inputPaths.has(filename),
+      ),
+    'Existing official proposal ref does not match this review',
+  );
+  if (previousParent !== parent) {
+    const ancestry = await github(
+      'verify interrupted proposal parent is on the business branch',
+      '/compare/' + previousParent + '...' + parent + '?per_page=1',
+    );
+    assert.ok(
+      ancestry.status === 'ahead' &&
+        ancestry.base_commit?.sha === previousParent &&
+        ancestry.merge_base_commit?.sha === previousParent,
+      'Existing official proposal parent is not an ancestor of the current business branch',
+    );
+  }
 }
 
 export async function publishOfficialProposal(
@@ -163,13 +207,7 @@ export async function publishOfficialProposal(
     current = await getRef(head);
     assert.equal(current, commit);
   } else if (current !== commit) {
-    const existing = await github('read interrupted official proposal', '/git/commits/' + current);
-    assert.ok(
-      existing.message?.split('\n').includes(marker(plan.digest)) &&
-        existing.parents?.length === 1 &&
-        existing.parents[0].sha === parent,
-      'Existing official proposal ref does not match this review',
-    );
+    await checkInterruptedCandidate(github, current, parent, plan.digest);
     const alreadyOpen = await inspect();
     if (alreadyOpen) return link(alreadyOpen);
     await checkBase();

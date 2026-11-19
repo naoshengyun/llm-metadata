@@ -19,6 +19,30 @@ const env = {
 const reply = (body, status = 200) =>
   new Response(body === null ? null : JSON.stringify(body), { status });
 
+const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const appEnv = {
+  ...env,
+  CNY_UPSTREAM_PR_APP_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }),
+};
+
+function appResponse(path, method, body) {
+  if (path === '/repos/' + repo + '/installation')
+    return reply({ id: 512, app_id: 5826118, account: { login: 'naoshengyun' } });
+  if (path === '/app/installations/512/access_tokens') {
+    assert.deepEqual(body, {
+      repositories: ['llm-metadata'],
+      permissions: { pull_requests: 'write' },
+    });
+    return reply({
+      token: 'test-app-token',
+      permissions: { pull_requests: 'write', metadata: 'read' },
+    });
+  }
+  if (path === '/installation/repositories')
+    return reply({ total_count: 1, repositories: [repository] });
+  if (path === '/installation/token' && method === 'DELETE') return reply(null, 204);
+}
+
 test('an App price review is reused until a previously merged change genuinely recurs', async () => {
   const head = 'codex/official-prices/' + digest;
   const refs = new Map();
@@ -45,21 +69,8 @@ test('an App price review is reused until a previously merged change genuinely r
       return reply(pulls.has(name) ? [pulls.get(name)] : []);
     }
     if (path === api + '/pulls/99') return reply(pulls.get(head));
-    if (path === api + '/installation')
-      return reply({ id: 512, app_id: 5826118, account: { login: 'naoshengyun' } });
-    if (path === '/app/installations/512/access_tokens') {
-      assert.deepEqual(body, {
-        repositories: ['llm-metadata'],
-        permissions: { pull_requests: 'write' },
-      });
-      return reply({
-        token: 'test-app-token',
-        permissions: { pull_requests: 'write', metadata: 'read' },
-      });
-    }
-    if (path === '/installation/repositories')
-      return reply({ total_count: 1, repositories: [repository] });
-    if (path === '/installation/token' && method === 'DELETE') return reply(null, 204);
+    const app = appResponse(path, method, body);
+    if (app) return app;
     if (path === api + '/pulls' && method === 'POST') {
       assert.equal(options.headers.Authorization, 'Bearer test-app-token');
       assert.equal(body.head, creates === 0 ? head : head + '-after-99');
@@ -93,15 +104,7 @@ test('an App price review is reused until a previously merged change genuinely r
     refs.set(name, revision);
     return '';
   };
-  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-  const options = {
-    fetchApi,
-    execGit,
-    env: {
-      ...env,
-      CNY_UPSTREAM_PR_APP_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }),
-    },
-  };
+  const options = { fetchApi, execGit, env: appEnv };
   const plan = {
     version: { sourceSha: base, candidateId: 'd'.repeat(64) },
     digest,
@@ -125,6 +128,120 @@ test('an App price review is reused until a previously merged change genuinely r
   assert.equal((await publishOfficialProposal(plan, options)).number, 100);
   assert.equal(creates, 2);
   assert.equal(pushes, 2);
+});
+
+test('an interrupted App proposal can recover across business advancement without overwriting manual work', async () => {
+  const head = 'codex/official-prices/' + digest;
+  const candidateRef = 'refs/heads/' + head;
+  const nextBase = 'd'.repeat(40);
+  const nextCommit = 'e'.repeat(40);
+  const manual = 'f'.repeat(40);
+  const api = '/repos/' + repo;
+  const bot = { login: 'github-actions[bot]', type: 'Bot', id: 41898282 };
+  const rawBot = {
+    name: bot.login,
+    email: '41898282+github-actions[bot]@users.noreply.github.com',
+  };
+  let business = base;
+  let candidate = revision;
+  let remote = null;
+  let pull;
+  let createAttempts = 0;
+  let pushAttempts = 0;
+  let compareAttempts = 0;
+  const fetchApi = async (raw, options) => {
+    const path = new URL(raw).pathname;
+    const { method } = options;
+    const body = options.body && JSON.parse(options.body);
+    if (path === api + '/git/ref/heads/naoshengyun')
+      return reply({ ref: 'refs/heads/naoshengyun', object: { type: 'commit', sha: business } });
+    if (path === api + '/git/ref/heads/' + head)
+      return remote
+        ? reply({ ref: candidateRef, object: { type: 'commit', sha: remote } })
+        : reply({}, 404);
+    if (path === api + '/pulls' && method === 'GET') return reply(pull ? [pull] : []);
+    if (path === api + '/commits/' + remote) {
+      return reply({
+        sha: remote,
+        commit: {
+          author: rawBot,
+          committer: rawBot,
+          message: 'Review current official prices\n\nCNY official semantic change: ' + digest,
+        },
+        author: remote === manual ? { login: 'maintainer', type: 'User', id: 12 } : bot,
+        committer: bot,
+        parents: [{ sha: base }],
+        files: [{ filename: 'data/cny/official-catalog.json', status: 'modified' }],
+      });
+    }
+    if (path === api + '/compare/' + base + '...' + nextBase) {
+      compareAttempts++;
+      return reply({
+        status: 'ahead',
+        base_commit: { sha: base },
+        merge_base_commit: { sha: base },
+      });
+    }
+    const app = appResponse(path, method, body);
+    if (app) return app;
+    if (path === api + '/pulls' && method === 'POST') {
+      assert.equal(options.headers.Authorization, 'Bearer test-app-token');
+      assert.equal(body.head, head);
+      if (++createAttempts === 1) return reply({}, 503);
+      assert.equal(remote, nextCommit);
+      pull = {
+        state: 'open',
+        number: 99,
+        html_url: 'https://github.com/' + repo + '/pull/99',
+        head: { ref: head, sha: remote, repo: repository },
+        base: { ref: 'naoshengyun', repo: repository },
+        user: { login: 'naoshengyun-cny-pr-codex[bot]', type: 'Bot' },
+        body: body.body,
+      };
+      return reply(pull, 201);
+    }
+    throw Error('Unexpected GitHub operation: ' + method + ' ' + path);
+  };
+  const execGit = (_, args) => {
+    if (args[0] === 'rev-list') return candidate + ' ' + business + '\n';
+    if (args[0] === 'diff') return 'data/cny/official-catalog.json\n';
+    assert.ok(args.includes('push'));
+    assert.ok(args.includes('--force-with-lease=' + candidateRef + ':' + (remote ?? '')));
+    assert.ok(args.includes(candidate + ':' + candidateRef));
+    pushAttempts++;
+    remote = candidate;
+    return '';
+  };
+  const propose = () =>
+    publishOfficialProposal(
+      {
+        version: { sourceSha: business, candidateId: digest },
+        digest,
+        attemptedAt: '2026-11-19T12:00:00Z',
+        changes: [{ id: 'quote', nativeKey: 'model', status: 'changed' }],
+      },
+      { env: { ...appEnv, GITHUB_SHA: business }, fetchApi, execGit },
+    );
+
+  await assert.rejects(propose, /create official price review PR failed/);
+  assert.equal(remote, revision);
+  assert.equal(pull, undefined);
+
+  business = nextBase;
+  candidate = nextCommit;
+  remote = manual;
+  await assert.rejects(propose, /Existing official proposal ref does not match this review/);
+  assert.equal(remote, manual);
+  assert.equal(pushAttempts, 1);
+  assert.equal(createAttempts, 1);
+
+  remote = revision;
+  assert.equal((await propose()).status, 'opened');
+  assert.equal(remote, nextCommit);
+  assert.equal((await propose()).status, 'reused');
+  assert.equal(pushAttempts, 2);
+  assert.equal(createAttempts, 2);
+  assert.equal(compareAttempts, 1);
 });
 
 test('status updates append to the isolated branch and refuse an older attempt', async () => {
