@@ -19,10 +19,10 @@ const env = {
 const reply = (body, status = 200) =>
   new Response(body === null ? null : JSON.stringify(body), { status });
 
-test('the first observed change opens an App PR and a repeat reuses it', async () => {
+test('an App price review is reused until a previously merged change genuinely recurs', async () => {
   const head = 'codex/official-prices/' + digest;
-  let remote = null;
-  let pull;
+  const refs = new Map();
+  const pulls = new Map();
   let creates = 0;
   let pushes = 0;
   const fetchApi = async (raw, options) => {
@@ -33,12 +33,18 @@ test('the first observed change opens an App PR and a repeat reuses it', async (
     if (path === api + '/git/ref/heads/naoshengyun') {
       return reply({ ref: 'refs/heads/naoshengyun', object: { type: 'commit', sha: base } });
     }
-    if (path === api + '/git/ref/heads/' + head) {
-      return remote
-        ? reply({ ref: 'refs/heads/' + head, object: { type: 'commit', sha: remote } })
+    if (path.startsWith(api + '/git/ref/heads/' + head)) {
+      const name = path.slice((api + '/git/ref/heads/').length);
+      const sha = refs.get(name);
+      return sha
+        ? reply({ ref: 'refs/heads/' + name, object: { type: 'commit', sha } })
         : reply({}, 404);
     }
-    if (path === api + '/pulls' && method === 'GET') return reply(pull ? [pull] : []);
+    if (path === api + '/pulls' && method === 'GET') {
+      const name = new URL(raw).searchParams.get('head').split(':')[1];
+      return reply(pulls.has(name) ? [pulls.get(name)] : []);
+    }
+    if (path === api + '/pulls/99') return reply(pulls.get(head));
     if (path === api + '/installation')
       return reply({ id: 512, app_id: 5826118, account: { login: 'naoshengyun' } });
     if (path === '/app/installations/512/access_tokens') {
@@ -56,20 +62,22 @@ test('the first observed change opens an App PR and a repeat reuses it', async (
     if (path === '/installation/token' && method === 'DELETE') return reply(null, 204);
     if (path === api + '/pulls' && method === 'POST') {
       assert.equal(options.headers.Authorization, 'Bearer test-app-token');
-      assert.equal(body.head, head);
+      assert.equal(body.head, creates === 0 ? head : head + '-after-99');
       assert.equal(body.base, 'naoshengyun');
       assert.match(body.body, /"sourcePrice":/);
       assert.match(body.body, /https:\/\/github.com\/naoshengyun\/llm-metadata\/actions\/runs\/31/);
       creates++;
-      pull = {
+      const number = 98 + creates;
+      const pull = {
         state: 'open',
-        number: 99,
-        html_url: 'https://github.com/' + repo + '/pull/99',
-        head: { ref: head, sha: remote, repo: repository },
+        number,
+        html_url: 'https://github.com/' + repo + '/pull/' + number,
+        head: { ref: body.head, sha: refs.get(body.head), repo: repository },
         base: { ref: 'naoshengyun', repo: repository },
         user: { login: 'naoshengyun-cny-pr-codex[bot]', type: 'Bot' },
         body: body.body,
       };
+      pulls.set(body.head, pull);
       return reply(pull, 201);
     }
     throw Error('Unexpected fixture operation: ' + method + ' ' + path);
@@ -77,11 +85,12 @@ test('the first observed change opens an App PR and a repeat reuses it', async (
   const execGit = (_, args) => {
     if (args[0] === 'rev-list') return revision + ' ' + base + '\n';
     if (args[0] === 'diff') return 'data/cny/official-catalog.json\n';
+    const name = pushes === 0 ? head : head + '-after-99';
     assert.ok(
-      args.includes('push') && args.includes('--force-with-lease=refs/heads/' + head + ':'),
+      args.includes('push') && args.includes('--force-with-lease=refs/heads/' + name + ':'),
     );
     pushes++;
-    remote = revision;
+    refs.set(name, revision);
     return '';
   };
   const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -109,8 +118,13 @@ test('the first observed change opens an App PR and a repeat reuses it', async (
   };
   assert.equal((await publishOfficialProposal(plan, options)).status, 'opened');
   assert.equal((await publishOfficialProposal(plan, options)).status, 'reused');
-  assert.equal(creates, 1);
-  assert.equal(pushes, 1);
+  pulls.get(head).state = 'closed';
+  assert.equal((await publishOfficialProposal(plan, options)).status, 'closed');
+  pulls.get(head).merged_at = '2026-11-20T12:00:00Z';
+  assert.equal((await publishOfficialProposal(plan, options)).number, 100);
+  assert.equal((await publishOfficialProposal(plan, options)).number, 100);
+  assert.equal(creates, 2);
+  assert.equal(pushes, 2);
 });
 
 test('status updates append to the isolated branch and refuse an older attempt', async () => {

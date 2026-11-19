@@ -88,7 +88,8 @@ export async function publishOfficialProposal(
     changed.length && changed.every((path) => inputPaths.has(path)),
     'Official proposal changes unexpected files',
   );
-  const head = 'codex/official-prices/' + plan.digest;
+  const headPrefix = 'codex/official-prices/' + plan.digest;
+  let head = headPrefix;
   const token = env.GH_TOKEN;
   assert.ok(
     typeof token === 'string' && /^[A-Za-z0-9._~+\/-]+={0,2}$/.test(token),
@@ -143,8 +144,18 @@ export async function publishOfficialProposal(
     };
   };
   await checkBase();
-  const prior = await inspect();
-  if (prior) return link(prior);
+  let previousNumber = 0;
+  for (let prior = await inspect(); prior; prior = await inspect()) {
+    const result = link(prior);
+    if (result.status !== 'closed') return result;
+    const details = await github('read closed price review', '/pulls/' + result.number);
+    assert.deepEqual(link(details), result);
+    if (!details.merged_at) return result;
+    // A new publication can reintroduce the earlier rate. Start a new review cycle.
+    assert.ok(result.number > previousNumber, 'Official price review history is out of order');
+    previousNumber = result.number;
+    head = headPrefix + '-after-' + result.number;
+  }
   let current = await getRef(head, true);
   if (current === null) {
     await checkBase();
