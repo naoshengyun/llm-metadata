@@ -1,0 +1,65 @@
+name: CNY review
+on:
+  pull_request:
+    branches: [naoshengyun]
+    types: [opened, reopened, synchronize, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  check:
+    name: CNY reviewed build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Require the simulated merge of the PR into the business branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-list --parents -1 HEAD)" = "$GITHUB_SHA $BASE_SHA $HEAD_SHA"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Reject a future review cutoff
+        run: node scripts/check-cny-effective-time.mjs
+      - name: Install the locked dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm --prefix web ci --ignore-scripts
+      - name: Run price and publication regressions
+        run: npm run test:cny
+      - name: Read the preceding immutable price candidate
+        if: github.repository == 'naoshengyun/llm-metadata'
+        run: |
+          node scripts/cny-pages-release.mjs snapshot https://naoshengyun.github.io/llm-metadata/ "$RUNNER_TEMP/prior" "" retain
+      - name: Build the simulated merge and fixed candidate
+        run: |
+          node scripts/build-reviewed-cny.mjs "$RUNNER_TEMP" --check-base
+          if [ -f "$RUNNER_TEMP/prior/current.json" ]; then
+            node scripts/cny-pages-release.mjs seal "$RUNNER_TEMP/site" "$RUNNER_TEMP/prior" > "$RUNNER_TEMP/publication-receipt.json"
+          fi
+      - name: Install the browser test driver
+        run: npm --prefix "$RUNNER_TEMP/browser" install --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Test the built page and the fixed HTTP JSON
+        run: |
+          node scripts/check-unified-site.mjs \
+            "$RUNNER_TEMP/site" \
+            "$RUNNER_TEMP/browser/node_modules/playwright/index.mjs" \
+            "$RUNNER_TEMP/browser-evidence"
+      - name: Upload checked file hashes and review evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-review-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/site/site-manifest.json
+            ${{ runner.temp }}/candidate/manifest.json
+            ${{ runner.temp }}/candidate/price-diff.json
+            ${{ runner.temp }}/browser-evidence
+          if-no-files-found: error
+          retention-days: 14

@@ -1,4 +1,5 @@
 /** Pure adapter. Upstream metadata stays intact; selected CNY prices have separate provenance. */
+import { groupBy } from './group-by.mjs';
 import { createHash } from 'node:crypto';
 import { buildBillingExpr } from '../.cache/cny-build/billing/expr.js';
 import { COST_FAMILIES } from '../.cache/cny-build/billing/cost-families.js';
@@ -136,7 +137,7 @@ export function adaptCatalog(source) {
     }
   const selected = {},
     exclusions = [];
-  const groups = Map.groupBy(records, (r) => r.modelId);
+  const groups = groupBy(records, (r) => r.modelId);
   for (const [id, group] of groups) {
     const nonSubscription = group.filter((r) => r.status !== 'subscription');
     const domestic = nonSubscription.filter(

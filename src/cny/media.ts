@@ -3,6 +3,7 @@ import { NATIVE_TASK_SCHEMA } from './native-task-schema.js';
 export interface TaskCharge {
   usageKey: string;
   amount?: number;
+  freeQuantity?: number;
   unit: string;
   currency: 'CNY' | 'USD';
 }
@@ -131,6 +132,18 @@ export function compileTask(quote: TaskQuote): TaskResult {
           field: field + '.currency',
           reason: 'Original CNY or USD is required',
         };
+      if (
+        charge.freeQuantity !== undefined &&
+        (usage.unit !== 'count' ||
+          !Number.isSafeInteger(charge.freeQuantity) ||
+          charge.freeQuantity < 0)
+      ) {
+        return {
+          status: 'unsupported-shape',
+          field: field + '.freeQuantity',
+          reason: 'A free quantity requires a non-negative integer count',
+        };
+      }
       currencies.add(charge.currency);
       const price = charge.amount * (charge.currency === 'USD' ? 7 : 1);
       if (!Number.isFinite(price))
@@ -154,9 +167,11 @@ export function compileTask(quote: TaskQuote): TaskResult {
           field: field + '.amount',
           reason: 'Rate overflows native usage smoke-test ceilings',
         };
-      terms.push(
-        `u(${JSON.stringify(charge.usageKey)}) * ${price}${usage.unit === 'token' ? ' / 1000000' : ''}`,
-      );
+      const observed = `u(${JSON.stringify(charge.usageKey)})`;
+      const billable = charge.freeQuantity
+        ? `(${observed} > ${charge.freeQuantity} ? ${observed} - ${charge.freeQuantity} : 0)`
+        : observed;
+      terms.push(`${billable} * ${price}${usage.unit === 'token' ? ' / 1000000' : ''}`);
     }
     for (const [key, field] of Object.entries(schema)) {
       if (

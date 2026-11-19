@@ -5,6 +5,329 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "us-minimax-minimax-h3-global-video",
+      "provider": "minimax",
+      "model": "MiniMax-H3",
+      "priceList": "MiniMax International Video API / pay-as-you-go",
+      "endpoint": "https://api.minimax.io/v2/video_generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://platform.minimax.io/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "1d4cc50a2f31017d75f01498e3c24a517a8fa4bec10a8e2af0b82970141a275f"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "inputVideoBilledAtOutputResolution": true,
+        "audioInputFree": true
+      },
+      "task": {
+        "plugin": "hailuo",
+        "model": "MiniMax-H3",
+        "tiers": [
+          {
+            "name": "2K",
+            "when": {
+              "resolution": "2K"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.13,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.13,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.04,
+                "unit": "per_count",
+                "currency": "USD",
+                "freeQuantity": 5
+              }
+            ]
+          },
+          {
+            "name": "768P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.04,
+                "unit": "per_count",
+                "currency": "USD",
+                "freeQuantity": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-imagine-video-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image",
+        "inputVideoUnit": "input-second"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video",
+        "tiers": [
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.07,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.002,
+                "unit": "per_count",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.01,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.05,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.002,
+                "unit": "per_count",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.01,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-imagine-video-1.5-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video-1.5",
+        "tiers": [
+          {
+            "name": "1080p",
+            "when": {
+              "resolution": "1080p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.25,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.14,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.08,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-xai-grok-imagine-video-1.5-lite-standard",
+      "provider": "xai",
+      "model": "grok-imagine-video-1.5-lite",
+      "priceList": "xAI API / global video generation",
+      "origin": "foreign",
+      "currency": "USD",
+      "kind": "task",
+      "source": {
+        "url": "https://docs.x.ai/developers/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "fd8531e3cc16973cd593209331aa04344f306336e60284d3ee8c16188c0dbb25"
+      },
+      "required": [],
+      "cost": {},
+      "conditions": {
+        "outputVideoUnit": "generated-second",
+        "inputImageUnit": "image"
+      },
+      "description": "Original USD for https://api.x.ai/v1/videos/generations. Rates are assigned by generated video resolution; media input charges retain their own units.",
+      "task": {
+        "plugin": "xai",
+        "model": "grok-imagine-video-1.5-lite",
+        "tiers": [
+          {
+            "name": "1080p",
+            "when": {
+              "resolution": "1080p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.14,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720p",
+            "when": {
+              "resolution": "720p"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.03,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480p",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.02,
+                "unit": "per_second",
+                "currency": "USD"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.01,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "us-anthropic-claude-fable-5-2-standard",
       "provider": "anthropic",
       "model": "claude-fable-5-2",
@@ -3560,6 +3883,2591 @@
           "setting/operation_setting/tools.go"
         ],
         "scope": "Existing GLM Chat search_std encoder/meter. Actual search invocation/billing O verification is not claimed."
+      }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-pro-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-pro",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 6,
+        "cache_read": 0.025
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-flash-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-flash",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 2,
+        "cache_read": 0.02
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-xiaomi-mimo-v2.6-pro-ultraspeed-standard",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-pro-ultraspeed",
+      "priceList": "Xiaomi MiMo China real-time pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 30,
+        "output": 60,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheWrite": "limited-time-free"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.0-flash-standard",
+      "provider": "bailing",
+      "model": "Ling-3.0-flash",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.0-flash-VL-standard",
+      "provider": "bailing",
+      "model": "Ling-3.0-flash-VL",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-bailing-Ling-3.1-flash-standard",
+      "provider": "bailing",
+      "model": "Ling-3.1-flash",
+      "priceList": "Bailing first-party RMB base tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+        "checkedAt": "2026-11-18",
+        "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.4
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party API"
+      }
+    },
+    {
+      "id": "cn-longcat-LongCat-2.0-standard",
+      "provider": "longcat",
+      "model": "LongCat-2.0",
+      "priceList": "LongCat-2.0 first-party original RMB tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0",
+        "checkedAt": "2026-11-18",
+        "sha256": "a3db027207849bb7161a17f940eee945fe06ae0cefe6be8f273bc42d0ba3de4c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 5,
+        "output": 20,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "scope": "first-party published LongCat-2.0 base tariff"
+      }
+    },
+    {
+      "id": "cn-stepfun-step-5-preview-standard",
+      "provider": "stepfun",
+      "model": "step-5-preview",
+      "priceList": "StepFun China online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3"
+      },
+      "effectiveAt": "2026-10-14T00:30:00+08:00",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 7,
+        "output": 20,
+        "cache_read": 0.7
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "legacyCacheHit": {
+          "amount": 0.35,
+          "eligibility": "Used Step 5 Preview through the pay-as-you-go API before the effective time",
+          "unit": "per_million_tokens"
+        }
+      }
+    },
+    {
+      "id": "cn-tencent-hy3-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy3",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-tencent-hy3-preview-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy3-preview",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "effectiveAt": "2026-08-31T00:00:00+08:00",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.25
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou",
+        "billedAsModel": "hy3"
+      }
+    },
+    {
+      "id": "cn-tencent-hy4-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy4",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 18,
+        "cache_read": 0.3
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-tencent-hy4-preview-standard",
+      "provider": "tencent-tokenhub",
+      "model": "hy4-preview",
+      "priceList": "TokenHub Guangzhou online pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://cloud.tencent.com/document/product/1823/130055",
+        "checkedAt": "2026-11-18",
+        "sha256": "c5ed68b39062902a451e8b478ed41e64cdedd266bff280ad454f1ee1631844db",
+        "supplemental": [
+          {
+            "url": "https://cloud.tencent.com/announce/detail/2391",
+            "sha256": "4184f8c977b8233a0f756a3c9d121473cb25c43ecb0bd2fb85f10eda0b2483a0",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 18,
+        "cache_read": 0.3
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "Guangzhou"
+      }
+    },
+    {
+      "id": "cn-minimax-MiniMax-M3-standard",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3",
+      "priceList": "MiniMax China standard original online tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 4.2,
+        "output": 16.8,
+        "cache_read": 0.84,
+        "tiers": [
+          {
+            "tier": {
+              "size": 512000
+            },
+            "input": 8.4,
+            "output": 33.6,
+            "cache_read": 1.68
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheMinimumInputTokens": 512,
+        "cachePrefixMatch": true,
+        "inputThreshold": 512000,
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "id": "cn-minimax-MiniMax-M3.1-Flash-standard",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3.1-Flash",
+      "priceList": "MiniMax China standard original online tariff",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheMinimumInputTokens": 512,
+        "cachePrefixMatch": true
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5.3-flashx-standard",
+      "provider": "zhipuai",
+      "model": "glm-5.3-flashx",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 7,
+        "cache_read": 0.57
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "1M",
+        "inputModalities": [
+          "图片",
+          "视频",
+          "文件",
+          "文本"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5.1-standard",
+      "provider": "zhipuai",
+      "model": "glm-5.1",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 24,
+        "cache_read": 1.3,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 8,
+            "output": 28,
+            "cache_read": 2
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5-standard",
+      "provider": "zhipuai",
+      "model": "glm-5",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 18,
+        "cache_read": 1,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 6,
+            "output": 22,
+            "cache_read": 1.5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-5v-turbo-standard",
+      "provider": "zhipuai",
+      "model": "glm-5v-turbo",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 5,
+        "output": 22,
+        "cache_read": 1.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 7,
+            "output": 26,
+            "cache_read": 1.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 ≥32K"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.6v-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.6v",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 2,
+            "output": 6,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 [32K, 128K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.5v-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.5v",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.4,
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 4,
+            "output": 12,
+            "cache_read": 0.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputBands": [
+          "输入长度 [0, 32K)",
+          "输入长度 [32K, 64K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-flashx-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7-flashx",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "200K"
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-flash-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7-flash",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "200K",
+        "tokenTariff": "official-free"
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.6v-flash-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.6v-flash",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "context": "—",
+        "tokenTariff": "official-free"
+      }
+    },
+    {
+      "id": "cn-minimax-MiniMax-H3-video",
+      "provider": "minimax-cn",
+      "model": "MiniMax-H3",
+      "priceList": "MiniMax China H3 video pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.minimax.cn/docs/pricing/overview.md",
+        "checkedAt": "2026-11-18",
+        "sha256": "8f43457c41e00bbd821b0b42ad534eddb92a83d58aabd64f78f94e6ed4c8e4c6",
+        "supplemental": [
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+            "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create.md",
+            "sha256": "685b347f6fbf1fdda56c350275fe52c68de05e78e9d2d63d0a8d54cf8c2ed8ac",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "unit": "per-charge",
+      "conditions": {
+        "inputVideoBilledAtOutputResolution": true,
+        "audioInputFree": true
+      },
+      "kind": "task",
+      "endpoint": "https://api.minimax.cn/v2/video_generation",
+      "task": {
+        "plugin": "hailuo",
+        "model": "MiniMax-H3",
+        "tiers": [
+          {
+            "name": "2K",
+            "when": {
+              "resolution": "2K"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.8,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.8,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.2,
+                "unit": "per_count",
+                "currency": "CNY",
+                "freeQuantity": 5
+              }
+            ]
+          },
+          {
+            "name": "768P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.5,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_video_seconds",
+                "amount": 0.5,
+                "unit": "per_second",
+                "currency": "CNY"
+              },
+              {
+                "usageKey": "input_images",
+                "amount": 0.2,
+                "unit": "per_count",
+                "currency": "CNY",
+                "freeQuantity": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.7-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.7",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "short_output.input",
+        "tiers.0.input",
+        "output",
+        "short_output.output",
+        "tiers.0.output",
+        "cache_read",
+        "short_output.cache_read",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 14,
+        "cache_read": 0.6,
+        "short_output": {
+          "maxInput": 31999,
+          "maxOutput": 199,
+          "input": 2,
+          "output": 8,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 4,
+            "output": 16,
+            "cache_read": 0.8
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputOutputBands": [
+          "输入 [0, 32K)，输出 [0, 0.2K)",
+          "输入 [0, 32K)，输出 ≥0.2K",
+          "输入 [32K, 200K)"
+        ]
+      }
+    },
+    {
+      "id": "cn-zhipu-glm-4.5-air-standard",
+      "provider": "zhipuai",
+      "model": "glm-4.5-air",
+      "priceList": "BigModel China standard API pay-as-you-go",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "01fc68749553819560c111480359cddcb8e99af225135755ffa5544f6563081c"
+      },
+      "required": [
+        "input",
+        "short_output.input",
+        "tiers.0.input",
+        "output",
+        "short_output.output",
+        "tiers.0.output",
+        "cache_read",
+        "short_output.cache_read",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 6,
+        "cache_read": 0.16,
+        "short_output": {
+          "maxInput": 31999,
+          "maxOutput": 199,
+          "input": 0.8,
+          "output": 2,
+          "cache_read": 0.16
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 31999
+            },
+            "input": 1.2,
+            "output": 8,
+            "cache_read": 0.24
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "cacheStorage": "limited-time-free",
+        "cacheStorageUnit": "per_million_token_hours",
+        "inputOutputBands": [
+          "输入 [0, 32K)，输出 [0, 0.2K)",
+          "输入 [0, 32K)，输出 ≥0.2K",
+          "输入 [32K, 128K)"
+        ]
+      }
+    },
+    {
+      "id": "dashscope--qwen-doc-turbo--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-doc-turbo",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.6,
+        "output": 1,
+        "cache_read": 0.12
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-doc-turbo--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen-doc-turbo",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 0.6,
+        "output": 1,
+        "cache_read": 0.06,
+        "cache_write": 0.75
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-flash--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read"
+      ],
+      "cost": {
+        "input": 0.15,
+        "output": 1.5,
+        "cache_read": 0.03,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.6,
+            "output": 6,
+            "cache_read": 0.12
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 12,
+            "cache_read": 0.24
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-flash--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 0.15,
+        "output": 1.5,
+        "cache_read": 0.015,
+        "cache_write": 0.1875,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.6,
+            "output": 6,
+            "cache_read": 0.06,
+            "cache_write": 0.75
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 12,
+            "cache_read": 0.12,
+            "cache_write": 1.5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-max--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-max",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2.4,
+        "output": 9.6,
+        "cache_read": 0.48
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-coder-flash--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen3-coder-flash",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.2.input",
+        "tiers.2.output",
+        "tiers.2.cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.5,
+            "output": 6,
+            "cache_read": 0.3
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 2.5,
+            "output": 10,
+            "cache_read": 0.5
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 5,
+            "output": 25,
+            "cache_read": 1
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-coder-flash--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3-coder-flash",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write",
+        "tiers.2.input",
+        "tiers.2.output",
+        "tiers.2.cache_read",
+        "tiers.2.cache_write"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.1,
+        "cache_write": 1.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.5,
+            "output": 6,
+            "cache_read": 0.15,
+            "cache_write": 1.875
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 2.5,
+            "output": 10,
+            "cache_read": 0.25,
+            "cache_write": 3.125
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-vl-plus--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen3-vl-plus",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 10,
+        "cache_read": 0.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.5,
+            "output": 15,
+            "cache_read": 0.3
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 3,
+            "output": 30,
+            "cache_read": 0.6
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3-vl-plus--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3-vl-plus",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 1,
+        "output": 10,
+        "cache_read": 0.1,
+        "cache_write": 1.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.5,
+            "output": 15,
+            "cache_read": 0.15,
+            "cache_write": 1.875
+          },
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 3,
+            "output": 30,
+            "cache_read": 0.3,
+            "cache_write": 3.75
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.5-flash--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3.5-flash",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 0.2,
+        "output": 2,
+        "cache_read": 0.02,
+        "cache_write": 0.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 0.8,
+            "output": 8,
+            "cache_read": 0.08,
+            "cache_write": 1
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 1.2,
+            "output": 12,
+            "cache_read": 0.12,
+            "cache_write": 1.5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.5-plus--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3.5-plus",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 4.8,
+        "cache_read": 0.08,
+        "cache_write": 1,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 2,
+            "output": 12,
+            "cache_read": 0.2,
+            "cache_write": 2.5
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 4,
+            "output": 24,
+            "cache_read": 0.4,
+            "cache_write": 5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.6-flash--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3.6-flash",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 1.2,
+        "output": 7.2,
+        "cache_read": 0.12,
+        "cache_write": 1.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 4.8,
+            "output": 28.8,
+            "cache_read": 0.48,
+            "cache_write": 6
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.6-plus--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen3.6-plus",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "cache_write": 2.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 256000
+            },
+            "input": 8,
+            "output": 48,
+            "cache_read": 0.8,
+            "cache_write": 10
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-deep-research--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "qwen-deep-research",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 54,
+        "output": 163
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-long--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "qwen-long",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 2
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-mt-plus--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "qwen-mt-plus",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 1.8,
+        "output": 5.4
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-vl-ocr--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "qwen-vl-ocr",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 0.3,
+        "output": 0.5
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.5-397b-a17b--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "qwen3.5-397b-a17b",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "tiers.0.input",
+        "tiers.0.output"
+      ],
+      "cost": {
+        "input": 1.2,
+        "output": 7.2,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "input": 3,
+            "output": 18
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          }
+        ],
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--siliconflow-deepseek-r1-0528--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "siliconflow/deepseek-r1-0528",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 16
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--siliconflow-deepseek-v3-0324--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "siliconflow/deepseek-v3-0324",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 8
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--siliconflow-deepseek-v3.1-terminus--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "siliconflow/deepseek-v3.1-terminus",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 12
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--siliconflow-deepseek-v3.2--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "siliconflow/deepseek-v3.2",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 3
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--tongyi-intent-detect-v3--cn-beijing-online-original-token",
+      "provider": "dashscope",
+      "model": "tongyi-intent-detect-v3",
+      "priceList": "cn-beijing-online-original-token",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "cost": {
+        "input": 0.4,
+        "output": 1
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-plus--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c466d1808974ab935319f21d6c021aac90ed35a622a336214f0a9bc8078044bb",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "thinkingToggle": {
+        "param": "enable_thinking",
+        "value": true
+      },
+      "required": [
+        "reasoning",
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.reasoning",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.1.reasoning",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read"
+      ],
+      "cost": {
+        "reasoning": 8,
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.16,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "reasoning": 24,
+            "input": 2.4,
+            "output": 20,
+            "cache_read": 0.48
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "reasoning": 64,
+            "input": 4.8,
+            "output": 48,
+            "cache_read": 0.96
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "thinkingToggle": {
+          "param": "enable_thinking",
+          "value": true,
+          "default": false
+        },
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen-plus--cn-beijing-online-original-explicit",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c466d1808974ab935319f21d6c021aac90ed35a622a336214f0a9bc8078044bb",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "thinkingToggle": {
+        "param": "enable_thinking",
+        "value": true
+      },
+      "required": [
+        "reasoning",
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers.0.reasoning",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.1.reasoning",
+        "tiers.1.input",
+        "tiers.1.output",
+        "tiers.1.cache_read",
+        "tiers.1.cache_write"
+      ],
+      "cost": {
+        "reasoning": 8,
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.08,
+        "cache_write": 1,
+        "tiers": [
+          {
+            "tier": {
+              "size": 128000
+            },
+            "reasoning": 24,
+            "input": 2.4,
+            "output": 20,
+            "cache_read": 0.24,
+            "cache_write": 3
+          },
+          {
+            "tier": {
+              "size": 256000
+            },
+            "reasoning": 64,
+            "input": 4.8,
+            "output": 48,
+            "cache_read": 0.48,
+            "cache_write": 6
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 128000
+          },
+          {
+            "lower": 128000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "thinkingToggle": {
+          "param": "enable_thinking",
+          "value": true,
+          "default": false
+        },
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen3.8-omni-flash",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c466d1808974ab935319f21d6c021aac90ed35a622a336214f0a9bc8078044bb",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "5363ec60e251a68403e3e3931e826d0a76aaf259413dfc56ff4153c313100739",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "cache_read",
+        "output"
+      ],
+      "cost": {
+        "input": 0.8,
+        "cache_read": 0.1,
+        "output": 2.7
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "cacheMode": "implicit",
+        "inputModalities": [
+          "text",
+          "audio",
+          "image",
+          "video"
+        ],
+        "outputModalities": [
+          "text"
+        ]
+      }
+    },
+    {
+      "id": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit",
+      "provider": "dashscope",
+      "model": "qwen-plus-character",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "checkedAt": "2026-11-18",
+        "sha256": "47dd0005b35d2f40687ea4280fbdf23854ac6d9cf2b09a9136585b89483358ab",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "830418d5c01f437e46c8b7b157df59217ab4cc85bf0a678a259231268b65fc1c",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c466d1808974ab935319f21d6c021aac90ed35a622a336214f0a9bc8078044bb",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "5363ec60e251a68403e3e3931e826d0a76aaf259413dfc56ff4153c313100739",
+            "checkedAt": "2026-11-18"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "615126d94e9aafa2aa76f3e767c031d2569e7f8839dfdc7658c0b8358773db9c",
+            "checkedAt": "2026-11-18"
+          }
+        ]
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.16
+      },
+      "unit": "per_million_tokens",
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "reasoningBilledAsOutput": true,
+        "sessionCacheRequestHeader": "x-dashscope-aca-session",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
       }
     }
   ],

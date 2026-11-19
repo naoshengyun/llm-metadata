@@ -9,7 +9,7 @@ export type CostFamilyCells = Partial<Record<CostFamily, number>>;
 
 /** 结构化上下文阶梯条目（价格在 tier.size tokens 以上生效） */
 export interface ModelCostTier extends CostFamilyCells {
-  tier?: { size?: number; type?: string };
+  tier?: { size?: number; type?: string; comparison?: 'gte' };
 }
 
 /**
@@ -38,7 +38,13 @@ export interface CostSchedule {
  * 单一货币下的价目。
  * tiers 中价格在 tier.size 以上生效；context_over_200k 为同一信息的遗留表示（tiers 存在时忽略）。
  */
+export interface ShortOutputRate extends CostFamilyCells {
+  maxInput: number;
+  maxOutput: number;
+}
+
 export interface CostSheet extends CostFamilyCells {
+  short_output?: ShortOutputRate;
   tiers?: ModelCostTier[];
   context_over_200k?: CostFamilyCells;
   schedule?: CostSchedule;
@@ -50,6 +56,7 @@ export interface CostSheet extends CostFamilyCells {
     | string
     | ModelCostTier[]
     | CostFamilyCells
+    | ShortOutputRate
     | CostSchedule
     | CurrencyOptions
     | undefined;

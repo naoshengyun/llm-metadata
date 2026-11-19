@@ -52,6 +52,8 @@ export function normalizeCostToPlane(
       converted[key] = convert(value);
     } else if (key === 'tiers' && Array.isArray(value)) {
       converted.tiers = convertTiers(value);
+    } else if (key === 'short_output' && cost.short_output) {
+      converted.short_output = convertCells(cost.short_output);
     } else if (key === 'context_over_200k' && value && typeof value === 'object') {
       converted.context_over_200k = convertCells(value as CostFamilyCells);
     } else if (key === 'schedule' && value && typeof value === 'object') {

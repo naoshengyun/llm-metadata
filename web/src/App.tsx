@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, LayoutGrid, List, Search, TriangleAlert } from 'lucide-react';
 
@@ -79,13 +79,21 @@ function HeaderStats({ providers, models }: { providers: number; models: number 
 }
 
 /** Fixed publication source, separate from upstream application authorship. */
-function FooterSource() {
+function FooterSource({ unified }: { unified: boolean }) {
   const { locale } = useI18n();
   return (
     <a href="./publication.html" className="underline underline-offset-2">
-      {locale === 'zh'
-        ? '上游完整模型资料 · CNY 基础价 · 缺价明确标注 · 来源与下载'
-        : 'Full upstream catalog · CNY base prices · missing prices explicit · sources/downloads'}
+      {unified
+        ? {
+            en: 'CNY price source · coverage and downloads',
+            zh: 'CNY 价格源 · 覆盖清单与下载',
+            ja: 'CNY 料金ソース・対象一覧とダウンロード',
+          }[locale]
+        : {
+            en: 'Full upstream catalog · CNY base prices',
+            zh: '上游完整模型资料 · CNY 基础价',
+            ja: '上流の全モデル資料・CNY 基準価格',
+          }[locale]}
     </a>
   );
 }
@@ -165,7 +173,7 @@ function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (view: ViewM
 
 /** 根组件：加载构建清单，为整个工作区提供 new-api 部署上下文（默认汇率来自清单） */
 export default function App() {
-  const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [manifest, setManifest] = useState<Manifest | null>();
 
   useEffect(() => {
     let cancelled = false;
@@ -179,16 +187,29 @@ export default function App() {
 
   const exchangeRates = useMemo(() => manifest?.newapi?.exchangeRates ?? {}, [manifest]);
 
+  if (manifest === undefined) return <div className="bg-background h-dvh" aria-busy="true" />;
+  const candidateBase =
+    manifest?.candidateId && /^[0-9a-f]{64}$/.test(manifest.candidateId)
+      ? `./versions/${manifest.candidateId}`
+      : undefined;
+
   return (
     <NewApiProvider exchangeRates={exchangeRates}>
-      <Workspace updatedAt={manifest?.generatedAt ?? null} />
+      <Workspace updatedAt={manifest?.generatedAt ?? null} candidateBase={candidateBase} />
     </NewApiProvider>
   );
 }
 
-function Workspace({ updatedAt }: { updatedAt: string | null }) {
+function Workspace({
+  updatedAt,
+  candidateBase,
+}: {
+  updatedAt: string | null;
+  candidateBase?: string;
+}) {
   const { locale, t } = useI18n();
   const { deployment, exchangeRates } = useNewApi();
+  const catalogBase = candidateBase ? candidateBase + '/api' : undefined;
   const [providers, setProviders] = useState<ProviderIndexItem[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(() => readHash().model);
@@ -196,15 +217,15 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [modelQuery, setModelQuery] = useState('');
   const [view, setView] = useState<ViewMode>(readStoredViewMode);
+  const mobileSearch = useRef<HTMLDetailsElement>(null);
   // 重试令牌：selectedId 不变时也能重新触发加载 effect
   const [reloadKey, setReloadKey] = useState(0);
 
   // 加载供应商索引，并根据 URL hash 恢复选中项（语言切换后重取本地化数据）。
-  // 订阅套餐端点（Token Plan / Coding Plan）按预付额度抵扣、没有逐 token 价目，不在界面中列出；
-  // 侧栏、移动端选择器、全局搜索与“其他端点”均以此列表为准
+  // 侧栏、移动端选择器、搜索和其他端点使用完整索引，包含订阅。
   useEffect(() => {
     let cancelled = false;
-    fetchProviders(locale)
+    fetchProviders(locale, catalogBase)
       .then(({ providers: list }) => {
         if (cancelled) return;
         const sorted = list.sort((a, b) => a.name.localeCompare(b.name));
@@ -225,10 +246,9 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
     return () => {
       cancelled = true;
     };
-  }, [locale, reloadKey]);
+  }, [locale, reloadKey, catalogBase]);
 
-  // 浏览器前进/后退：hash 变化同步选中的供应商与模型；未列出的供应商 ID（失效链接、
-  // 订阅套餐端点）保持当前选择，不会停在空白骨架上
+  // 浏览器前进/后退：hash 变化同步选中的供应商与模型，失效链接保持当前供应商。
   useEffect(() => {
     if (!providers) return;
     const onHashChange = () => {
@@ -240,13 +260,13 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [providers]);
 
-  // 加载选中供应商的模型（表达式由前端按当前 new-api 部署即时生成）
+  // 加载选中供应商的模型和同一固定候选的已选表达式。
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
     setProvider(null);
     setError(null);
-    fetchProvider(locale, selectedId)
+    fetchProvider(locale, selectedId, catalogBase)
       .then((data) => {
         if (!cancelled) setProvider(data);
       })
@@ -256,9 +276,10 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
     return () => {
       cancelled = true;
     };
-  }, [locale, selectedId, reloadKey]);
+  }, [locale, selectedId, reloadKey, catalogBase]);
 
   const handleSelect = useCallback((id: string) => {
+    if (mobileSearch.current) mobileSearch.current.open = false;
     setSelectedId(id);
     setSelectedModelId(null);
     setModelQuery('');
@@ -278,6 +299,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
   // 全局搜索跳转：切换供应商并直接打开模型详情（跨供应商时清空列表内搜索）
   const handleOpenModelIn = useCallback(
     (providerId: string, modelId: string) => {
+      if (mobileSearch.current) mobileSearch.current.open = false;
       setSelectedId(providerId);
       setSelectedModelId(modelId);
       if (providerId !== selectedId) setModelQuery('');
@@ -344,7 +366,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
           </AnimatedShinyText>
           <div className="ml-auto flex items-center gap-1.5">
             {providers && <HeaderStats providers={providers.length} models={totalModels} />}
-            <NewApiSettings />
+            <NewApiSettings candidateBase={candidateBase} />
             <LocaleToggle />
             <ThemeToggle />
             <Tooltip>
@@ -364,6 +386,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
       <div className="flex min-h-0 flex-1 gap-6 px-4 pt-6 sm:px-6">
         {providers ? (
           <ProviderSidebar
+            catalogBase={catalogBase}
             providers={providers}
             selectedId={selectedId}
             onSelect={handleSelect}
@@ -380,12 +403,19 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 pb-6">
           {providers && (
-            <details className="shrink-0 rounded border p-2 md:hidden">
+            <details ref={mobileSearch} className="shrink-0 rounded border p-2 md:hidden">
               <summary>
-                {locale === 'zh' ? '搜索供应商 / 全部模型' : 'Search providers / all models'}
+                {
+                  {
+                    en: 'Search providers / all models',
+                    zh: '搜索供应商 / 全部模型',
+                    ja: 'プロバイダー・全モデルを検索',
+                  }[locale]
+                }
               </summary>
               <ProviderSidebar
                 mobile
+                catalogBase={catalogBase}
                 providers={providers}
                 selectedId={selectedId}
                 onSelect={handleSelect}
@@ -513,6 +543,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
               key={`${selectedMeta.id}/${selectedModel.id}`}
               model={selectedModel}
               provider={selectedMeta}
+              catalogBase={catalogBase}
               providers={providers ?? []}
               onBack={handleCloseModel}
               onOpenModelIn={handleOpenModelIn}
@@ -549,7 +580,7 @@ function Workspace({ updatedAt }: { updatedAt: string | null }) {
 
           <footer className="mt-auto shrink-0 border-t pt-4">
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-              <FooterSource />
+              <FooterSource unified={Boolean(candidateBase)} />
               {updatedAt && (
                 <span>{t('app.updated', { date: formatDate(updatedAt, locale) })}</span>
               )}

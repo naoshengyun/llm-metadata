@@ -87,7 +87,10 @@ function collectSegments(cost: ModelCost): PriceSegment[] {
   const tiers = Array.isArray(cost.tiers) ? cost.tiers : [];
   const sized = tiers.filter((tier) => typeof tier.tier?.size === 'number' && tier.tier.size > 0);
   if (sized.length > 0) {
-    for (const tier of sized) byStart.set(tier.tier!.size!, pickCells(tier));
+    for (const tier of sized) {
+      const { size, comparison } = tier.tier!;
+      byStart.set(comparison === 'gte' ? size! - 1 : size!, pickCells(tier));
+    }
   } else if (cost.context_over_200k) {
     byStart.set(200_000, pickCells(cost.context_over_200k));
   }
@@ -389,7 +392,35 @@ export function buildBillingExpr(cost: ModelCost, options: BillingExprOptions): 
   }
   if (perImage) warnings.push('per_image ignored in favour of token pricing');
 
-  const { schedule, ...base } = cost;
+  const { schedule, short_output: short, ...base } = cost;
+  if (short) {
+    const validCutoffs = [short.maxInput, short.maxOutput].every(
+      (limit) => Number.isSafeInteger(limit) && limit >= 0,
+    );
+    if (
+      !validCutoffs ||
+      schedule ||
+      typeof short.input !== 'number' ||
+      typeof short.output !== 'number' ||
+      !Array.isArray(base.tiers) ||
+      !base.tiers.some((tier) => tier.tier?.size === short.maxInput)
+    ) {
+      warnings.push('invalid short-output price or input and output thresholds');
+      return { expr: null, warnings };
+    }
+    const ordinary = buildModeBranch(collectSegments(base), [], options, warnings);
+    const lowered = buildModeBranch(
+      [{ lo: 0, cells: pickCells(short) }],
+      ['short_output'],
+      options,
+      warnings,
+    );
+    return {
+      expr: `len <= ${short.maxInput} && c <= ${short.maxOutput} ? ${wrapBranch(lowered)} : ${ordinary}`,
+      unit: 'token',
+      warnings,
+    };
+  }
   if (schedule === undefined) {
     return {
       expr: buildModeBranch(collectSegments(base), [], options, warnings),

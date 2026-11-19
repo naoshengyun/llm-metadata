@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { compileTask, compileTool, type TaskQuote, type ToolQuote } from './media.js';
-import type { ModelCost } from '../billing/cost.js';
+import type { ModelCost, ThinkingToggle } from '../billing/cost.js';
 import { NewApiBuilder } from '../services/newapi-builder.js';
 import type { Model, NormalizedData } from '../types/index.js';
 
@@ -9,6 +9,7 @@ export interface OfficialQuote {
   provider: string;
   model: string;
   priceList: string;
+  endpoint?: string;
   origin: 'domestic' | 'foreign';
   currency: 'CNY' | 'USD';
   source: { url: string; checkedAt: string };
@@ -18,6 +19,7 @@ export interface OfficialQuote {
   /** Explicitly pin a model in the upstream snapshot; disappearance blocks this new quote. */
   upstreamKey?: { provider: string; model: string };
   description?: string;
+  thinkingToggle?: ThinkingToggle;
   kind?: 'model' | 'task' | 'tool';
   task?: TaskQuote;
   tools?: ToolQuote[];
@@ -53,7 +55,7 @@ export function canonical(value: unknown): string {
 export function hash(value: unknown): string {
   return createHash('sha256').update(canonical(value)).digest('hex');
 }
-const PRICE_KEYS = new Set([
+export const PRICE_KEYS: ReadonlySet<string> = new Set([
   'input',
   'output',
   'cache_read',
@@ -70,7 +72,7 @@ const PRICE_KEYS = new Set([
 ]);
 function convert(value: unknown, factor: number, key = ''): unknown {
   if (typeof value === 'number' && PRICE_KEYS.has(key))
-    return Number((value * factor).toPrecision(15));
+    return factor === 1 ? value : Number((value * factor).toPrecision(15));
   if (Array.isArray(value)) return value.map((v) => convert(v, factor));
   if (value !== null && typeof value === 'object')
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, convert(v, factor, k)]));
@@ -83,8 +85,10 @@ function inspectCost(value: unknown, path = ''): string[] {
     const p = path ? `${path}.${key}` : key;
     if (PRICE_KEYS.has(key)) {
       if (typeof item !== 'number' || !Number.isFinite(item) || item < 0) errors.push(p);
-    } else if (key === 'size') {
+    } else if (['size', 'maxInput', 'maxOutput'].includes(key)) {
       if (typeof item !== 'number' || !Number.isSafeInteger(item) || item <= 0) errors.push(p);
+    } else if (key === 'comparison') {
+      if (item !== 'gte') errors.push(p);
     } else if (key === 'tiers') {
       if (!Array.isArray(item)) {
         errors.push(p);
@@ -92,7 +96,9 @@ function inspectCost(value: unknown, path = ''): string[] {
       }
       const thresholds = new Set<number>();
       for (const [index, tier] of item.entries()) {
-        const threshold = tier?.tier?.size;
+        const size = tier?.tier?.size;
+        const threshold =
+          typeof size === 'number' && tier?.tier?.comparison === 'gte' ? size - 1 : size;
         if (
           typeof threshold !== 'number' ||
           !Number.isSafeInteger(threshold) ||
@@ -104,7 +110,9 @@ function inspectCost(value: unknown, path = ''): string[] {
         errors.push(...inspectCost(tier, `${p}.${index}`));
       }
     } else if (key === 'currency' || key === 'currency_options') errors.push(p);
-    else if (['tiers', 'tier', 'context_over_200k', 'schedule', 'windows'].includes(key)) {
+    else if (
+      ['tiers', 'tier', 'context_over_200k', 'schedule', 'windows', 'short_output'].includes(key)
+    ) {
       if (Array.isArray(item)) item.forEach((v, i) => errors.push(...inspectCost(v, `${p}.${i}`)));
       else errors.push(...inspectCost(item, p));
     } else if (!['size', 'type', 'name', 'weekdays', 'hours', 'timezone', 'fallback'].includes(key))
@@ -167,6 +175,8 @@ export function generateCny(input: CnyInput) {
       !record.provider ||
       !record.model ||
       !record.priceList ||
+      (record.endpoint !== undefined &&
+        !/^https:\/\/[^/@\s]+(?:\/[^\s]*)?$/.test(record.endpoint)) ||
       !['domestic', 'foreign'].includes(record.origin)
     )
       fields.push('official identity');
@@ -311,6 +321,7 @@ export function generateCny(input: CnyInput) {
         providers: {
           selected: {
             id: 'selected',
+            ...(quote.thinkingToggle && { billing: { thinkingToggle: quote.thinkingToggle } }),
             models: { official: { ...entry.snapshotModel, id: 'official', cost: entry.cnyCost } },
           },
         },
