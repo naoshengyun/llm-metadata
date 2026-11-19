@@ -134,13 +134,14 @@ test('subscription and retired providers are omitted from the catalog and offici
   assert.ok(load('api/newapi/ratio_config.json').data.billing_expr['MiniMax-M3']);
 });
 
-test('service scope removes only approved native prices and skips their official checks', async (t) => {
+test('service scope and model deprecation remove only approved native prices', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'cny-service-scope-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const policy = input('unified-policy.json');
   const priorPolicy = join(dir, 'prior-policy.json');
-  const { notOfferedModels: keys, ...before } = policy;
-  writeFileSync(priorPolicy, JSON.stringify(before));
+  const { notOfferedModels: keys, lifecycle, ...before } = policy;
+  const deprecated = Object.keys(lifecycle);
+  writeFileSync(priorPolicy, JSON.stringify({ ...before, lifecycle: {} }));
   const prior = join(dir, 'prior');
   const candidate = join(dir, 'candidate');
   run(prior, [priorPolicy]);
@@ -154,32 +155,42 @@ test('service scope removes only approved native prices and skips their official
   const load = (directory, filename) => JSON.parse(readFileSync(join(directory, filename)));
   const filename = 'api/newapi/ratio_config.json';
   const config = load(prior, filename);
-  assert.equal(keys.length, 34);
-  for (const key of keys) {
+  assert.ok(keys.includes('MiniMax-M2'));
+  assert.ok(deprecated.includes('doubao-seed-1-8-251228'));
+  for (const key of [...keys, ...deprecated]) {
     assert.ok(Object.hasOwn(config.data.billing_expr, key), key);
     delete config.data.billing_mode[key];
     delete config.data.billing_expr[key];
   }
   assert.deepEqual(load(candidate, filename), config);
   const { changes } = load(candidate, 'price-diff.json');
-  assert.deepEqual(changes.map(({ nativeKey }) => nativeKey).sort(), [...keys].sort());
+  assert.deepEqual(
+    changes.map(({ nativeKey }) => nativeKey).sort(),
+    [...keys, ...deprecated].sort(),
+  );
   assert.ok(
     changes.every(
-      ({ type, reason, evidence }) =>
+      ({ nativeKey, type, reason, evidence }) =>
         type === 'removed' &&
-        reason === 'naoshengyun-service-scope' &&
-        evidence.url === policy.sources.notOffered,
+        (deprecated.includes(nativeKey)
+          ? reason === 'model-deprecated' &&
+            evidence.sha256 === lifecycle[nativeKey][0].evidence.sha256
+          : reason === 'naoshengyun-service-scope' && evidence.url === policy.sources.notOffered),
     ),
   );
 
   const coverage = load(candidate, 'coverage.json');
-  const excluded = coverage.models.filter(({ nativeKey }) => keys.includes(nativeKey));
-  assert.ok(excluded.every(({ status, syncable }) => status === 'not-offered' && !syncable));
+  const excluded = coverage.models.filter(({ nativeKey }) =>
+    keys.includes(nativeKey) || deprecated.includes(nativeKey),
+  );
+  assert.ok(excluded.every(({ syncable }) => !syncable));
   for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
     const catalog = load(candidate, path);
-    for (const { providerId, modelId } of excluded) {
+    for (const { providerId, modelId, status, lifecycle: event } of excluded) {
       const model = catalog[providerId].models[modelId];
-      assert.equal(model.cnyPrice.status, 'not-offered');
+      assert.equal(status, keys.includes(modelId) ? 'not-offered' : 'deprecated');
+      assert.equal(model.cnyPrice.status, status);
+      assert.deepEqual(model.cnyPrice.lifecycle, event);
       assert.equal(model.cnyPrice.exported, false);
       assert.equal(model.cnyPrice.quotes, undefined);
       assert.equal(model.cost, undefined);
@@ -214,6 +225,12 @@ test('service scope removes only approved native prices and skips their official
   assert.equal(skipped.status, 'not-offered');
   assert.equal(skipped.latestAttemptedAt, null);
   assert.equal(skipped.selected, false);
+  const deprecatedModel = excluded.find(({ modelId }) => modelId === 'doubao-seed-1-8-251228');
+  const deprecatedResult = report.results.find(
+    ({ quoteId }) => quoteId === deprecatedModel.upstreamPrice.quoteId,
+  );
+  assert.equal(deprecatedResult.status, 'deprecated');
+  assert.equal(deprecatedResult.latestAttemptedAt, null);
   assert.deepEqual(report.changes, []);
 });
 

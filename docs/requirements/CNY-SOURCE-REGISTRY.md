@@ -76,3 +76,18 @@
 `dashscope-anthropic` 归入阿里云百炼中国站 `alibaba-cn`，两条官方价目引用仍区分 Anthropic 端点和原始报价身份。[阿里云接入地址](https://help.aliyun.com/zh/model-studio/base-url)
 
 旧混元平台已下线，`hunyuan` 和其 `hunyuan-a13b` 模型退出当前目录。腾讯 TokenHub 使用 `tencent-tokenhub`，旧 A13B 的报价留作历史证据。[腾讯下线公告](https://cloud.tencent.com/announce/detail/2287) · [TokenHub 迁移指南](https://cloud.tencent.com/document/product/1823/131382)
+
+### 2026-11-19 已废弃模型复核
+
+用户确认，官方标记已废弃的模型退出 New API 价格 JSON。当前三语目录保留模型身份，显示「已废弃」并隐藏现行价格。覆盖记录保留原价和生命周期证据，固定历史版本按原身份保留。已明确通过旧 ID 路由至另一模型的记录，按原模型身份处理，替代型号使用各自价目。
+
+| 供应商 | 本轮去向 | 官方证据 |
+| --- | --- | --- |
+| MiniMax 中国 | 当前中国区按量文本价格目录省略 `MiniMax-M2`。按用户指定的收录口径停止同步，历史发布价留作参考。 | [中国区当前定价目录](https://platform.minimax.cn/docs/pricing/overview) |
+| 火山方舟 | `doubao-seed-1-8-251228` 已下线，公告时间为北京时间 2026-09-21 14:00。 | [方舟模型下线公告](https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh) |
+| Google | `gemini-2.5-flash` 已明确废弃，12 月 1 日起自动路由。原 `gemini-3.5-flash` 与 `gemini-3.7-flash` 已从 AI Studio 撤下，旧 API ID 路由至后续型号。其余八条保留现状，包括已公告最早停用日期的 `gemini-2.5-flash-image` 和 `gemini-3.1-flash-lite`。 | [Gemini API 生命周期](https://aistudio.google.com/docs/deprecations) |
+| Mistral | 九个固定或具名 ID 和官方点名已废弃的 `magistral-medium-latest` 退出同步，包括已标记废弃、退役日为 2027-04-30 的 `mistral-large-2512`。三个滚动别名 `devstral-latest`、`devstral-medium-latest` 和 `mistral-medium-latest` 的当前指向仍需核实。两个 Voxtral Small ID 的模型卡仍标 GA。 | [废弃模型目录](https://docs.mistral.ai/models#legacy-models) · [生命周期与滚动别名](https://docs.mistral.ai/inference/model-lifecycle) · [Voxtral Small](https://docs.mistral.ai/models/voxtral-small-25-07) |
+| OpenAI | 本轮八个旧 ID 均列在 2026-10-23 下线表。仍有效的 `gpt-realtime-2.1` 官方 Standard 音频输入、输出和缓存输入费率为每百万 Token 32、64 和 0.40 USD。价目已取得，独立音频缓存用量仍待原生计费支持。 | [OpenAI 下线公告](https://developers.openai.com/api/docs/deprecations) · [OpenAI 价格](https://developers.openai.com/api/docs/pricing) |
+| Upstage | `solar-pro2` 与 `solar-pro3` 的官方价卡标记服务于 2026-10-30 韩国时间结束。 | [Upstage API 价格](https://www.upstage.ai/pricing/api) · [型号历史](https://console.upstage.ai/docs/models/history) |
+
+逐原生键的证据网址及原始响应 SHA-256 记录在 [统一构建政策的 `lifecycle`](../../data/cny/unified-policy.json)。

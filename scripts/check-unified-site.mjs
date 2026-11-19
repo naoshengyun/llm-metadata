@@ -64,6 +64,7 @@ try {
   const coverage = JSON.parse(await get(current.fixedBase + 'coverage.json'));
   const removedProviders = [...coverage.excludedProviderIds, 'dashscope-anthropic'];
   const notOffered = coverage.models.find(({ status }) => status === 'not-offered');
+  const deprecated = coverage.models.find(({ status }) => status === 'deprecated');
   for (const q of coverage.quotes.filter(({ outputKind }) => outputKind === 'tool-reference'))
     assert.ok(!names.includes(q.modelId));
 
@@ -226,6 +227,10 @@ try {
       );
     }
 
+    if (deprecated) {
+      await goto(select(deprecated.providerId, deprecated.modelId));
+      await expectVisible(page.getByText('Model deprecated', { exact: true }).first());
+    }
     if (notOffered) {
       await goto(select(notOffered.providerId, notOffered.modelId));
       await expectVisible(page.getByText('Not offered by Naoshengyun', { exact: true }));

@@ -22,7 +22,14 @@ const identityOf = (row) => ({
   currency: row.sourceCurrency,
 });
 const fields = (obj) => Object.keys(obj ?? {});
-const skipped = new Set(['deferred', 'subscription', 'excluded', 'withdrawn', 'not-offered']);
+const skipped = new Set([
+  'deferred',
+  'subscription',
+  'excluded',
+  'withdrawn',
+  'not-offered',
+  'deprecated',
+]);
 const timestamp = (value) => {
   const valid =
     typeof value === 'string' &&
@@ -506,20 +513,23 @@ export async function checkOfficialPrices({
     const event = policy.lifecycle[identity.modelId]?.at(-1);
     const withdrawn = event?.state === 'withdrawn' && event.quoteId === id;
     const reason = withdrawn
-      ? 'official-price-withdrawn'
+      ? (event.reason ?? 'official-price-withdrawn')
       : 'official-registration-missing-from-unified-coverage';
+    const status = withdrawn
+      ? event.reason === 'model-deprecated' ? 'deprecated' : 'withdrawn'
+      : 'failed';
     results.push({
       id,
       quoteId: id,
       nativeKey: identity.modelId,
       identity,
-      coverageStatus: withdrawn ? 'withdrawn' : null,
+      coverageStatus: withdrawn ? status : null,
       coverageReason: reason,
       selected: false,
       publishedEvidence: null,
       latestAttemptedAt: withdrawn ? null : attemptedAt,
       latestSuccessfulAt: old.get(id)?.latestSuccessfulAt ?? null,
-      status: withdrawn ? 'withdrawn' : 'failed',
+      status,
       reason,
       ...(withdrawn && { evidence: event.evidence }),
     });
