@@ -53,20 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           work="$RUNNER_TEMP/upstream-sync"
-          npm ci --ignore-scripts
-          npm run cny:unified:build -- "$work/previous"
-          (
-            cd "$work/source"
-            npm ci --ignore-scripts
-            npm --prefix web ci --ignore-scripts
-            npm run test:cny
-            upstream_directory="$(jq -er .upstreamDirectory data/cny/unified-policy.json)"
-            node scripts/build-unified-cny.mjs "$work/candidate" data/cny/unified-policy.json \
-              data/cny/official-catalog.json data/cny/proposed-selection.json "$upstream_directory" "$work/previous"
-            node scripts/build-visual-site.mjs data/cny/publication/upstream-release.json "$work/site" "$work/candidate"
-          )
-          node scripts/report-upstream-sync.mjs "$work/preparation.json" "$work/previous" "$work/candidate" \
-            "$work/site" > "$work/validation.json"
+          bash scripts/check-upstream-sync.sh "$work"
           cat "$work/validation.json"
           printf 'validation=%s\n' "$(jq -c . "$work/validation.json")" >> "$GITHUB_OUTPUT"
       - name: Summarize the check
@@ -92,7 +79,7 @@ jobs:
           path: |
             ${{ runner.temp }}/upstream-sync/preparation.json
             ${{ runner.temp }}/upstream-sync/validation.json
-            ${{ runner.temp }}/upstream-sync/candidate/price-diff.json
+            ${{ runner.temp }}/upstream-sync/results/candidate/price-diff.json
           if-no-files-found: warn
           retention-days: 14
 

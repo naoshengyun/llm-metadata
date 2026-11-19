@@ -18,5 +18,5 @@ gh run list --repo naoshengyun/llm-metadata --workflow naoshengyun-upstream-sync
 ## 仓库配置
 
 - `cny-upstream-sync` 是独立的 Actions 环境，部署分支仅允许 `naoshengyun`。在该环境保存 `CNY_UPSTREAM_PR_APP_PRIVATE_KEY`。App `Naoshengyun CNY PR Codex` 只安装到业务仓库，权限为 Pull requests 写入和 Metadata 读取。
-- 检查作业持有只读仓库权限。提 PR 作业从固定输入重新生成并比对检查过的 Git 提交，使用仓库令牌推送 `codex/upstream-sync/<upstream-sha>`，使用 App 安装令牌创建 PR。
+- 检查作业持有只读仓库权限。候选的依赖安装在独立容器中执行并禁用安装脚本，候选测试和构建在断网容器中执行。业务分支的已审核构建独立生成目录、价格和差异，并与候选实际产物逐字节核对。提 PR 作业只重现已检查的 Git 提交，使用仓库令牌推送 `codex/upstream-sync/<upstream-sha>`，使用 App 安装令牌创建 PR。
 - 保留仓库的精确 Action SHA 允许列表。新工作流使用现有已允许的 checkout、setup-node 和 upload-artifact 固定版本。

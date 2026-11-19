@@ -86,9 +86,18 @@ assert.ok(
 const diff = json(candidateRoot, 'price-diff.json');
 assert.equal(diff.baseline.candidateId, before.manifest.candidateId);
 const priceDiff = { added: 0, changed: 0, removed: 0 };
-for (const { type } of diff.changes) {
+const priceChanges = [];
+let includedBytes = 0;
+for (const change of diff.changes) {
+  const { nativeKey, type, reason, before, after } = change;
   assert.ok(Object.hasOwn(priceDiff, type), 'Unknown price diff type: ' + type);
   priceDiff[type]++;
+  const entry = { nativeKey, type, reason, before, after };
+  const entryBytes = Buffer.byteLength(JSON.stringify(entry));
+  if (includedBytes + entryBytes <= 20_000) {
+    includedBytes += entryBytes;
+    priceChanges.push(entry);
+  }
 }
 console.log(
   JSON.stringify({
@@ -97,6 +106,8 @@ console.log(
     business,
     candidateId,
     priceDiff,
+    priceChanges,
+    omittedPriceChanges: diff.changes.length - priceChanges.length,
     models: { before: before.manifest.stats.models, after: after.manifest.stats.models },
     officialKeys,
   }),

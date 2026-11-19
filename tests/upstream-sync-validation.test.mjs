@@ -95,6 +95,8 @@ test('upstream validation binds the generated site, checks actual pricing, and r
     priceDiff: { added: 0, changed: 1, removed: 0 },
     models: { before: 7, after: 8 },
     officialKeys: 1,
+    priceChanges: [{ nativeKey: 'remote', type: 'changed' }],
+    omittedPriceChanges: 0,
   });
   const overwritten = publish('p * 99');
   assert.equal(overwritten.status, 1);
