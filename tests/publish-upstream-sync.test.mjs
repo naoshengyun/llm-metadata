@@ -62,19 +62,29 @@ function fixture(t) {
   return { preparation, validation, preparationReport, validationReport, candidate, business, writeReports, git };
 }
 
-function github(f, { prior = null, head = null, baseSha = f.business } = {}) {
+function github(f, {
+  prior = null, head = null, baseSha = f.business, failOnceAfterPush = false, moveBeforePush = null,
+} = {}) {
   let pushed = false;
   const requests = [];
   const pulls = [];
+  const transitions = [];
+  const nodeId = 'PR_kwDTEST';
+  const code = (sha) => String.fromCharCode(96) + sha + String.fromCharCode(96);
   function response(value, status = 200) {
     return new Response(JSON.stringify(value), { status });
   }
   function pull(state, sha = f.candidate, login = bot, recorded = sha) {
     return {
-      state, number: 42, html_url: url, body: '| Git 候选提交 | ' + "`" + recorded + "`" + ' |',
+      state, number: 42, node_id: nodeId, draft: prior?.draft ?? false, html_url: url,
+      body: prior?.body ?? [
+        '请保留人工评审备注。', '<!-- cny-upstream-sync:start -->',
+        '| 业务基线 | ' + code(prior?.business ?? f.business) + ' |',
+        '| Git 候选提交 | ' + code(recorded) + ' |', '<!-- cny-upstream-sync:end -->',
+      ].join('\n'),
       user: { login, type: 'Bot' },
       head: { ref: branch, sha, repo: { full_name: repo } },
-      base: { ref: base, sha: f.business, repo: { full_name: repo } },
+      base: { ref: base, sha: baseSha, repo: { full_name: repo } },
     };
   }
   async function fetchApi(raw, options) {
@@ -89,7 +99,7 @@ function github(f, { prior = null, head = null, baseSha = f.business } = {}) {
       assert.equal(target.searchParams.get('state'), 'all');
       assert.equal(target.searchParams.get('head'), 'naoshengyun:' + branch);
       assert.equal(target.searchParams.get('base'), base);
-      return response(prior ? [pull(prior.state, prior.sha, prior.login, prior.recorded)] : []);
+      return response(prior ? [pull(prior.state, head ?? prior.sha, prior.login, prior.recorded ?? prior.sha)] : []);
     }
     if (method === 'GET' && path === '/git/ref/heads/' + base) {
       assert.equal(auth, 'Bearer ' + env.GH_TOKEN);
@@ -118,6 +128,33 @@ function github(f, { prior = null, head = null, baseSha = f.business } = {}) {
       assert.equal(auth, 'Bearer fake-installation-token');
       return response({ total_count: 1, repositories: [{ full_name: repo }] });
     }
+    if (path === '/pulls/42' && method === 'GET') {
+      assert.equal(auth, 'Bearer ' + env.GH_TOKEN);
+      return response(pull(prior.state, head, prior.login, prior.recorded ?? prior.sha));
+    }
+    if (path === '/pulls/42' && method === 'PATCH') {
+      assert.equal(auth, 'Bearer fake-installation-token');
+      if (pushed && failOnceAfterPush) {
+        failOnceAfterPush = false;
+        return response({}, 500);
+      }
+      const request = JSON.parse(options.body);
+      assert.deepEqual(Object.keys(request), ['body']);
+      prior.body = request.body;
+      return response(pull(prior.state, head, prior.login));
+    }
+    if (path === '/graphql' && method === 'POST') {
+      assert.equal(auth, 'Bearer fake-installation-token');
+      const { query, variables } = JSON.parse(options.body);
+      assert.equal(variables.input.pullRequestId, nodeId);
+      const mutation = query.includes('convertPullRequestToDraft') ? 'convertPullRequestToDraft' : 'markPullRequestReadyForReview';
+      assert.ok(query.includes(mutation));
+      prior.draft = mutation === 'convertPullRequestToDraft';
+      transitions.push(prior.draft ? 'draft' : 'ready');
+      return response({ data: { [mutation]: { pullRequest: {
+        id: nodeId, isDraft: prior.draft, state: 'OPEN', headRefOid: head, baseRefOid: baseSha,
+      } } } });
+    }
     if (method === 'POST' && path === '/pulls') {
       assert.equal(auth, 'Bearer fake-installation-token');
       assert.equal(head, f.candidate);
@@ -125,6 +162,7 @@ function github(f, { prior = null, head = null, baseSha = f.business } = {}) {
       assert.equal(request.head, branch);
       assert.equal(request.base, base);
       pulls.push(request);
+      prior = { state: 'open', sha: head, body: request.body };
       return response(pull('open'), 201);
     }
     if (method === 'DELETE' && path === '/installation/token') {
@@ -139,15 +177,21 @@ function github(f, { prior = null, head = null, baseSha = f.business } = {}) {
     assert.equal(options.env.GIT_CONFIG_KEY_0, 'http.https://github.com/' + repo + '.git.extraheader');
     assert.equal(options.env.GIT_CONFIG_VALUE_0, 'Authorization: Basic ' + Buffer.from('x-access-token:' + env.GH_TOKEN).toString('base64'));
     assert.deepEqual(args.slice(args.indexOf('push') + 1), [
-      '--no-verify', '--force-with-lease=refs/heads/' + branch + ':',
+      '--no-verify', '--force-with-lease=refs/heads/' + branch + ':' + (head ?? ''),
       'https://github.com/' + repo + '.git', f.candidate + ':refs/heads/' + branch,
     ]);
-    assert.equal(head, null);
+    assert.ok(head === null || prior?.draft, 'Update a managed head only while the PR is draft');
+    if (moveBeforePush) {
+      head = moveBeforePush;
+      moveBeforePush = null;
+      throw new Error('stale info');
+    }
+    transitions.push('push');
     head = f.candidate;
     pushed = true;
   }
   const run = () => publishUpstreamSync(f.preparation, f.validation, { env, fetchApi, execGit });
-  return { run, get pushed() { return pushed; }, requests, pulls };
+  return { run, get pushed() { return pushed; }, requests, pulls, transitions, get body() { return prior?.body; }, get draft() { return prior?.draft; } };
 }
 
 test('publishes a fixed candidate with separate GitHub credentials and review evidence', async (t) => {
@@ -183,7 +227,7 @@ test('reuses an existing app-authored PR without changing its checked head', asy
   const f = fixture(t);
   const reviewed = 'e'.repeat(40);
   const remote = github(f, { prior: { state: 'open', sha: reviewed }, head: reviewed });
-  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url });
+  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url, headSha: reviewed, freshHead: false });
   assert.equal(remote.pushed, false);
   assert.equal(remote.pulls.length, 0);
   assert.ok(remote.requests.every(([method]) => method === 'GET'));
@@ -242,7 +286,89 @@ test('refuses to present a moved PR ref as a checked candidate', async (t) => {
   const f = fixture(t);
   const changed = 'e'.repeat(40);
   const remote = github(f, { prior: { state: 'open', sha: changed, recorded: f.candidate }, head: changed });
-  await assert.rejects(remote.run(), /does not match its recorded candidate SHA/);
+  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url, headSha: changed, freshHead: false });
   assert.equal(remote.pushed, false);
   assert.equal(remote.pulls.length, 0);
+});
+
+test('refreshes the same bot PR on a moved business base and preserves human notes', async (t) => {
+  const f = fixture(t);
+  const oldHead = 'e'.repeat(40);
+  const remote = github(f, { prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40) }, head: oldHead });
+  assert.deepEqual(await remote.run(), { status: 'refreshed', number: 42, url, headSha: f.candidate, freshHead: true });
+  assert.deepEqual(remote.transitions, ['draft', 'push', 'ready']);
+  assert.equal(remote.draft, false);
+  assert.equal(remote.pulls.length, 0);
+  assert.match(remote.body, /请保留人工评审备注/);
+  assert.ok(remote.body.includes(f.candidate));
+  assert.ok(!remote.body.includes(oldHead));
+  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url, headSha: f.candidate, freshHead: true });
+  assert.deepEqual(remote.transitions, ['draft', 'push', 'ready']);
+});
+
+test('finishes a refresh after an interruption between the ref push and body update', async (t) => {
+  const f = fixture(t);
+  const oldHead = 'e'.repeat(40);
+  const remote = github(f, {
+    prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40) },
+    head: oldHead,
+    failOnceAfterPush: true,
+  });
+  await assert.rejects(remote.run(), /HTTP 500/);
+  assert.equal(remote.draft, true);
+  assert.deepEqual(remote.transitions, ['draft', 'push']);
+  assert.deepEqual(await remote.run(), { status: 'refreshed', number: 42, url, headSha: f.candidate, freshHead: true });
+  assert.deepEqual(remote.transitions, ['draft', 'push', 'ready']);
+  assert.match(remote.body, /请保留人工评审备注/);
+  assert.ok(remote.body.includes(f.candidate));
+  assert.equal(remote.draft, false);
+});
+
+test('preserves a human-drafted PR with no automation refresh in progress', async (t) => {
+  const f = fixture(t);
+  const oldHead = 'e'.repeat(40);
+  const remote = github(f, { prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40), draft: true }, head: oldHead });
+  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url, headSha: oldHead, freshHead: false });
+  assert.equal(remote.draft, true);
+  assert.ok(remote.requests.every(([method]) => method === 'GET'));
+});
+
+test('leaves a concurrently moved candidate ref untouched after a failed lease', async (t) => {
+  const f = fixture(t);
+  const oldHead = 'e'.repeat(40);
+  const manualHead = '1'.repeat(40);
+  const remote = github(f, {
+    prior: { state: 'open', sha: oldHead, business: 'f'.repeat(40) }, head: oldHead, moveBeforePush: manualHead,
+  });
+  await assert.rejects(remote.run(), /Could not write the managed candidate ref with the expected SHA/);
+  assert.deepEqual(remote.transitions, ['draft']);
+  assert.deepEqual(await remote.run(), { status: 'reused', number: 42, url, headSha: manualHead, freshHead: false });
+  assert.deepEqual(remote.transitions, ['draft']);
+  assert.match(remote.body, /请保留人工评审备注/);
+});
+
+test('shows bounded source and CNY price changes with hostile Markdown escaped', async (t) => {
+  const f = fixture(t);
+  const hostile = '@everyone ' + String.fromCharCode(96).repeat(3) + ' <img>';
+  f.validationReport.priceChanges = [
+    {
+      nativeKey: 'test-model',
+      type: 'changed',
+      before: { sourcePrice: { input: 1 }, sourceCurrency: 'USD', cnyPrice: { input: 7 }, conditions: 'normal' },
+      after: { sourcePrice: { input: 2 }, sourceCurrency: 'USD', cnyPrice: { input: 14 }, conditions: hostile },
+    },
+    { nativeKey: 'oversized-model', type: 'added', after: { conditions: 'x'.repeat(100_000) } },
+  ];
+  f.validationReport.omittedPriceChanges = 4;
+  f.writeReports();
+  const remote = github(f);
+  await remote.run();
+  const { body } = remote.pulls[0];
+  const fence = String.fromCharCode(96).repeat(3);
+  const block = body.split(fence)[1];
+  const data = JSON.parse(block.slice('json\n'.length));
+  assert.deepEqual(data, [f.validationReport.priceChanges[0]]);
+  assert.doesNotMatch(body, /@everyone|<img>|oversized-model/);
+  assert.match(body, /另有 5 项/);
+  assert.ok(Buffer.byteLength(body) < 20_000);
 });

@@ -13,6 +13,11 @@ const GIT_URL = WEB_REPO + '.git';
 const BASE_REF = 'refs/heads/' + OWNER;
 const APP_ID = 5826118;
 const APP_BOT = 'naoshengyun-cny-pr-codex[bot]';
+const EVIDENCE_START = '<!-- cny-upstream-sync:start -->';
+const EVIDENCE_END = '<!-- cny-upstream-sync:end -->';
+const PRICE_EXCERPT_BYTES = 8_000;
+const PR_BODY_BYTES = 65_536;
+const JSON_FENCE = '```';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -50,6 +55,8 @@ function checkReports(preparation, validation) {
     [priceDiff?.added, priceDiff?.changed, priceDiff?.removed, models?.before, models?.after, officialKeys].every(isCount),
     'Validation report needs nonnegative model and price counts',
   );
+  assert(validation.priceChanges === undefined || Array.isArray(validation.priceChanges), 'Invalid price changes');
+  assert(validation.omittedPriceChanges === undefined || isCount(validation.omittedPriceChanges), 'Invalid omitted price changes count');
 }
 
 function candidateGit(execGit, cwd, path) {
@@ -88,7 +95,38 @@ function changedDirectories(git, business, candidate) {
   return displayNames.join('、') || '无';
 }
 
-function pullBody(preparation, validation, directories, env) {
+function priceExcerpt(changes = [], omitted = 0) {
+  function terms(side) {
+    if (side == null) return side;
+    const { providerId, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions } = side;
+    return { providerId, sourcePrice, sourceCurrency, sourceUnit, cnyPrice, conditions };
+  }
+  const rows = [];
+  let bytes = 0;
+  for (const change of changes) {
+    const entry = JSON.stringify({
+      nativeKey: change?.nativeKey,
+      type: change?.type,
+      before: terms(change?.before),
+      after: terms(change?.after),
+    }).replace(/[<>&@\x60\u2028-\u202e\u2066-\u2069]/g, (character) => (
+      '\\u' + character.charCodeAt(0).toString(16).padStart(4, '0')
+    ));
+    const size = Buffer.byteLength(entry) + 4;
+    if (typeof change?.nativeKey !== 'string' || bytes + size > PRICE_EXCERPT_BYTES) {
+      omitted++;
+      continue;
+    }
+    rows.push(entry);
+    bytes += size;
+  }
+  const lines = [];
+  if (rows.length) lines.push('', '### 逐模型价格差异', '', JSON_FENCE + 'json', '[', '  ' + rows.join(',\n  '), ']', JSON_FENCE);
+  if (omitted) lines.push('', '另有 ' + omitted + ' 项价格差异，见运行产物中的完整价格差异。');
+  return lines;
+}
+
+function pullEvidence(preparation, validation, directories, env) {
   const { upstream, previousUpstream, candidate, business, quarantinedWorkflows } = preparation;
   const { candidateId, priceDiff, models, officialKeys } = validation;
   const lines = [
@@ -111,10 +149,40 @@ function pullBody(preparation, validation, directories, env) {
     '',
     '此候选需要必需检查通过、人工审核与人工合并。固定价格产物由合并后的发布门禁处理。',
   ];
+  lines.push(...priceExcerpt(validation.priceChanges, validation.omittedPriceChanges));
   if (env.GITHUB_REPOSITORY === REPOSITORY && /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '')) {
     lines.push('', '[查看候选验证运行和产物](' + WEB_REPO + '/actions/runs/' + env.GITHUB_RUN_ID + ')');
   }
   return lines.join('\n');
+}
+
+function managedBody(evidence, refresh) {
+  const lines = [EVIDENCE_START, evidence];
+  if (refresh) lines.push('<!-- cny-upstream-sync:refresh ' + refresh.from + ' ' + refresh.to + ' -->');
+  lines.push(EVIDENCE_END);
+  return lines.join('\n');
+}
+
+function readManagedBody(body) {
+  if (typeof body !== 'string') return null;
+  const start = body.indexOf(EVIDENCE_START + '\n');
+  const end = body.indexOf('\n' + EVIDENCE_END, start + EVIDENCE_START.length);
+  if (start < 0 || end < 0 || body.lastIndexOf(EVIDENCE_START) !== start || body.lastIndexOf(EVIDENCE_END) !== end + 1) {
+    return null;
+  }
+  const evidenceStart = start + EVIDENCE_START.length + 1;
+  const evidence = body.slice(evidenceStart, end);
+  const revision = /^\| Git 候选提交 \| \x60([a-f0-9]{40})\x60 \|$/m.exec(evidence)?.[1];
+  const business = /^\| 业务基线 \| \x60([a-f0-9]{40})\x60 \|$/m.exec(evidence)?.[1];
+  if (!revision || !business) return null;
+  const marker = /\n<!-- cny-upstream-sync:refresh ([a-f0-9]{40}) ([a-f0-9]{40}) -->$/.exec(evidence);
+  return {
+    revision,
+    business,
+    evidence: marker ? evidence.slice(0, marker.index) : evidence,
+    refresh: marker ? { from: marker[1], to: marker[2] } : null,
+    replace: (newEvidence, refresh) => body.slice(0, start) + managedBody(newEvidence, refresh) + body.slice(end + EVIDENCE_END.length + 1),
+  };
 }
 
 class GitHubError extends Error {
@@ -181,7 +249,11 @@ function pullResult(pull, status) {
   return { status, number: pull.number, url: pull.html_url };
 }
 
-function pushCandidate(git, token, candidate, ref) {
+function checkBodySize(body) {
+  assert(Buffer.byteLength(body) <= PR_BODY_BYTES, 'Managed pull request body exceeds GitHub size limit');
+}
+
+function pushCandidate(git, token, candidate, ref, expected = '') {
   const header = 'Authorization: Basic ' + Buffer.from('x-access-token:' + token).toString('base64');
   git([
     '-c', 'core.hooksPath=/dev/null',
@@ -190,10 +262,56 @@ function pushCandidate(git, token, candidate, ref) {
     '-c', 'protocol.https.allow=always',
     '-c', 'push.followTags=false',
     '-c', 'push.recurseSubmodules=no',
-    'push', '--no-verify', '--force-with-lease=' + ref + ':', GIT_URL, candidate + ':' + ref,
-  ], 'Could not create the managed candidate ref', {
+    'push', '--no-verify', '--force-with-lease=' + ref + ':' + expected, GIT_URL, candidate + ':' + ref,
+  ], 'Could not write the managed candidate ref with the expected SHA', {
     GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.' + GIT_URL + '.extraheader', GIT_CONFIG_VALUE_0: header,
   });
+}
+
+async function withAppToken(fetchApi, privateKey, useApp) {
+  assert(typeof privateKey === 'string' && privateKey.length > 0, 'CNY_UPSTREAM_PR_APP_PRIVATE_KEY is missing');
+  const jwt = appJwt(privateKey);
+  const installation = await githubApi(fetchApi, 'find app installation', API_REPO + '/installation', jwt);
+  assert(
+    isId(installation?.id) && installation.app_id === APP_ID && installation.account?.login === OWNER && !installation.suspended_at,
+    'GitHub App installation does not match the expected account and App',
+  );
+  const token = await githubApi(fetchApi, 'mint installation token', '/app/installations/' + installation.id + '/access_tokens', jwt, {
+    method: 'POST', body: { repositories: [REPO], permissions: { pull_requests: 'write' } },
+  });
+  assert(isToken(token?.token), 'GitHub returned an invalid installation token');
+  const appApi = (operation, path, options) => githubApi(fetchApi, operation, path, token.token, options);
+  try {
+    assert(
+      token.permissions?.pull_requests === 'write' && Object.entries(token.permissions).every(
+        ([name, value]) => name === 'pull_requests' || (name === 'metadata' && value === 'read'),
+      ),
+      'GitHub App token has unexpected permissions',
+    );
+    const repositories = await appApi('verify installation token scope', '/installation/repositories');
+    assert(
+      repositories?.total_count === 1 && repositories.repositories?.length === 1 && repositories.repositories[0]?.full_name === REPOSITORY,
+      'GitHub App token is not scoped to the expected repository',
+    );
+    return await useApp(appApi);
+  } finally {
+    await appApi('revoke installation token', '/installation/token', { method: 'DELETE' });
+  }
+}
+
+async function changeDraft(appApi, pull, draft, business, head) {
+  const operation = draft ? 'convertPullRequestToDraft' : 'markPullRequestReadyForReview';
+  const inputType = draft ? 'ConvertPullRequestToDraftInput!' : 'MarkPullRequestReadyForReviewInput!';
+  const query = 'mutation($input: ' + inputType + ') { ' + operation + '(input: $input) { pullRequest { id state isDraft headRefOid baseRefOid } } }';
+  const response = await appApi(operation, '/graphql', {
+    method: 'POST', body: { query, variables: { input: { pullRequestId: pull.node_id } } },
+  });
+  const updated = response?.data?.[operation]?.pullRequest;
+  assert(
+    !response?.errors?.length && updated?.id === pull.node_id && updated.state === 'OPEN'
+      && updated.isDraft === draft && updated.headRefOid === head && updated.baseRefOid === business,
+    'GitHub did not confirm the expected pull request draft transition',
+  );
 }
 
 export async function publishUpstreamSync(preparationPath, validationPath, {
@@ -233,49 +351,131 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
       const existing = pulls.find((pull) => exactPull(pull, head) && authoredByApp(pull));
       if (existing) {
         assert(existing.state === 'open' || existing.state === 'closed', 'GitHub returned an invalid pull request state');
-        if (existing.state === 'open') {
-          const recordedCandidate = /^\| Git 候选提交 \| `([a-f0-9]{40})` \|$/m.exec(existing.body ?? '')?.[1];
-          assert(recordedCandidate && existing.head.sha === recordedCandidate && await readRef(ref) === recordedCandidate,
-            'Existing pull request candidate ref does not match its recorded candidate SHA');
-        }
-        return pullResult(existing, existing.state === 'open' ? 'reused' : 'closed');
+        return existing;
       }
       assert(!pulls.some((pull) => exactPull(pull, head)), 'Managed candidate ref already has a pull request from another author');
       if (pulls.length < 100) return null;
     }
   }
 
+  function evidence() {
+    return pullEvidence(preparation, validation, changedDirectories(git, business, candidate), env);
+  }
+
+  async function reuseResult(pull, headSha, managed = readManagedBody(pull.body)) {
+    if (pull.state === 'closed') return pullResult(pull, 'closed');
+    headSha ??= await readRef(ref, true);
+    const freshHead = headSha === candidate && pull.head.sha === candidate
+      && managed?.revision === candidate && managed?.business === business && !managed.refresh;
+    return { ...pullResult(pull, 'reused'), headSha, freshHead };
+  }
+
+  async function reuseOrRefresh(prior) {
+    if (prior.state === 'closed') return pullResult(prior, 'closed');
+    const headSha = await readRef(ref, true);
+    const managed = readManagedBody(prior.body);
+    const pending = managed?.refresh?.to === candidate
+      && (managed.revision === managed.refresh.from || managed.revision === candidate);
+    const ownedHead = managed && headSha === prior.head.sha
+      && (headSha === managed.revision || (pending && headSha === candidate));
+    const canStart = ownedHead && prior.draft === false && !managed.refresh
+      && managed.business !== business && headSha !== candidate;
+    if (!ownedHead || (!pending && !canStart)) return reuseResult(prior, headSha, managed);
+
+    const refresh = pending ? managed.refresh : { from: headSha, to: candidate };
+    const nextEvidence = evidence();
+    await checkBase();
+    const { number } = pullResult(prior, 'reused');
+    const pullPath = API_REPO + '/pulls/' + number;
+    assert(typeof prior.node_id === 'string' && prior.node_id.length > 0, 'GitHub returned an invalid pull request node ID');
+
+    function checkPull(pull, expectedHead) {
+      assert(
+        exactPull(pull, head) && authoredByApp(pull) && pull.number === number && pull.node_id === prior.node_id
+          && pull.state === 'open' && pull.head.sha === expectedHead && pull.base.sha === business,
+        'Managed pull request changed during refresh',
+      );
+    }
+
+    async function readPull(expectedHead) {
+      const pull = await get('read pull request for refresh', pullPath);
+      checkPull(pull, expectedHead);
+      assert(await readRef(ref) === expectedHead, 'Managed candidate ref moved during refresh');
+      const section = readManagedBody(pull.body);
+      assert(section, 'Managed pull request evidence changed during refresh');
+      return { pull, section };
+    }
+
+    function checkRefresh(section, from, to) {
+      assert(section.refresh?.from === from && section.refresh.to === to, 'Managed pull request refresh marker changed');
+    }
+
+    return withAppToken(fetchApi, privateKey, async (appApi) => {
+      async function patchBody(current, replacement) {
+        checkBodySize(replacement);
+        const patched = await appApi('update pull request evidence', pullPath, { method: 'PATCH', body: { body: replacement } });
+        checkPull(patched, current.head.sha);
+        assert(patched.body === replacement && patched.draft === current.draft, 'GitHub did not confirm updated pull request evidence');
+      }
+
+      let { pull, section } = await readPull(headSha);
+      checkBodySize(section.replace(nextEvidence, refresh));
+      if (pending) {
+        checkRefresh(section, refresh.from, refresh.to);
+      } else {
+        assert(pull.draft === false && !section.refresh && section.revision === headSha
+          && section.business === managed.business, 'Managed pull request evidence changed before refresh');
+        // Record intent while the old evidence is still intact so retries can identify a bot-owned draft.
+        await patchBody(pull, section.replace(section.evidence, refresh));
+        ({ pull, section } = await readPull(headSha));
+        checkRefresh(section, refresh.from, refresh.to);
+      }
+
+      if (headSha !== candidate) {
+        assert(headSha === refresh.from && section.revision === refresh.from, 'Managed pull request head is no longer owned by this refresh');
+        if (!pull.draft) await changeDraft(appApi, pull, true, business, headSha);
+        ({ pull, section } = await readPull(headSha));
+        checkRefresh(section, refresh.from, refresh.to);
+        assert(pull.draft && section.revision === refresh.from, 'Managed pull request is not a draft at its previous candidate');
+        checkBodySize(section.replace(nextEvidence, refresh));
+        await checkBase();
+        try {
+          pushCandidate(git, contentsToken, candidate, ref, refresh.from);
+        } catch (error) {
+          if (await readRef(ref, true) !== candidate) throw error;
+        }
+        ({ pull, section } = await readPull(candidate));
+        checkRefresh(section, refresh.from, refresh.to);
+      }
+
+      if (pull.draft) {
+        assert(section.revision === refresh.from || (section.revision === candidate && section.business === business),
+          'Managed pull request contains unexpected evidence for this refresh');
+        await patchBody(pull, section.replace(nextEvidence, refresh));
+        ({ pull, section } = await readPull(candidate));
+        checkRefresh(section, refresh.from, refresh.to);
+        assert(pull.draft && section.revision === candidate && section.business === business,
+          'Managed pull request did not retain the checked evidence on its draft');
+        await checkBase();
+        await changeDraft(appApi, pull, false, business, candidate);
+        ({ pull, section } = await readPull(candidate));
+      }
+      checkRefresh(section, refresh.from, refresh.to);
+      assert(pull.draft === false && section.revision === candidate && section.business === business,
+        'Managed pull request is missing current evidence or has not been marked ready');
+      await patchBody(pull, section.replace(section.evidence));
+      return { ...pullResult(pull, 'refreshed'), headSha: candidate, freshHead: true };
+    });
+  }
+
   const prior = await existingPull();
-  if (prior) return prior;
+  if (prior) return reuseOrRefresh(prior);
   await checkBase();
   const current = await readRef(ref, true);
   assert(current === null || current === candidate, 'Managed candidate ref already points to another commit');
-  const body = pullBody(preparation, validation, changedDirectories(git, business, candidate), env);
+  const body = managedBody(evidence());
 
-  assert(typeof privateKey === 'string' && privateKey.length > 0, 'CNY_UPSTREAM_PR_APP_PRIVATE_KEY is missing');
-  const jwt = appJwt(privateKey);
-  const installation = await githubApi(fetchApi, 'find app installation', API_REPO + '/installation', jwt);
-  assert(
-    isId(installation?.id) && installation.app_id === APP_ID && installation.account?.login === OWNER && !installation.suspended_at,
-    'GitHub App installation does not match the expected account and App',
-  );
-  const token = await githubApi(fetchApi, 'mint installation token', '/app/installations/' + installation.id + '/access_tokens', jwt, {
-    method: 'POST', body: { repositories: [REPO], permissions: { pull_requests: 'write' } },
-  });
-  assert(isToken(token?.token), 'GitHub returned an invalid installation token');
-  const appApi = (operation, path, options) => githubApi(fetchApi, operation, path, token.token, options);
-  try {
-    assert(
-      token.permissions?.pull_requests === 'write' && Object.entries(token.permissions).every(
-        ([name, value]) => name === 'pull_requests' || (name === 'metadata' && value === 'read'),
-      ),
-      'GitHub App token has unexpected permissions',
-    );
-    const repositories = await appApi('verify installation token scope', '/installation/repositories');
-    assert(
-      repositories?.total_count === 1 && repositories.repositories?.length === 1 && repositories.repositories[0]?.full_name === REPOSITORY,
-      'GitHub App token is not scoped to the expected repository',
-    );
+  return withAppToken(fetchApi, privateKey, async (appApi) => {
     if (current === null) {
       await checkBase();
       try {
@@ -285,7 +485,7 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
       }
     }
     const discovered = await existingPull();
-    if (discovered) return discovered;
+    if (discovered) return reuseResult(discovered);
     assert(await readRef(ref) === candidate, 'Managed candidate ref moved after validation');
     await checkBase();
     let created;
@@ -296,7 +496,7 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
     } catch (error) {
       if (!(error instanceof GitHubError) || error.status !== 422) throw error;
       const raced = await existingPull();
-      if (raced) return raced;
+      if (raced) return reuseResult(raced);
       throw error;
     }
     assert(
@@ -305,9 +505,7 @@ export async function publishUpstreamSync(preparationPath, validationPath, {
       'Created pull request did not match the expected GitHub App and fixed candidate',
     );
     return pullResult(created, 'created');
-  } finally {
-    await appApi('revoke installation token', '/installation/token', { method: 'DELETE' });
-  }
+  });
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
