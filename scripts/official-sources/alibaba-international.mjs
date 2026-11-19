@@ -51,8 +51,6 @@ const models = [
   'qwen3.7-flash',
   'qwen3.7-max',
   'qwen3.7-plus',
-  'qwen3.8-flash',
-  'qwen3.8-max',
   'qwen3.8-omni-flash',
   'qwq-plus',
 ];

@@ -5,6 +5,330 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "dashscope--qwen3.8-flash--cn-beijing-online-original-implicit",
+      "provider": "alibaba-cn",
+      "model": "qwen3.8-flash",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "ad8108b728cb0100427f4ad7d9f4a04166de50b25074397cd5b45dba4b5edec2",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2.7,
+        "cache_read": 0.1
+      },
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-flash--cn-beijing-online-original-explicit",
+      "provider": "alibaba-cn",
+      "model": "qwen3.8-flash",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "ad8108b728cb0100427f4ad7d9f4a04166de50b25074397cd5b45dba4b5edec2",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2.7,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-max--cn-beijing-online-original-implicit",
+      "provider": "alibaba-cn",
+      "model": "qwen3.8-max",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "priceList": "cn-beijing-online-original-implicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "528cad6ecb741253233ff83ee1525729a8184d946cbcb0d33b5bf690ba458a88",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 12,
+        "output": 36,
+        "cache_read": 1.5
+      },
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-max--cn-beijing-online-original-explicit",
+      "provider": "alibaba-cn",
+      "model": "qwen3.8-max",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "priceList": "cn-beijing-online-original-explicit",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "528cad6ecb741253233ff83ee1525729a8184d946cbcb0d33b5bf690ba458a88",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 12,
+        "output": 36,
+        "cache_read": 1,
+        "cache_write": 15
+      },
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-flash--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3.8-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "528b3da95b51a1335c8463c5c2b5d175180fb8e8c89fbd393436a6cfddbedd4d",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.15,
+        "output": 0.47,
+        "cache_read": 0.016
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-flash--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.8-flash",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-flash.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "528b3da95b51a1335c8463c5c2b5d175180fb8e8c89fbd393436a6cfddbedd4d",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 0.15,
+        "output": 0.47,
+        "cache_read": 0.016,
+        "cache_write": 0.2
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-max--sg-international-online-original-implicit",
+      "provider": "alibaba",
+      "model": "qwen3.8-max",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-implicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "0dd74dd382bdb21a135376257b31e7b779d01b8d40693cd46538f5a3129b2b79",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.25
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "cacheMode": "implicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheTtl": "no fixed TTL",
+        "cacheWriteIncludedInInput": true
+      }
+    },
+    {
+      "id": "dashscope--qwen3.8-max--sg-international-online-original-explicit",
+      "provider": "alibaba",
+      "model": "qwen3.8-max",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "priceList": "sg-international-online-original-explicit",
+      "origin": "foreign",
+      "currency": "USD",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-max.md",
+        "checkedAt": "2026-11-19",
+        "sha256": "0dd74dd382bdb21a135376257b31e7b779d01b8d40693cd46538f5a3129b2b79",
+        "supplemental": [
+          {
+            "url": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+            "checkedAt": "2026-11-19",
+            "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.17,
+        "cache_write": 2.5
+      },
+      "conditions": {
+        "region": "Singapore",
+        "deployment": "International",
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      }
+    },
+    {
       "id": "us-minimax-minimax-h3-global-video",
       "provider": "minimax",
       "model": "MiniMax-H3",
@@ -1147,6 +1471,54 @@
           "quoteGroup": "anthropic-conditional-tools"
         }
       ]
+    },
+    {
+      "id": "us-anthropic-claude-opus-4-5-standard",
+      "provider": "anthropic",
+      "endpoint": "https://api.anthropic.com/v1/messages",
+      "model": "claude-opus-4-5",
+      "priceList": "Claude API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_write",
+        "cache_write_1h",
+        "cache_read",
+        "output"
+      ],
+      "cost": {
+        "input": 5,
+        "cache_write": 6.25,
+        "cache_write_1h": 10,
+        "cache_read": 0.5,
+        "output": 25
+      },
+      "conditions": {
+        "cacheWriteTtlSeconds": {
+          "cache_write": 300,
+          "cache_write_1h": 3600
+        },
+        "cacheHitRenewsTtl": true
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+        "sha256": "8fba19f5dbcab60a1ebb3f68b7d3785f6286f76e239d9a3191f2a2a1e06de9d3",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://platform.claude.com/docs/en/models/opus-4-5/overview.md",
+            "sha256": "05e1a2c031950ef63be8567edc615d7bd4e76ec09e5af652aa19eff774bda633",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions.md",
+            "sha256": "821abd1b54ba7704c07c9fc7337e42c58f53da2fbd9956fd1fce3f307a3958bf",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
     },
     {
       "id": "us-anthropic-claude-opus-4-5-20251101-standard",

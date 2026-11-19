@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-19T16:48:00+08:00",
+  "asOf": "2026-11-19T17:37:55+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -765,6 +765,20 @@
   },
   "upstreamSelection": {},
   "lifecycle": {
+    "gpt-image-1-mini": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T17:37:55+08:00",
+        "quoteId": "upstream:openai:gpt-image-1-mini:unknown",
+        "evidence": {
+          "url": "https://developers.openai.com/api/docs/deprecations.md",
+          "sha256": "947f740cdc922910da6ffed196ace5ba88befeae4889acf3e37e92fac112850e",
+          "checkedAt": "2026-11-19",
+          "detail": "The OpenAI shutdown schedule lists this exact image API model as Deprecated, with shutdown on 2026-12-01."
+        }
+      }
+    ],
     "gemini-2.5-flash-image": [
       {
         "state": "withdrawn",

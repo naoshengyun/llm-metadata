@@ -171,7 +171,11 @@ test('service scope and model deprecation remove only approved native prices', a
   const config = load(prior, filename);
   assert.ok(keys.includes('MiniMax-M2'));
   assert.ok(deprecated.includes('doubao-seed-1-8-251228'));
-  for (const key of [...keys, ...deprecated]) {
+  const unpricedDeprecated = 'gpt-image-1-mini';
+  assert.ok(deprecated.includes(unpricedDeprecated));
+  assert.ok(!Object.hasOwn(config.data.billing_expr, unpricedDeprecated));
+  const removed = [...keys, ...deprecated.filter((key) => key !== unpricedDeprecated)];
+  for (const key of removed) {
     assert.ok(Object.hasOwn(config.data.billing_expr, key), key);
     delete config.data.billing_mode[key];
     delete config.data.billing_expr[key];
@@ -180,7 +184,7 @@ test('service scope and model deprecation remove only approved native prices', a
   const { changes } = load(candidate, 'price-diff.json');
   assert.deepEqual(
     changes.map(({ nativeKey }) => nativeKey).sort(),
-    [...keys, ...deprecated].sort(),
+    removed.sort(),
   );
   assert.ok(
     changes.every(
