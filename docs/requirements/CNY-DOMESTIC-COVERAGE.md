@@ -46,6 +46,20 @@
 
 官方 Batch 价格页的三个已有参考价目均完成自动核价。静态解析读取独立的输入、输出、命中和缓存写入价列。K3 与 K3.1 Pro 记录 5 分钟及 1 小时缓存写入。K2.7 Code 的两列写入值为破折号，原价记录省略这两个字段。官方说明 Batch 价为标准模型价的 60%，异步并行请求的缓存命中为尽力而为。三个价目保持未选，同步 JSON 与上次验收版本逐字节一致。[Kimi 中国 Batch 价格](https://platform.kimi.com/docs/pricing/batch)
 
-官方表另刊出 K2.6 Batch，每百万 Token 输入 3.90、输出 16.20、缓存命中 0.66 CNY，两列写入价均为破折号。原始夹具保存该行，现有候选未添加此价目身份。[Kimi 中国 Batch 价格](https://platform.kimi.com/docs/pricing/batch)
+官方表另刊出 K2.6 Batch，每百万 Token 输入 3.90、输出 16.20、缓存命中 0.66 CNY，两列写入价均为破折号。最初的原始夹具保存该行，当时的候选未添加此价目身份。[Kimi 中国 Batch 价格](https://platform.kimi.com/docs/pricing/batch)
 
 固定和实际获取的响应 SHA-256 均为 91e1ad367a7e4d5ee19026c9347a772b412fec406db3a56ce314b3fd7ab94f9f。三条核价结果的金额与已有记录一致，结构化条件产生未选价目的审查差异。同步链路测试通过 174 项。国内已解析模型数仍为 96，国内固定价目解析数增加至 107。
+
+## 2026-11-19 Kimi 与阶跃复核
+
+- `cn-moonshot-kimi-k2.6-batch` 作为中国站异步 Batch 参考进入自有价目目录。11 月 18 日及 19 日两份真实 HTML 均提取出每百万 Token 输入 3.90、输出 16.20、缓存命中 0.66 CNY。两列缓存写入均显示破折号，价目省略写入收费字段。Batch 价格为标准价的 60%，缓存命中为尽力而为。原有实时键仍由国内实时价目以输入 6.50、输出 27、缓存命中 1.10 CNY 提供。[Kimi Batch 官方价目](https://platform.kimi.com/docs/pricing/batch) · [Kimi 实时官方价目](https://platform.kimi.com/docs/pricing/chat)
+- 阶跃主价页和语音说明均再次返回 HTTP 200，原始字节与 11 月 18 日夹具相同。阶跃四条已选价目正常核查且同价。`stepaudio-2.5-asr` 的 SSE 报价仍为每输入音频小时 0.15 CNY，0.45 CNY 于北京时间 11 月 23 日 12:00 生效，作为官方参考保留，原生模型价格缺少该计费单位。阶跃的价表中缺失单型号时，其他仍可验证的独立型号继续产生核查结果。[阶跃国内价目](https://platform.stepfun.com/docs/zh/guides/pricing/details.md) · [阶跃语音模型](https://platform.stepfun.com/docs/zh/guides/models/audio.md)
+- 用 #41 核价入口运行 Kimi 实时、Kimi Batch 和阶跃国内适配器，共取得四份 HTTP 200 官方文档。15 条注册价目得到 11 条同价、3 条未选 Batch 收费条件差异和 1 条 ASR 待生效，新增 K2.6 Batch 参考为同价。复核范围限这三个适配器，其他国内价目参见前述逐条矩阵。部分来源仍缺跨日历史响应，方舟及百炼旧型号、MiniMax 旧系缓存收费、智谱旧型号和小米历史图价仍有前述缺口。
+- 统一构建新增一个未选官方价目，同步 JSON 与集成基线 `1f3f2b6a50e121a9644296ab32651deb28e47b3d` 逐字节相同，仍含 275 个键，SHA-256 为 `ce65e7f664688cc105493f256ffe36d78b1da8774f28ee87bb8da6aa00f6515e`。Node 22 下 `npm run test:cny` 通过 208 项，包含 K2.6 Batch 改价生成审查差异及阶跃缺行回归。
+
+| 官方响应 | 2026-11-19 原始字节 SHA-256 |
+|---|---|
+| Kimi Batch | `05b212e197f3b9cf0bf12999efa656486d74707e2dd30825d2ff405e89bf28c6` |
+| Kimi 实时 | `a25b776ac50999b18f0c7f6a1b61e7abf0cc1ebaccb51f989311df1ad9045e2d` |
+| 阶跃主价页 | `c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3` |
+| 阶跃语音说明 | `6267ae40b2460dd85c44ef2359a437f343d2392a26671944c171216ae3722613` |

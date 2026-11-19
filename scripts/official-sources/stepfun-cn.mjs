@@ -11,7 +11,6 @@ const targets = models.map((model) =>
     model === 'step-5-preview'
       ? 'cn-stepfun-' + model + '-standard'
       : `upstream:stepfun:${model}:CNY`,
-    'text-tokens',
   ),
 );
 
@@ -57,6 +56,44 @@ function audioTariff(source, audio) {
   };
 }
 
+function textTariff(text, target) {
+  const rows = text.split('\n').filter((line) => line.startsWith('| `' + target.modelId + '` |'));
+  const row = only(rows, target.modelId)
+    .split('|')
+    .slice(1, -1)
+    .map((cell) => cell.trim());
+  if (row.length !== 4) throw Error('Incomplete StepFun token row');
+  const [, input, hit, output] = row;
+  const result = tariff(
+    target,
+    {
+      input: number(input),
+      output: number(output),
+      cache_read: number(hit),
+    },
+    {},
+  );
+  if (target.modelId === 'step-5-preview') {
+    const announcement =
+      /Step 5 Preview 的缓存命中输入价格自北京时间 (\d{4}) 年 (\d{2}) 月 (\d{2}) 日 (\d{2}:\d{2}) 起由 (\d+\.\d+) 元／百万 tokens 调整为 (\d+\.\d+) 元／百万 tokens。在该时间之前已通过按量付费 API 调用过 Step 5 Preview 的用户，继续适用 (\d+\.\d+) 元／百万 tokens。/.exec(
+        text,
+      );
+    if (
+      !announcement ||
+      number(announcement[6]) !== result.sourcePrice.cache_read ||
+      number(announcement[5]) !== number(announcement[7])
+    )
+      throw Error('Unverified Step 5 eligibility conditions');
+    result.effectiveAt = `${announcement[1]}-${announcement[2]}-${announcement[3]}T${announcement[4]}:00+08:00`;
+    result.conditions.legacyCacheHit = {
+      amount: number(announcement[7]),
+      eligibility: 'Used Step 5 Preview through the pay-as-you-go API before the effective time',
+      unit: 'per_million_tokens',
+    };
+  }
+  return result;
+}
+
 export const adapter = {
   id: 'stepfun-cn',
   url: 'https://platform.stepfun.com/docs/zh/guides/pricing/details.md',
@@ -73,48 +110,14 @@ export const adapter = {
       !source.includes('单价以人民币计价')
     )
       throw Error('Missing StepFun CNY token table');
-    const rates = new Map(
-      targets.map((target) => {
-        const rows = text
-          .split('\n')
-          .filter((line) => line.startsWith('| `' + target.modelId + '` |'));
-        const row = only(rows, target.modelId)
-          .split('|')
-          .slice(1, -1)
-          .map((cell) => cell.trim());
-        if (row.length !== 4) throw Error('Incomplete StepFun token row');
-        const [, input, hit, output] = row;
-        const result = tariff(
-          target,
-          {
-            input: number(input),
-            output: number(output),
-            cache_read: number(hit),
-          },
-          {},
-        );
-        if (target.modelId === 'step-5-preview') {
-          const announcement =
-            /Step 5 Preview 的缓存命中输入价格自北京时间 (\d{4}) 年 (\d{2}) 月 (\d{2}) 日 (\d{2}:\d{2}) 起由 (\d+\.\d+) 元／百万 tokens 调整为 (\d+\.\d+) 元／百万 tokens。在该时间之前已通过按量付费 API 调用过 Step 5 Preview 的用户，继续适用 (\d+\.\d+) 元／百万 tokens。/.exec(
-              text,
-            );
-          if (
-            !announcement ||
-            number(announcement[6]) !== result.sourcePrice.cache_read ||
-            number(announcement[5]) !== number(announcement[7])
-          )
-            throw Error('Unverified Step 5 eligibility conditions');
-          result.effectiveAt = `${announcement[1]}-${announcement[2]}-${announcement[3]}T${announcement[4]}:00+08:00`;
-          result.conditions.legacyCacheHit = {
-            amount: number(announcement[7]),
-            eligibility:
-              'Used Step 5 Preview through the pay-as-you-go API before the effective time',
-            unit: 'per_million_tokens',
-          };
-        }
-        return [target.quoteId, result];
-      }),
-    );
+    const rates = new Map();
+    for (const target of targets) {
+      try {
+        rates.set(target.quoteId, textTariff(text, target));
+      } catch (error) {
+        rates.set(target.quoteId, { error: error.message });
+      }
+    }
     try {
       rates.set(audioTarget.quoteId, audioTariff(source, decode(supplemental.get('audio').body)));
     } catch (error) {

@@ -9,7 +9,7 @@ import {
 import { only, standardTarget, tariff } from './lib/domestic-tables.mjs';
 
 const priceList = 'Kimi China Batch API';
-const models = ['kimi-k3.1-pro', 'kimi-k3', 'kimi-k2.7-code'];
+const models = ['kimi-k3.1-pro', 'kimi-k3', 'kimi-k2.7-code', 'kimi-k2.6'];
 const columnNames = ['模型', '输入', '输出', '缓存命中', '缓存写入（5min）', '缓存写入（1h）'];
 const baseCharges = ['input', 'output', 'cache_read'];
 const writeCharges = ['cache_write', 'cache_write_1h'];

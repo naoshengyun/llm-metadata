@@ -218,6 +218,20 @@ test('Chinese holidays and hourly ASR enter coverage with complete evidence and 
   assert.equal(step.changes.find(({ id }) => id === asr.id)?.candidate, undefined);
 });
 
+test('a missing StepFun model row leaves other verified tariffs and ASR available', async () => {
+  const report = await check('stepfun', (body) =>
+    Buffer.from(body.toString().replace('| `step-3.7-flash` | 1.35 | 0.27 | 8.1 |', '')),
+  );
+  const missing = resultFor(report, 'upstream:stepfun:step-3.7-flash:CNY');
+  assert.equal(missing.status, 'failed');
+  assert.match(missing.reason, /step-3\.7-flash missing or ambiguous/);
+  const unchanged = resultFor(report, 'upstream:stepfun:step-3.5-flash:CNY');
+  assert.equal(unchanged.status, 'unchanged');
+  assert.equal(unchanged.latestSuccessfulAt, attemptedAt);
+  const asr = resultFor(report, 'upstream:stepfun:stepaudio-2.5-asr:unknown');
+  assert.equal(asr.status, 'future-effective');
+});
+
 test('MiniMax uses the original standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
   const report = await check('minimax');
   const m3 = resultFor(report, 'cn-minimax-MiniMax-M3-standard');
@@ -460,10 +474,10 @@ test('Ark official Markdown and rendered HTML produce the same selected rates', 
   );
 });
 
-test('Kimi China Batch reads three independent, unselected official references', async () => {
+test('Kimi China Batch reads four independent, unselected official references', async () => {
   const report = await check('kimi-batch');
   const rows = report.results.filter((row) => row.sourceId === 'kimi-batch-cn');
-  assert.equal(rows.length, 3);
+  assert.equal(rows.length, 4);
   const pro = resultFor(report, 'cn-moonshot-kimi-k3.1-pro-batch');
   assert.equal(pro?.status, 'changed', pro?.reason);
   assert.equal(pro.selected, false);
@@ -483,18 +497,53 @@ test('Kimi China Batch reads three independent, unselected official references',
   const k2 = resultFor(report, 'cn-moonshot-kimi-k2.7-code-batch');
   assert.deepEqual(k2.observed.sourcePrice, { input: 3.9, output: 16.2, cache_read: 0.78 });
   assert.equal(Object.hasOwn(k2.observed.sourcePrice, 'cache_write'), false);
-  assert.equal(
-    rows.some(({ identity }) => identity.modelId === 'kimi-k2.6'),
-    false,
-  );
+  const k26 = resultFor(report, 'cn-moonshot-kimi-k2.6-batch');
+  assert.equal(k26?.status, 'unchanged', k26?.reason);
+  assert.equal(k26.selected, false);
+  assert.deepEqual(k26.observed.sourcePrice, { input: 3.9, output: 16.2, cache_read: 0.66 });
+  assert.deepEqual(k26.observed.conditions, {
+    service: 'async-batch',
+    standardPricePercent: 60,
+    cacheHit: 'best-effort',
+  });
+  const realtime = resultFor(report, 'upstream:moonshotai-cn:kimi-k2.6:CNY');
+  assert.equal(realtime.selected, true);
   assert.ok(
     report.changes.filter(({ id }) => id.endsWith('-batch')).every(({ selected }) => !selected),
   );
   const config = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
   assert.equal(
+    config.data.billing_expr['kimi-k2.6'],
+    'tier("standard", p * 6.5 + cr * 1.1 + c * 27)',
+  );
+  assert.equal(
     config.data.billing_expr['kimi-k3.1-pro'],
     'tier("standard", p * 13 + cr * 1.3 + cc * 13 + cc1h * 26 + c * 68)',
   );
+});
+
+test('Kimi China Batch detects a K2.6 change for review without selecting it', async () => {
+  const fixture = gunzipSync(
+    readFileSync(
+      new URL('./fixtures/official-check/domestic/kimi-batch-2026-11-19.gz', import.meta.url),
+    ),
+  );
+  const id = 'cn-moonshot-kimi-k2.6-batch';
+  const verified = resultFor(await check('kimi-batch', () => fixture), id);
+  assert.equal(verified.status, 'unchanged');
+  assert.equal(
+    verified.evidence.sha256,
+    '05b212e197f3b9cf0bf12999efa656486d74707e2dd30825d2ff405e89bf28c6',
+  );
+
+  const report = await check('kimi-batch', () =>
+    Buffer.from(fixture.toString().replace('`¥0.66 / MTok`', '`¥0.67 / MTok`')),
+  );
+  const change = report.changes.find((row) => row.id === id);
+  assert.equal(change?.status, 'changed');
+  assert.equal(change.selected, false);
+  assert.equal(change.difference.amounts.before.cache_read, 0.66);
+  assert.equal(change.difference.amounts.after.cache_read, 0.67);
 });
 
 test('Kimi China Batch rejects missing amount fields and an unexpected table heading', async () => {
