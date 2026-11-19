@@ -1,0 +1,152 @@
+name: CNY upstream sync
+run-name: CNY upstream sync from ${{ github.sha }}
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: naoshengyun-upstream-sync
+  cancel-in-progress: false
+env:
+  UPSTREAM_REPOSITORY: https://github.com/basellm/llm-metadata.git
+
+jobs:
+  check:
+    if: github.repository == 'naoshengyun/llm-metadata' && github.ref == 'refs/heads/naoshengyun'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      status: ${{ steps.prepare.outputs.status }}
+      upstream: ${{ steps.prepare.outputs.upstream }}
+      candidate: ${{ steps.prepare.outputs.candidate }}
+      validation: ${{ steps.check.outputs.validation }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - id: prepare
+        name: Detect and simulate the fixed upstream change
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/upstream-sync"
+          mkdir "$work"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git fetch --no-tags -- "$UPSTREAM_REPOSITORY" refs/heads/main
+          upstream="$(git rev-parse FETCH_HEAD)"
+          result=0
+          node scripts/sync-upstream.mjs --reviewed --repo "$GITHUB_WORKSPACE" --upstream "$upstream" \
+            --business "$GITHUB_SHA" --output "$work/source" > "$work/preparation.json" || result=$?
+          cat "$work/preparation.json"
+          test "$result" = 0
+          jq -er '"status=\(.status)", "upstream=\(.upstream)", "candidate=\(.candidate // "")"' \
+            "$work/preparation.json" >> "$GITHUB_OUTPUT"
+      - name: Validate the previous and simulated candidates
+        id: check
+        if: steps.prepare.outputs.status == 'candidate-ready'
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/upstream-sync"
+          npm ci --ignore-scripts
+          npm run cny:unified:build -- "$work/previous"
+          (
+            cd "$work/source"
+            npm ci --ignore-scripts
+            npm --prefix web ci --ignore-scripts
+            npm run test:cny
+            upstream_directory="$(jq -er .upstreamDirectory data/cny/unified-policy.json)"
+            node scripts/build-unified-cny.mjs "$work/candidate" data/cny/unified-policy.json \
+              data/cny/official-catalog.json data/cny/proposed-selection.json "$upstream_directory" "$work/previous"
+            node scripts/build-visual-site.mjs data/cny/publication/upstream-release.json "$work/site" "$work/candidate"
+          )
+          node scripts/report-upstream-sync.mjs "$work/preparation.json" "$work/previous" "$work/candidate" \
+            "$work/site" > "$work/validation.json"
+          cat "$work/validation.json"
+          printf 'validation=%s\n' "$(jq -c . "$work/validation.json")" >> "$GITHUB_OUTPUT"
+      - name: Summarize the check
+        if: always()
+        run: |
+          {
+            printf '### CNY upstream check\n'
+            if [ -f "$RUNNER_TEMP/upstream-sync/preparation.json" ]; then
+              printf '\n```json\n'
+              cat "$RUNNER_TEMP/upstream-sync/preparation.json"
+              printf '```\n'
+            fi
+            if [ -f "$RUNNER_TEMP/upstream-sync/validation.json" ]; then
+              printf '\n```json\n'
+              cat "$RUNNER_TEMP/upstream-sync/validation.json"
+              printf '```\n'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: cny-upstream-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/upstream-sync/preparation.json
+            ${{ runner.temp }}/upstream-sync/validation.json
+            ${{ runner.temp }}/upstream-sync/candidate/price-diff.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  propose:
+    if: needs.check.outputs.status == 'candidate-ready'
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: cny-upstream-sync
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Reproduce the exact checked commit without running candidate code
+        env:
+          UPSTREAM_SHA: ${{ needs.check.outputs.upstream }}
+          CANDIDATE_SHA: ${{ needs.check.outputs.candidate }}
+          VALIDATION: ${{ needs.check.outputs.validation }}
+        run: |
+          set -euo pipefail
+          [[ "$UPSTREAM_SHA" =~ ^[a-f0-9]{40}$ && "$CANDIDATE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          work="$RUNNER_TEMP/upstream-proposal"
+          mkdir "$work"
+          git fetch --no-tags -- "$UPSTREAM_REPOSITORY" "$UPSTREAM_SHA"
+          test "$(git rev-parse FETCH_HEAD)" = "$UPSTREAM_SHA"
+          node scripts/sync-upstream.mjs --reviewed --repo "$GITHUB_WORKSPACE" --upstream "$UPSTREAM_SHA" \
+            --business "$GITHUB_SHA" --output "$work/source" > "$work/preparation.json"
+          test "$(jq -er .candidate "$work/preparation.json")" = "$CANDIDATE_SHA"
+          printf '%s\n' "$VALIDATION" > "$work/validation.json"
+      - name: Push the checked candidate and open or reuse its review PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CNY_UPSTREAM_PR_APP_PRIVATE_KEY: ${{ secrets.CNY_UPSTREAM_PR_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/upstream-proposal"
+          node scripts/publish-upstream-sync.mjs "$work/preparation.json" "$work/validation.json" | tee "$work/pull-request.json"
+          {
+            printf '### CNY upstream review PR\n\n```json\n'
+            cat "$work/pull-request.json"
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75a540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: cny-upstream-proposal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/upstream-proposal/*.json
+          if-no-files-found: warn
+          retention-days: 14
