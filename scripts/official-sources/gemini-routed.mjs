@@ -15,7 +15,11 @@ export const adapter = {
   id: 'gemini-routed',
   url: standard.url,
   supplemental: [{ id: 'deprecations', url: 'https://aistudio.google.com/docs/deprecations.md' }],
-  targets: [...routes.keys()].map(geminiDeveloperTarget),
+  targets: [...routes.keys()].map((modelId) => ({
+    ...geminiDeveloperTarget(modelId),
+    referenceOnlyReason:
+      'Google documents automatic routing. Billing terms and base rates for the original request ID remain unverified.',
+  })),
   parse,
 };
 
@@ -45,7 +49,15 @@ function parse({ body, supplemental, evidence }) {
           matches[0][3] !== statement
         )
           throw Error('No exact automatic routing documented for Gemini model: ' + modelId);
-        return [quoteId, read(modelId, routedModelId)];
+        const tariff = read(modelId, routedModelId);
+        const { cacheMode, explicitCacheStorage } = tariff.conditions;
+        if (cacheMode === 'implicit-only' && explicitCacheStorage)
+          throw Error(
+            'Conflicting explicit cache storage terms for routed Gemini model: ' + modelId,
+          );
+        if (cacheMode !== 'implicit-only' && !explicitCacheStorage)
+          throw Error('Missing explicit cache storage terms for routed Gemini model: ' + modelId);
+        return [quoteId, tariff];
       } catch (error) {
         return [quoteId, { error: error.message }];
       }

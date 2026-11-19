@@ -279,7 +279,7 @@ const googleRoutingEvidence = {
   fixtures: { 'gemini-routed--deprecations': 'gemini-deprecations-2026-11-19' },
 };
 
-test('Google verifies paid Standard tariffs for exact IDs it still routes automatically', async () => {
+test('Google records routed Standard tariffs as reference evidence for the exact request IDs', async () => {
   const report = await run(undefined, googleRoutingEvidence);
   for (const [requested, routed] of [
     ['gemini-3.5-flash', 'gemini-3.6-flash'],
@@ -287,7 +287,8 @@ test('Google verifies paid Standard tariffs for exact IDs it still routes automa
   ]) {
     const id = 'upstream:google:' + requested + ':USD';
     const row = report.results.find((result) => result.id === id);
-    assert.equal(row.status, 'changed', row.reason);
+    assert.equal(row.status, 'unsupported', row.reason);
+    assert.match(row.reason, /billing terms.*base rates.*unverified/i);
     assert.equal(row.selected, true);
     assert.equal(row.observed.identity.modelId, requested);
     assert.equal(row.observed.identity.endpoint, 'https://generativelanguage.googleapis.com');
@@ -298,12 +299,13 @@ test('Google verifies paid Standard tariffs for exact IDs it still routes automa
       output: 3.75,
       cache_read: 0.075,
     });
-    assert.equal(row.observed.cnyCost.output, 26.25);
+    assert.equal(row.observed.cnyCost, undefined);
     assert.equal(row.observed.conditions.routedModelId, routed);
     assert.equal(row.observed.conditions.explicitCacheStorage.amount, 0.5);
     assert.equal(row.observed.conditions.announcedPrices.output.amount, 7.5);
     assert.equal(row.observed.conditions.announcedPrices.output.starts, 'January 1, 2027');
     assert.match(row.evidence.supplemental.deprecations.sha256, /^[0-9a-f]{64}$/);
+    assert.ok(!report.changes.some((change) => change.id === id));
   }
 });
 
@@ -328,7 +330,56 @@ test('A Gemini migration recommendation cannot price the old request ID', async 
   assert.equal(affected.observed, undefined);
   assert.ok(!report.changes.some(({ id }) => id === affected.id));
   const other = report.results.find(({ id }) => id === 'upstream:google:gemini-3.7-flash:USD');
-  assert.equal(other.status, 'changed', other.reason);
+  assert.equal(other.status, 'unsupported', other.reason);
+});
+
+test('Routed Gemini pricing requires an hourly storage tariff or explicit implicit-only caching', async () => {
+  const storagePrices =
+    /^\s*\$0\.50 \/ 1,000,000 tokens per hour \(storage price\) through December 31, 2026\.\s*\n\s*\$1\.00 \/ 1,000,000 tokens per hour \(storage price\) starting January 1, 2027\.$/m;
+  const implicitOnly = '  Implicit caching only (explicit caching is not supported).';
+  for (const [replacement, expected] of [
+    ['', 'failed'],
+    ['\n' + implicitOnly, 'unsupported'],
+    ['$&\n' + implicitOnly, 'failed'],
+  ]) {
+    const report = await run((body, id) => {
+      if (!['gemini-routed', 'gemini-developer'].includes(id)) return body;
+      const page = body.toString();
+      const start = page.indexOf('## Gemini 3.6 Flash ');
+      const end = page.indexOf('\n## ', start + 3);
+      const section = page.slice(start, end);
+      assert.match(section, storagePrices);
+      const updated = section.replace(storagePrices, replacement);
+      return Buffer.from(page.slice(0, start) + updated + page.slice(end));
+    }, googleRoutingEvidence);
+    const result = (model) =>
+      report.results.find(({ id }) => id === 'upstream:google:' + model + ':USD');
+    const routed = result('gemini-3.5-flash');
+    assert.equal(routed.status, expected, routed.reason);
+    if (expected === 'failed') {
+      assert.match(routed.reason, /explicit cache storage/);
+      assert.ok(!report.changes.some(({ id }) => id === routed.id));
+    } else {
+      assert.equal(routed.observed.conditions.cacheMode, 'implicit-only');
+      assert.equal(routed.observed.conditions.explicitCacheStorage, undefined);
+    }
+    assert.equal(result('gemini-3.6-flash').status, 'changed');
+    assert.equal(result('gemini-3.7-flash').status, 'unsupported');
+  }
+});
+
+test('Routed Gemini prices require current evidence at their announced rollover', async () => {
+  const report = await run(undefined, {
+    ...googleRoutingEvidence,
+    attemptedAt: '2027-01-01T00:00:00Z',
+  });
+  const routed = report.results.filter(({ sourceId }) => sourceId === 'gemini-routed');
+  assert.equal(routed.length, 2);
+  for (const row of routed) {
+    assert.equal(row.status, 'failed');
+    assert.match(row.reason, /rate needs current price and effective timezone/);
+    assert.ok(!report.changes.some(({ id }) => id === row.id));
+  }
 });
 
 test('MiniMax international preserves the Standard threshold and charges H3 only beyond its free image quota', async () => {
