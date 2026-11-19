@@ -189,6 +189,7 @@ test('service scope and model deprecation remove only approved native prices', a
     'gemini-embedding-2',
     'glm-4.5',
     'glm-4.5-x',
+    'glm-4.6',
     'gpt-image-1-mini',
     'qwen3-max',
     'qwen3.6-max-preview',

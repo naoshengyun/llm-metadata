@@ -64,5 +64,5 @@ Upstage 官方价格卡仍列两条旧 Solar Pro，且将精确别名写在卡�
 
 - 百炼新加坡的其他分档和视觉型号，例如 `qwen-plus`、`qwen3-vl-plus`，已有可读的官方地区价，仍需接入精确收费条件。Z.AI 的旧 GLM 须明确限时免费存储与旧缓存写入字段的关系。
 - Gemini 的三个 Flash 型号仍缺独立的 Token 小时存储计量，`gemini-3.1-flash-live-preview` 仍缺独立视频输入计量。Google 尚未公告 Live 预览、`gemini-3-flash-preview` 和 `gemini-2.5-flash-lite` 的停用日期，`gemini-3.1-flash-lite` 的停用日期为 2027-05-07。音频补证延期另行记录。xAI `grok-imagine-image` 的生成和编辑图分别计费。[Gemini 生命周期](https://aistudio.google.com/docs/deprecations) · [Gemini 官方定价](https://aistudio.google.com/docs/pricing) · [Grok Imagine Image](https://docs.x.ai/developers/models/grok-imagine-image)
-- `gemini-embedding-2`、其他向量嵌入模型、MiniMax 国际 `image-01` 以及两个 Devstral 别名按用户确认的业务范围移出验收。[脑生云服务范围](CNY-SOURCE-REGISTRY.md#naoshengyun-service-scope)
+- `gemini-embedding-2`、其他向量嵌入模型、MiniMax 国际 `image-01`、两个 Devstral 别名以及 `glm-4.6` 按用户确认的业务范围移出验收。[脑生云服务范围](CNY-SOURCE-REGISTRY.md#naoshengyun-service-scope)
 - 已选价目的核价差异仍需逐条审查。例如 OpenAI 的 12 小时缓存与 Gemini 图片输出须核实独立计量，不能从核价报告直接应用到同步 JSON。真实旧、新响应夹具及按当前业务范围更新的逐型号矩阵仍待补齐。
