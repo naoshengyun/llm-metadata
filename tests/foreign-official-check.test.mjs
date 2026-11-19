@@ -476,12 +476,12 @@ test('OpenAI upstream models use the correct Standard tables and retain explicit
 test('Alibaba International uses the Singapore service scope and preserves mode tariffs', async () => {
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'alibaba-international');
-  assert.equal(rows.length, 47);
+  assert.equal(rows.length, 33);
   const id = (model) => rows.find(({ nativeKey }) => nativeKey === model);
   assert.equal(id('qwen3.6-35b-a3b').observed.sourcePrice.input, 0.375);
   assert.equal(id('qwen3.6-35b-a3b').observed.cnyCost.output, 15.75);
   assert.equal(id('qwen-plus-character-ja').observed.sourcePrice.input, 0.5);
-  assert.match(id('qwen3.7-max').reason, /requires cache evidence/);
+  assert.match(id('qwen-mt-turbo').reason, /Exact Singapore International tariff absent/);
 });
 
 test('the selected Claude Opus 4.5 API alias has its own reviewed identity and complete cache TTLs', async () => {

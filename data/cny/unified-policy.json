@@ -63,6 +63,7 @@
     "text-embedding-ada-002"
   ],
   "deferredModels": {
+    "alibaba": ["qwen3-asr-flash", "qwen3-omni-flash", "qwen3.8-omni-flash"],
     "sensenova": ["sensenova-6.8-flash-lite"],
     "bailing": ["Ling-3.0-tiny", "Ling-3.2-flash"],
     "longcat": ["LongCat-2.5-Preview"],
