@@ -2445,6 +2445,36 @@
       "unit": "CNY per 1,000,000 tokens"
     },
     {
+      "id": "cn-moonshot-kimi-k2.6-batch",
+      "provider": "moonshotai-cn",
+      "model": "kimi-k2.6",
+      "priceList": "Kimi China Batch API",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://platform.kimi.com/docs/pricing/batch",
+        "checkedAt": "2026-11-19",
+        "sha256": "05b212e197f3b9cf0bf12999efa656486d74707e2dd30825d2ff405e89bf28c6"
+      },
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 3.9,
+        "output": 16.2,
+        "cache_read": 0.66
+      },
+      "conditions": {
+        "service": "async-batch",
+        "standardPricePercent": 60,
+        "cacheHit": "best-effort"
+      },
+      "officialRegion": "China mainland domestic API",
+      "unit": "CNY per 1,000,000 tokens"
+    },
+    {
       "id": "cn-zhipu-glm-5.3-standard",
       "provider": "zhipuai",
       "model": "glm-5.3",

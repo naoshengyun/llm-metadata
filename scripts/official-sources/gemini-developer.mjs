@@ -24,11 +24,9 @@ const models = [
   'gemini-3.1-flash-tts-preview',
   'gemini-3.1-pro-preview',
   'gemini-3.1-pro-preview-customtools',
-  'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
   'gemini-3.5-live-translate-preview',
   'gemini-3.6-flash',
-  'gemini-3.7-flash',
   'gemini-3.8-flash',
   'gemini-4-argon',
   'gemini-4-carbon',
@@ -56,7 +54,12 @@ const escaped = (id) => id.replaceAll('.', '\\.');
 export const adapter = {
   id: 'gemini-developer',
   url: 'https://aistudio.google.com/docs/pricing.md',
-  targets: models.map((modelId) => ({
+  targets: models.map(geminiDeveloperTarget),
+  parse,
+};
+
+export function geminiDeveloperTarget(modelId) {
+  return {
     quoteId: 'upstream:google:' + modelId + ':USD',
     providerId,
     endpoint,
@@ -65,9 +68,21 @@ export const adapter = {
     currency,
     group: modelId,
     baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
-  })),
-  parse,
-};
+  };
+}
+
+export function markdocRows(body) {
+  return body
+    .trim()
+    .split(/^\s*---\s*$/m)
+    .map((row) =>
+      row
+        .trim()
+        .split(/^\s*\* /m)
+        .filter(Boolean)
+        .map((column) => column.trim()),
+    );
+}
 
 function paidRows(modelSection) {
   const standard = [
@@ -82,16 +97,7 @@ function paidRows(modelSection) {
     standard.length > 1
   )
     throw Error('Missing or ambiguous Gemini Standard tariff');
-  const [header, ...rows] = tables[0][1]
-    .trim()
-    .split(/^\s*---\s*$/m)
-    .map((row) =>
-      row
-        .trim()
-        .split(/^\s*\* /m)
-        .filter(Boolean)
-        .map((column) => column.trim()),
-    );
+  const [header, ...rows] = markdocRows(tables[0][1]);
   if (header.join('|') !== 'Feature|Free Tier|Paid Tier, per 1M tokens in USD') {
     throw Error('Gemini paid tariff uses a different unit or service tier: ' + header.join(', '));
   }
@@ -275,33 +281,44 @@ function plainPrices(rows, modelId, checkedAt) {
   return { sourcePrice, required, conditions };
 }
 
-function parse({ body, evidence }) {
-  const text = markdown(body);
+function modelPriceSections(sections, modelId) {
+  const key = 'id="' + modelId + '"';
+  const explicitLink = new RegExp('\\[`' + escaped(modelId) + '`\\]\\(/docs/models/');
+  return sections.filter(
+    (block) =>
+      block.split('\n', 1)[0].includes(key) || explicitLink.test(block.split('{% hr /%}', 1)[0]),
+  );
+}
+
+export function standardTariffs(text, checkedAt) {
   requireText(text, '# Gemini Developer API pricing');
   const sections = text.split(/^## /m).slice(1);
-  const checkedAt = evidence.obtainedAt.slice(0, 10);
+  return (modelId, priceModelId = modelId) => {
+    const routed = priceModelId !== modelId;
+    if (routed && modelPriceSections(sections, modelId).length)
+      throw Error('Independent Gemini tariff conflicts with automatic routing: ' + modelId);
+    const matches = modelPriceSections(sections, priceModelId);
+    if (matches.length !== 1)
+      throw Error(
+        'Exact model ID absent from Gemini Developer API price sections: ' + priceModelId,
+      );
+    const tariff = plainPrices(paidRows(matches[0]), priceModelId, checkedAt);
+    if (routed) tariff.conditions.routedModelId = priceModelId;
+    return {
+      identity: { providerId, endpoint, modelId, priceList, currency },
+      recordId: 'us-google-' + modelId + '-developer-standard',
+      sourceUnit: 'per_million_tokens',
+      ...tariff,
+    };
+  };
+}
+
+function parse({ body, evidence }) {
+  const read = standardTariffs(markdown(body), evidence.obtainedAt.slice(0, 10));
   return new Map(
     adapter.targets.map(({ quoteId, modelId }) => {
       try {
-        const id = escaped(modelId);
-        const key = 'id="' + modelId + '"';
-        const explicitLink = new RegExp('\\[`' + id + '`\\]\\(/docs/models/');
-        const matches = sections.filter(
-          (block) =>
-            block.split('\n', 1)[0].includes(key) ||
-            explicitLink.test(block.split('{% hr /%}', 1)[0]),
-        );
-        if (matches.length !== 1)
-          throw Error('Exact model ID absent from Gemini Developer API price sections: ' + modelId);
-        return [
-          quoteId,
-          {
-            identity: { providerId, endpoint, modelId, priceList, currency },
-            recordId: 'us-google-' + modelId + '-developer-standard',
-            sourceUnit: 'per_million_tokens',
-            ...plainPrices(paidRows(matches[0]), modelId, checkedAt),
-          },
-        ];
+        return [quoteId, read(modelId)];
       } catch (error) {
         return [quoteId, { error: error.message }];
       }
