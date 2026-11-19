@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-19T18:08:44+08:00",
+  "asOf": "2026-11-19T18:26:41+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -774,6 +774,34 @@
   },
   "upstreamSelection": {},
   "lifecycle": {
+    "glm-4.5": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:26:41+08:00",
+        "quoteId": "upstream:zhipuai:glm-4.5:USD",
+        "evidence": {
+          "url": "https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5.md",
+          "sha256": "fdd0bf2740f0c09ba5138fb5a66c2063e004b2b5f141e367b7078e172e8fb4b8",
+          "checkedAt": "2026-11-19",
+          "detail": "BigModel announces upcoming retirement for GLM-4.5 and GLM-4.5-X and recommends GLM-4.7. Naoshengyun has withdrawn this exact model from its catalog pricing."
+        }
+      }
+    ],
+    "glm-4.5-x": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T18:26:41+08:00",
+        "quoteId": "upstream:zhipuai:glm-4.5-x:unknown",
+        "evidence": {
+          "url": "https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5.md",
+          "sha256": "fdd0bf2740f0c09ba5138fb5a66c2063e004b2b5f141e367b7078e172e8fb4b8",
+          "checkedAt": "2026-11-19",
+          "detail": "BigModel announces upcoming retirement for GLM-4.5 and GLM-4.5-X and recommends GLM-4.7. This exact model is excluded from Naoshengyun pricing even if it reappears in upstream data."
+        }
+      }
+    ],
     "qwen3-max": [
       {
         "state": "withdrawn",

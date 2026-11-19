@@ -187,6 +187,8 @@ test('service scope and model deprecation remove only approved native prices', a
   const excludedKeys = [...keys, ...deprecated];
   const alreadyUnpriced = [
     'gemini-embedding-2',
+    'glm-4.5',
+    'glm-4.5-x',
     'gpt-image-1-mini',
     'qwen3-max',
     'qwen3.6-max-preview',

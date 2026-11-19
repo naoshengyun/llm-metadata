@@ -75,6 +75,8 @@
 
 用户同时确认停止提供 `devstral-latest` 和 `devstral-medium-latest`。两条别名标记未提供，旧同步价移除，结束本轮别名核价。
 
+脑生云优先提供厂商最新型号。按用户确认及智谱停用公告，将 `glm-4.5`、`glm-4.5-x` 记为已废弃。当前目录只收录 `glm-4.5`，未收录的 `glm-4.5-x` 同样记录在生命周期政策中，以备后续上游同步核对。[智谱型号页](https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5)
+
 国内外 Coding Plan、Token Plan、Step Plan 等订阅套餐整体退出当前目录。统一候选按上游 `subscription` 标记移除供应商及其模型，覆盖清单、三语目录和供应商详情统一执行此范围，并跳过官方核价。同型号的官方按量价目继续按既有规则处理。固定上游输入和已归档发布按原身份保留。
 
 `dashscope-anthropic` 归入阿里云百炼中国站 `alibaba-cn`，两条官方价目引用仍区分 Anthropic 端点和原始报价身份。[阿里云接入地址](https://help.aliyun.com/zh/model-studio/base-url)

@@ -101,6 +101,8 @@ PR #57 追踪的 62 条已选缺项中有 11 条属国内。公开回读了 Mini
 
 北京 `qwen3.8-flash` 和 `qwen3.8-max` 的型号页可自动提取在线隐式及显式缓存 CNY 原价。两条隐式报价进入候选，显式报价保留五分钟缓存条件及独立费率。型号页和缓存条款的原始响应均已固定，率变更和缺收费项通过核价入口测试。[本轮来源](CNY-SOURCE-REGISTRY.md#62-发布后的核价范围)
 
-百炼公告明确将 `qwen3-max` 和 `qwen3.6-max-preview` 列入北京时间 2026-10-10 00:00 下线的主线模型。两个型号按已废弃处理。智谱中国 `glm-4.5`、`glm-4.6` 未列在当前 BigModel 中国站价格表，仍缺中国站下线公告或完整按量和缓存价格。百炼第三方模型下线的范围以该平台为准。方舟两次官方回读对部分 Seed/Seedream ID 和 Lite 别名关系给出不同结果，待核实当前适用的精确型号清单。[百炼下线公告](https://www.alibabacloud.com/en/notice/model_studio_notice_on_the_postponed_retirement_of_selected_legacy_models_7d0?_p_lc=1) · [智谱中国站价格表](https://docs.bigmodel.cn/cn/guide/start/pricing)
+百炼公告明确将 `qwen3-max` 和 `qwen3.6-max-preview` 列入北京时间 2026-10-10 00:00 下线的主线模型。两个型号按已废弃处理。方舟两次官方回读对部分 Seed/Seedream ID 和 Lite 别名关系给出不同结果，待核实当前适用的精确型号清单。[百炼下线公告](https://www.alibabacloud.com/en/notice/model_studio_notice_on_the_postponed_retirement_of_selected_legacy_models_7d0?_p_lc=1)
+
+智谱型号页已公告 `glm-4.5`、`glm-4.5-x` 将停用，推荐 `glm-4.7`。脑生云按已废弃处理这两条精确型号。中国站 `glm-4.6` 仍缺完整按量和缓存价格。百炼和硅基流动的 `glm-4.6` 下线分别适用各自平台。[智谱 GLM-4.5 型号页](https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5) · [智谱中国站价格表](https://docs.bigmodel.cn/cn/guide/start/pricing) · [硅基流动公告](https://docs.siliconflow.cn/docs/release-notes/overview)
 
 仍需按调整后的业务范围更新逐型号矩阵，收齐必需来源的真实旧、新响应，并对照 #42 补齐异常和未来生效回归。新 Qwen3.8 夹具为本次实取，同期回读和改价模拟不能代替独立历史样本。
