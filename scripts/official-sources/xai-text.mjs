@@ -25,19 +25,31 @@ export const adapter = {
   supplemental: [
     { id: 'cache', url: 'https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md' },
   ],
-  targets: ids.map((modelId) => ({
-    quoteId: 'upstream:xai:' + modelId + ':USD',
-    providerId,
-    endpoint,
-    modelId,
-    priceList,
-    currency,
-    group: modelId,
-    baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
-    baselineConditions: conditions,
-  })),
+  targets: ids.map((modelId) => {
+    const legacy = modelId === 'grok-4.7-build-fast';
+    return {
+      quoteId: legacy ? 'upstream:xai:' + modelId + ':USD' : recordId(modelId),
+      providerId,
+      endpoint,
+      modelId,
+      priceList,
+      currency,
+      group: modelId,
+      ...(legacy && {
+        baselineIdentity: {
+          endpoint: null,
+          priceList: 'fixed upstream primary or original CNY sheet',
+        },
+        baselineConditions: conditions,
+      }),
+    };
+  }),
   parse,
 };
+
+function recordId(modelId) {
+  return 'us-xai-' + modelId + '-global-standard';
+}
 
 function tokenPrices(html, rows, modelId) {
   const link = new RegExp(
@@ -50,7 +62,7 @@ function tokenPrices(html, rows, modelId) {
   const exact = rows.filter((row) => link.test(row[0]?.html));
   if (exact.length !== 1) throw Error('Exact xAI text price row missing or ambiguous: ' + modelId);
   const [row] = exact;
-  const threshold = /Long context (≥|>) ([1-9]\d*)k tokens$/.exec(row[0].text);
+  const threshold = /Long context (≥|>|&ge;|&gt;) ([1-9]\d*)k tokens$/.exec(row[0].text);
   if (!threshold || row.length !== 8)
     throw Error('Incomplete xAI long context pricing: ' + modelId);
   requireText(
@@ -61,7 +73,8 @@ function tokenPrices(html, rows, modelId) {
     Object.fromEntries(charges.map((key, index) => [key, usd(rates[index].text)])),
   );
   const size = Number(threshold[2]) * 1000;
-  const tier = { size, type: 'context', ...(threshold[1] === '≥' && { comparison: 'gte' }) };
+  const inclusive = threshold[1] === '≥' || threshold[1] === '&ge;';
+  const tier = { size, type: 'context', ...(inclusive && { comparison: 'gte' }) };
   const legacyContext = modelId !== 'grok-4.7-build-fast';
   return {
     sourcePrice: {
@@ -98,7 +111,7 @@ function parse({ body, supplemental }) {
           quoteId,
           {
             identity: { providerId, endpoint, modelId, priceList, currency },
-            recordId: 'us-xai-' + modelId + '-global-standard',
+            recordId: recordId(modelId),
             ...tokenPrices(html, rows, modelId),
             sourceUnit: 'per_million_tokens',
             conditions,

@@ -106,3 +106,11 @@ PR #57 追踪的 62 条已选缺项中有 11 条属国内。公开回读了 Mini
 智谱型号页已公告 `glm-4.5`、`glm-4.5-x` 将停用，推荐 `glm-4.7`。脑生云按已废弃处理这两条精确型号。用户已确认停止提供 `glm-4.6`，中国站原价与缓存证据退出本轮验收。百炼和硅基流动的 `glm-4.6` 下线分别适用各自平台。[智谱 GLM-4.5 型号页](https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5) · [智谱中国站价格表](https://docs.bigmodel.cn/cn/guide/start/pricing) · [硅基流动公告](https://docs.siliconflow.cn/docs/release-notes/overview)
 
 仍需按调整后的业务范围更新逐型号矩阵，收齐必需来源的真实旧、新响应，并对照 #42 补齐异常和未来生效回归。新 Qwen3.8 夹具为本次实取，同期回读和改价模拟不能代替独立历史样本。
+
+## #65 公网复核后的收费条件
+
+本轮复核绑定公网固定版本 `ba427338a13c8487951cc1bae7bd26f7c23309a99fffe283fd1865f63217d49d`。对照 #63 发布，27 条百炼北京同步价的所选身份、计费模式和表达式均一致。
+
+本次候选补录 19 条已选价目的官价条件。智谱 `glm-5.2`、`glm-5.3`、`glm-5.3-flash` 的缓存存储为限时免费，目录记录单位、上下文和官方声明的模态。百炼北京 `qwen3.7-flash`、`qwen3.7-max`、`qwen3.7-plus` 补齐阶梯、隐式缓存条件及思维链按输出计费的说明。方舟四条 Seed 文本价目记录独立的显式缓存存储条件，四条 Seedance 和五条 Seedream 价目补录视频计费用量、最小用量或图片收费单位。19 条金额和表达式与公网版逐键一致。[智谱官方价目](https://docs.bigmodel.cn/cn/guide/start/pricing) · [百炼北京价目](https://help.aliyun.com/zh/model-studio/model-pricing) · [方舟官方价目](https://docs.volcengine.com/docs/ark/model-pricing?lang=zh)
+
+智谱 11 月 18 日及 19 日的实际价格表固定在回归测试中。其余来源仍按逐型号补证记录跟进，方舟的显式缓存存储需保留为独立收费条件，当前同步表达式按已选隐式缓存价格处理。

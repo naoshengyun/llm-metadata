@@ -234,18 +234,42 @@ test('Cohere verifies five priced production IDs and preserves the exact deferre
 });
 
 test('xAI global long context starts at exactly 200,000 tokens', async () => {
-  const report = await run();
-  const rows = report.results.filter(({ sourceId }) => sourceId === 'xai-text');
-  assert.equal(rows.length, 9);
-  assert.equal(rows.filter(({ status }) => status === 'changed').length, 8);
-  const change = report.changes.find(({ id }) => id === 'upstream:xai:grok-4.7:USD');
+  const reviewedId = 'us-xai-grok-4.7-global-standard';
+  const recent = {
+    fixtures: { 'xai-text': 'xai-text-2026-11-19' },
+    attemptedAt: '2026-11-19T11:18:40.561Z',
+  };
+  for (const options of [{}, recent]) {
+    const report = await run(undefined, options);
+    const rows = report.results.filter(({ sourceId }) => sourceId === 'xai-text');
+    assert.equal(rows.length, 9);
+    assert.equal(
+      rows.filter(({ status, selected }) => status === 'unchanged' && selected).length,
+      8,
+    );
+    assert.equal(
+      rows.find(({ id }) => id === reviewedId).observed.sourcePrice.tiers[0].tier.comparison,
+      'gte',
+    );
+    const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
+    assert.equal(old.status, 'failed');
+    assert.match(old.reason, /Exact xAI text price row/);
+  }
+  const config = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
+  assert.match(config.data.billing_expr['grok-4.7'], /len <= 199999 \?/);
+
+  const report = await run(
+    (body, id) =>
+      id === 'xai-text'
+        ? replaceEvidence(body, 'Long context ≥ <!-- -->200k', 'Long context &gt; <!-- -->200k')
+        : body,
+    recent,
+  );
+  const change = report.changes.find(({ id }) => id === reviewedId);
   assert.equal(change.difference.amounts, undefined);
-  assert.equal(change.observed.sourcePrice.tiers[0].tier.comparison, 'gte');
-  assert.match(change.candidate.expression, /len <= 199999 \?/);
-  assert.equal(change.candidate.record.id, 'us-xai-grok-4.7-global-standard');
-  const old = rows.find(({ nativeKey }) => nativeKey === 'grok-4.7-build-fast');
-  assert.equal(old.status, 'failed');
-  assert.match(old.reason, /Exact xAI text price row/);
+  assert.equal(change.observed.sourcePrice.tiers[0].tier.comparison, undefined);
+  assert.match(change.candidate.expression, /len <= 200000 \?/);
+  assert.equal(change.candidate.record.id, reviewedId);
 });
 
 test('Mistral binds active global USD rates to exact API IDs, and reports older missing IDs', async () => {
