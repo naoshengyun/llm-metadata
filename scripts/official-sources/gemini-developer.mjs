@@ -311,14 +311,30 @@ function modalityRates(rows, label, expected) {
   return expected.map((pattern, index) => usd(lines[index], pattern));
 }
 
-function mediaTariff(modelId, sectionText) {
+function imageTextTariffReference(sectionText, sections, modelId) {
+  const parts = sectionText.split('Text input and output is priced the same as');
+  if (parts.length !== 2) throw Error('Missing or ambiguous Gemini image text tariff reference');
+  const reference =
+    /^\s+\[[^\[\]]+\]\(\/docs\/pricing#(gemini-[a-z0-9]+(?:[.-][a-z0-9]+)*)\)\.(?=\s|$)/.exec(
+      parts[1],
+    )?.[1];
+  if (!reference || reference === modelId)
+    throw Error('Invalid Gemini image text tariff reference');
+  const anchor = '{% id="' + reference + '" %}';
+  const destination = sections.filter((section) => section.split('\n', 1)[0].includes(anchor));
+  if (destination.length !== 1)
+    throw Error('Missing or ambiguous Gemini image text tariff reference target: ' + reference);
+  return reference;
+}
+
+function mediaTariff(modelId, sectionText, sections) {
   const rows = paidRows(sectionText, '1M tokens');
   const inputRow = /^Input price$/;
   const outputRow = /^Output price(?: \(including thinking tokens\))?$/;
   let sourcePrice;
   let conditions;
   if (modelId === 'gemini-2.5-flash-image') {
-    requireText(sectionText, 'Text input and output is priced the same as');
+    const textOutputTariffReference = imageTextTariffReference(sectionText, sections, modelId);
     const [input] = modalityRates(rows, inputRow, [/^\$(\d+(?:\.\d+)?) \(text \/ image\)$/]);
     const [perImage] = modalityRates(rows, outputRow, [
       /^\$(\d+(?:\.\d+)?) per image\{% sup %\}\*\{% \/sup %\}$/,
@@ -338,7 +354,7 @@ function mediaTariff(modelId, sectionText) {
         maximumHeight: Number(image[3]),
         outputTokens: Number(image[4]),
       },
-      textOutputTariffReference: 'gemini-2.5-flash',
+      textOutputTariffReference,
     };
   } else if (modelId === 'gemini-3.1-flash-live-preview') {
     const [input, inputAudio, inputMedia] = modalityRates(rows, inputRow, [
@@ -418,7 +434,7 @@ export function standardTariffs(text, checkedAt) {
           : { fullSong: true },
       };
     } else if (Object.hasOwn(mediaReferences, priceModelId)) {
-      tariff = mediaTariff(priceModelId, matches[0]);
+      tariff = mediaTariff(priceModelId, matches[0], sections);
     } else {
       tariff = plainPrices(paidRows(matches[0], '1M tokens'), priceModelId, checkedAt);
     }

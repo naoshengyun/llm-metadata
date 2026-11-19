@@ -732,9 +732,48 @@ test('Gemini preserves independent media amounts and units without using a parti
   assert.equal(image.status, 'unsupported', image.reason);
   assert.equal(image.observed.conditions.imageEquivalent.amount, 0.039);
   assert.equal(image.observed.conditions.imageEquivalent.outputTokens, 1290);
+  assert.equal(image.observed.conditions.textOutputTariffReference, 'gemini-2.5-flash');
   assert.equal(live.status, 'unsupported', live.reason);
   assert.equal(live.observed.conditions.videoInput.amount, 1);
   assert.equal(embed.status, 'unsupported', embed.reason);
   assert.equal(embed.observed.conditions.videoInput.amount, 12);
   assert.ok(!report.changes.some(({ id }) => [image.id, live.id, embed.id].includes(id)));
+});
+
+test('Gemini verifies the complete official text tariff link for the image model', async () => {
+  const statement =
+    'Text input and output is priced the same as [2.5\nFlash](/docs/pricing#gemini-2.5-flash).';
+  const alternate =
+    'Text input and output is priced the same as [3.1 Flash Lite](/docs/pricing#gemini-3.1-flash-lite).';
+  const quoteId = 'upstream:google:gemini-2.5-flash-image:USD';
+  const check = async (replacement) => {
+    const report = await run(
+      (body, id) =>
+        id === 'gemini-developer' ? replaceEvidence(body, statement, replacement) : body,
+      { fixtures: { 'gemini-developer': 'gemini-reference-2026-11-19' } },
+    );
+    assert.ok(!report.changes.some(({ id }) => id === quoteId));
+    return report.results.find(({ id }) => id === quoteId);
+  };
+
+  const changed = await check(alternate);
+  assert.equal(changed.status, 'unsupported');
+  assert.equal(changed.observed.conditions.textOutputTariffReference, 'gemini-3.1-flash-lite');
+  assert.equal(
+    changed.difference.chargingConditions.after.declared.textOutputTariffReference,
+    'gemini-3.1-flash-lite',
+  );
+
+  for (const invalid of [
+    '',
+    'Text input and output is priced the same as 2.5 Flash.',
+    statement.replace('#gemini-2.5-flash', '#gemini-does-not-exist'),
+    statement.replace('/docs/pricing', 'https://example.com/docs/pricing'),
+    statement + ' ' + alternate,
+  ]) {
+    const result = await check(invalid);
+    assert.equal(result.status, 'failed', invalid);
+    assert.match(result.reason, /Gemini image text tariff reference/);
+    assert.equal(result.observed, undefined);
+  }
 });
