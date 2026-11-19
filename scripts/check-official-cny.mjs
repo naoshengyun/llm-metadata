@@ -414,8 +414,6 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt, lifecycle)
       statement.trim() &&
       statement === lifecycle.evidence.detail &&
       evidence.finalUrl === lifecycle.evidence.url &&
-      (parsed.effectiveAt === undefined ||
-        timestamp(parsed.effectiveAt) === timestamp(lifecycle.at)) &&
       new TextDecoder().decode(registration.body).includes(statement);
     if (!matchesReviewedRestoration) {
       throw Error(

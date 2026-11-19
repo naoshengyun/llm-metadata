@@ -456,7 +456,11 @@ test('official automation stages only effective lifecycle events with explicit e
   assert.equal(prepareOfficialChanges(activeSnapshot, same, restoration).plan.changes.length, 0);
 
   const changedTime = '2026-11-23T08:00:00Z';
-  const updated = { ...returned, sourcePrice: { ...row.sourcePrice, output: 69 } };
+  const updated = {
+    ...returned,
+    effectiveAt: '2026-11-23T00:00:00+08:00',
+    sourcePrice: { ...row.sourcePrice, output: 69 },
+  };
   const changed = await observe(updated, active, changedTime, same);
   assert.equal(result(changed).status, 'changed', result(changed).reason);
   assert.equal(result(changed).latestSuccessfulAt, changedTime);
@@ -491,4 +495,35 @@ test('official automation stages only effective lifecycle events with explicit e
   assert.equal(result(invalid).status, 'failed');
   assert.equal(result(invalid).latestSuccessfulAt, changedTime);
   assert.equal(invalid.changes.length, 0);
+
+  const futureTime = '2026-11-25T08:00:00Z';
+  const nextPrice = {
+    ...returned,
+    effectiveAt: '2026-12-01T00:00:00+08:00',
+    sourcePrice: { ...row.sourcePrice, output: 70 },
+  };
+  const scheduled = await observe(nextPrice, active, futureTime, invalid);
+  assert.equal(result(scheduled).status, 'future-effective', result(scheduled).reason);
+  assert.equal(result(scheduled).latestSuccessfulAt, futureTime);
+  assert.equal(result(scheduled).observed.effectiveAt, nextPrice.effectiveAt);
+  assert.deepEqual(scheduled.changes[0].candidate.record.cost, nextPrice.sourcePrice);
+  assert.equal(
+    prepareOfficialChanges(activeSnapshot, scheduled, restoration).plan.changes.length,
+    0,
+  );
+
+  const due = await observe(nextPrice, active, '2026-11-30T16:00:00Z', scheduled);
+  assert.equal(result(due).status, 'changed', result(due).reason);
+  const activated = prepareOfficialChanges(activeSnapshot, due, restoration);
+  assert.deepEqual(activated.policy.lifecycle, restoration.policy.lifecycle);
+  const activatedCandidate = buildProposal(
+    activated,
+    activeSnapshot,
+    'automatic-restored-effective-date',
+  );
+  assert.match(
+    JSON.parse(readFileSync(join(activatedCandidate, 'api/newapi/ratio_config.json'))).data
+      .billing_expr['kimi-k3.1-pro'],
+    /c \* 70/,
+  );
 });
