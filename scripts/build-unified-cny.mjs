@@ -201,14 +201,17 @@ function upstreamRows(providers, policy, source) {
         : null;
       const correction = policy.ineligibleUpstream[modelId];
       const exclusion = policy.nativeCapabilityExclusions?.[modelId];
-      const incapable = exclusion?.providerId === providerId && exclusion.endpoint === provider.api;
+      const incapable =
+        exclusion?.providerId === providerId && exclusion.endpoint === (provider.api ?? null);
       const corrected = correction?.providerId === providerId;
+      const domestic = domesticProviders.has(providerId) || provider.currency === 'CNY';
       if (
         incapable &&
         (corrected ||
           deferred ||
           evidence ||
-          exclusion.currency !== 'CNY' ||
+          exclusion.currency !== (domestic ? 'CNY' : 'USD') ||
+          (!domestic && !exclusion.source?.endpoint?.startsWith('https://')) ||
           !exclusion.sourceUnit ||
           !exclusion.sourcePrice ||
           !exclusion.conditions ||
@@ -285,7 +288,7 @@ function upstreamRows(providers, policy, source) {
         syncable: false,
         outputKind: 'model',
         cnyCost: incapable
-          ? exclusion.sourcePrice
+          ? (domestic ? exclusion.sourcePrice : undefined)
           : corrected || deferred || evidence
             ? undefined
             : price.cost,
@@ -298,7 +301,7 @@ function upstreamRows(providers, policy, source) {
         status,
         reason,
         origin: 'upstream',
-        domestic: domesticProviders.has(providerId) || provider.currency === 'CNY',
+        domestic,
         upstreamPrice,
         quoteIds: [],
       });

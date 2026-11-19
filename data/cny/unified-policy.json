@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-19T16:27:00+08:00",
+  "asOf": "2026-11-19T16:48:00+08:00",
   "sources": {
     "specification": "https://github.com/naoshengyun/llm-metadata/issues/34",
     "deferred": "https://github.com/naoshengyun/llm-metadata/issues/35",
@@ -143,6 +143,277 @@
     }
   },
   "nativeCapabilityExclusions": {
+    "gemini-2.5-flash-lite": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.1,
+        "input_audio": 0.3,
+        "output": 0.4,
+        "cache_read": 0.01
+      },
+      "conditions": {
+        "audioCacheRead": {
+          "amount": 0.03,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        },
+        "explicitCacheStorage": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no dedicated audio cache read or hourly cache storage charge"
+    },
+    "gemini-3-flash-preview": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.5,
+        "input_audio": 1,
+        "output": 3,
+        "cache_read": 0.05
+      },
+      "conditions": {
+        "audioCacheRead": {
+          "amount": 0.1,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        },
+        "explicitCacheStorage": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no dedicated audio cache read or hourly cache storage charge"
+    },
+    "gemini-3.1-flash-lite": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.25,
+        "input_audio": 0.5,
+        "output": 1.5,
+        "cache_read": 0.025
+      },
+      "conditions": {
+        "audioCacheRead": {
+          "amount": 0.05,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        },
+        "explicitCacheStorage": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no dedicated audio cache read or hourly cache storage charge"
+    },
+    "gemini-3.1-flash-live-preview": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.75,
+        "input_audio": 3,
+        "input_image": 1,
+        "output": 4.5,
+        "output_audio": 12
+      },
+      "conditions": {
+        "videoInput": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        }
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no distinct Live video input meter"
+    },
+    "gemini-embedding-2": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input": 0.2,
+        "input_image": 0.45,
+        "input_audio": 6.5
+      },
+      "conditions": {
+        "output": "embeddings",
+        "videoInput": {
+          "amount": 12,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        }
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no distinct embedding video input meter"
+    },
+    "gpt-realtime-2.1": {
+      "providerId": "openai",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_million_tokens",
+      "sourcePrice": {
+        "input_audio": 32,
+        "output_audio": 64,
+        "input": 4,
+        "output": 24,
+        "cache_read": 0.4,
+        "input_image": 5,
+        "cache_read_image": 0.5
+      },
+      "conditions": {
+        "audioCacheRead": {
+          "amount": 0.4,
+          "currency": "USD",
+          "unit": "per_million_tokens"
+        }
+      },
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "endpoint": "https://api.openai.com/v1",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native realtime pricing has no dedicated cached audio charge"
+    },
+    "lyria-3-clip-preview": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_song",
+      "sourcePrice": {
+        "output": 0.04
+      },
+      "conditions": {
+        "durationSeconds": 30
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no generated-song usage"
+    },
+    "lyria-3-pro-preview": {
+      "providerId": "google",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "per_song",
+      "sourcePrice": {
+        "output": 0.08
+      },
+      "conditions": {
+        "fullSong": true
+      },
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Gemini model sync has no generated-song usage"
+    },
+    "voxtral-small-2507": {
+      "providerId": "mistral",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "mixed",
+      "sourcePrice": {
+        "input": 0.1,
+        "output": 0.4,
+        "audioInput": {
+          "amount": 0.004,
+          "unit": "per_minute"
+        },
+        "cachedAudioInput": {
+          "amount": 0.0004,
+          "unit": "per_minute"
+        }
+      },
+      "conditions": {
+        "pricedVersion": "voxtral-small-2507",
+        "textUnit": "per_million_tokens"
+      },
+      "source": {
+        "url": "https://docs.mistral.ai/inference/pricing",
+        "endpoint": "https://api.mistral.ai/v1",
+        "sha256": "7505bf7c257e4e673d2d1cf41da57d4f63a717465e50743aae05c226246ee2c3",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Voxtral model pricing cannot combine audio minutes with text tokens"
+    },
+    "voxtral-small-latest": {
+      "providerId": "mistral",
+      "endpoint": null,
+      "currency": "USD",
+      "sourceUnit": "mixed",
+      "sourcePrice": {
+        "input": 0.1,
+        "output": 0.4,
+        "audioInput": {
+          "amount": 0.004,
+          "unit": "per_minute"
+        },
+        "cachedAudioInput": {
+          "amount": 0.0004,
+          "unit": "per_minute"
+        }
+      },
+      "conditions": {
+        "pricedVersion": "voxtral-small-2507",
+        "textUnit": "per_million_tokens"
+      },
+      "source": {
+        "url": "https://docs.mistral.ai/inference/pricing",
+        "endpoint": "https://api.mistral.ai/v1",
+        "sha256": "7505bf7c257e4e673d2d1cf41da57d4f63a717465e50743aae05c226246ee2c3",
+        "checkedAt": "2026-11-19"
+      },
+      "reason": "Native Voxtral model pricing cannot combine audio minutes with text tokens"
+    },
     "deepseek-flash": {
       "providerId": "deepseek",
       "endpoint": "https://api.deepseek.com",
@@ -494,6 +765,34 @@
   },
   "upstreamSelection": {},
   "lifecycle": {
+    "gemini-2.5-flash-image": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:48:00+08:00",
+        "quoteId": "upstream:google:gemini-2.5-flash-image:USD",
+        "evidence": {
+          "url": "https://aistudio.google.com/docs/pricing#gemini-2.5-flash-image",
+          "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+          "checkedAt": "2026-11-19",
+          "detail": "Google explicitly marks this exact image model deprecated, with shutdown on 2027-03-15."
+        }
+      }
+    ],
+    "mistral-medium-latest": [
+      {
+        "state": "withdrawn",
+        "reason": "model-deprecated",
+        "at": "2026-11-19T16:48:00+08:00",
+        "quoteId": "upstream:mistral:mistral-medium-latest:USD",
+        "evidence": {
+          "url": "https://docs.mistral.ai/models/mistral-medium-3-5-26-04",
+          "sha256": "1699f8c712e4982f74c32ef0e1e3901fec8b5ab2f4c4efe87d3ecab9de8fc00c",
+          "checkedAt": "2026-11-19",
+          "detail": "The model card includes this exact alias and marks Medium 3.5 Deprecated, with retirement on 2027-04-30. The current official Vibe model configuration maps the alias to Medium 3.5."
+        }
+      }
+    ],
     "devstral-2512": [
       {
         "state": "withdrawn",

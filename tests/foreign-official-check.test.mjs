@@ -14,6 +14,9 @@ const adapterPolicy = join(directory, 'adapter-policy.json');
 const policy = JSON.parse(readFileSync('data/cny/unified-policy.json'));
 delete policy.notOfferedModels;
 policy.lifecycle = {};
+policy.nativeCapabilityExclusions = Object.fromEntries(
+  Object.entries(policy.nativeCapabilityExclusions).filter(([, price]) => price.currency === 'CNY'),
+);
 writeFileSync(adapterPolicy, JSON.stringify(policy));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline, adapterPolicy]);
 const fixtures = {
