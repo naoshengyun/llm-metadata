@@ -82,6 +82,9 @@ export const adapter = {
   parse,
 };
 
+const promotionNote =
+  /^(?:(?:Permanent |Limited-time )?\d{1,2}(?:\.\d+)?% off|(?:Limited-time )?(?:Offer|Promotion)(?: through (?:[A-Z][a-z]+ \d{1,2}(?:, \d{4})?|\d{4}-\d{2}-\d{2}))?)$/;
+
 function textPrice(text, modelId) {
   const llm = text.match(/^## LLM\n([\s\S]*?)^## Video$/m)?.[1];
   if (!llm) throw Error('Missing MiniMax international text pricing section');
@@ -104,43 +107,33 @@ function textPrice(text, modelId) {
     throw Error('Exact MiniMax International LLM price absent: ' + modelId);
   const standard = tabs.split('> [tab] Priority')[0].replace(/^> ?/gm, '');
   const rows = table(standard, columns);
-  const threshold = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens Permanent 50% off$/;
-  const low = exactRow(rows, ([cell]) => threshold.test(cell), modelId + ' ordinary', 4);
-  const sizeText = threshold.exec(low[0])[1];
-  const high = exactRow(
-    rows,
-    ([cell]) => cell === '**MiniMax-M3** > ' + sizeText + 'k input tokens\\* Permanent 50% off',
-    modelId + ' long context',
-    4,
+  const lower = /^\*\*MiniMax-M3\*\* ≤ (\d+)k input tokens(?: (.+))?$/;
+  const upper = /^\*\*MiniMax-M3\*\* > (\d+)k input tokens(?:\\\*)?(?: (.+))?$/;
+  const low = exactRow(rows, ([cell]) => lower.test(cell), modelId + ' ordinary', 4);
+  const high = exactRow(rows, ([cell]) => upper.test(cell), modelId + ' long context', 4);
+  const [, sizeText, lowerNote] = lower.exec(low[0]);
+  const [, upperSizeText, upperNote] = upper.exec(high[0]);
+  if (sizeText !== upperSizeText) throw Error('Discontinuous MiniMax M3 input bands');
+  for (const note of [lowerNote, upperNote]) {
+    if (note && !promotionNote.test(note))
+      throw Error('Unsupported MiniMax M3 Standard pricing condition: ' + note);
+  }
+  const [base, long] = [low, high].map((row) =>
+    Object.fromEntries(
+      charges.map((key, index) => [key, usdAmount(row[index + 1].replace(/^~~[^~]+~~\s+/, ''))]),
+    ),
   );
-  const rates = [low, high].map((row) => {
-    const sale = {};
-    const undiscounted = {};
-    for (const [index, key] of charges.entries()) {
-      const pair = /^~~(\\\$\d+(?:\.\d+)?)~~ (\\\$\d+(?:\.\d+)?)$/.exec(row[index + 1]);
-      if (!pair) throw Error('Missing MiniMax International original or applicable rate');
-      undiscounted[key] = usdAmount(pair[1]);
-      sale[key] = usdAmount(pair[2]);
-      if (undiscounted[key] !== 2 * sale[key])
-        throw Error('MiniMax permanent discount and numeric rates disagree');
-    }
-    return { sale, undiscounted };
-  });
-  const [base, long] = rates;
   return {
     sourcePrice: {
-      ...base.sale,
-      context_over_200k: long.sale,
-      tiers: [{ tier: { size: Number(sizeText) * 1000, type: 'context' }, ...long.sale }],
+      ...base,
+      context_over_200k: long,
+      tiers: [{ tier: { size: Number(sizeText) * 1000, type: 'context' }, ...long }],
     },
     required: [
       ...charges,
       ...charges.flatMap((key) => ['tiers.0.' + key, 'context_over_200k.' + key]),
     ],
-    conditions: {
-      discountClass: 'published-permanent-50-percent',
-      undiscounted: { currency, base: base.undiscounted, long: long.undiscounted },
-    },
+    conditions: {},
   };
 }
 

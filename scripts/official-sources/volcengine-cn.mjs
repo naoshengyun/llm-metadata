@@ -272,6 +272,19 @@ function markdownTables(markdown) {
   );
 }
 
+function modelListText(body) {
+  const html = decode(body);
+  const embedded = /<script>\s*window\._ROUTER_DATA = (\{[^]*?\})\s*;?\s*<\/script>/.exec(html);
+  if (embedded) {
+    const doc = JSON.parse(embedded[1]).loaderData?.['docs/(libid)/(docid$)/page']?.curDoc;
+    if (doc?.LibraryCode !== 'ark' || doc?.DocumentCode !== 'model-list' || doc.Language !== 'zh')
+      throw Error('Unexpected Ark model list document');
+    if (typeof doc.MDContent === 'string' && doc.MDContent.trim())
+      return htmlText(doc.MDContent.replaceAll('\\-', '-'));
+  }
+  return htmlText(html.replace(/<script\b[^]*?<\/script>/g, ''));
+}
+
 export const adapter = {
   id: 'volcengine-cn',
   url: 'https://docs.volcengine.com/docs/zh/ark/model-pricing.md',
@@ -281,13 +294,12 @@ export const adapter = {
   targets: [...textTargets, ...imageTargets, ...videoTargets],
   parse({ body, supplemental }) {
     const html = decode(body);
-    const modelList = htmlText(
-      decode(supplemental.get('model-list').body).replace(/<script\b[^]*?<\/script>/g, ''),
-    );
+    const modelList = modelListText(supplemental.get('model-list').body);
     const exactModelIds = new Set(modelList.match(/doubao-[a-z0-9-]+/g));
-    const imageAlias = modelList.includes(
-      'doubao-seedream-5-0-260128 （同时支持：doubao-seedream-5-0-lite-260128）',
-    );
+    const imageAlias =
+      /doubao-seedream-5-0-260128(?:\]\(https:\/\/ark\.volcengine\.com\/[^)]*\))? （同时支持：doubao-seedream-5-0-lite-260128）/.test(
+        modelList,
+      );
     const rendered = tables(html);
     const all = rendered.length ? rendered : markdownTables(html);
     const textTable = only(

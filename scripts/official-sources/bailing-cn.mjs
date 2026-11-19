@@ -20,12 +20,11 @@ const targets = ['Ling-3.0-flash', 'Ling-3.0-flash-VL', 'Ling-3.1-flash'].map((m
   ),
 );
 
-function original({ content, text }) {
+function currentPrice({ content, text }) {
   const matches = [...content.matchAll(/<del\b[^>]*>([^]*?)<\/del>/gi)];
   if (matches.length === 0) return number(text, '¥');
-  const [discountedPrice, originalPrice] = only(matches, 'Bailing original price markup');
-  number(htmlText(content.replace(discountedPrice, '')), '¥');
-  return number(htmlText(originalPrice), '¥');
+  const [crossedOutPrice] = only(matches, 'Bailing crossed-out price markup');
+  return number(htmlText(content.replace(crossedOutPrice, '')), '¥');
 }
 
 export const adapter = {
@@ -63,9 +62,9 @@ export const adapter = {
           tariff(
             target,
             {
-              input: original(row[2]),
-              output: original(row[4]),
-              cache_read: original(row[6]),
+              input: currentPrice(row[2]),
+              output: currentPrice(row[4]),
+              cache_read: currentPrice(row[6]),
             },
             { scope: 'first-party API' },
           ),

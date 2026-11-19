@@ -195,10 +195,42 @@ function charges(row, parse) {
   return { input: parse(parts[1]), output: parse(parts[2]), cache_read: parse(parts[3]) };
 }
 
-function original(value) {
-  const match = /^~~(\d+(?:\.\d+)?)~~ \d+(?:\.\d+)?$/.exec(value);
-  if (!match) throw Error('Missing MiniMax standard base amount and separate discount');
-  return number(match[1]);
+function currentPrice(value) {
+  return number(value.replace(/^~~[^~]+~~\s+/, ''));
+}
+
+const promotionNote =
+  /^(?:(?:永久|限时)?(?:[一二三四五六七八九]|\d(?:\.\d+)?)折|(?:限时)?优惠(?:至 ?\d{4}-\d{2}-\d{2})?)$/;
+
+function standardM3Tariff(standard, conditions) {
+  const bands = standard.split('\n').filter((line) => line.startsWith('> | **MiniMax-M3** '));
+  const lower = /^\*\*MiniMax-M3\*\* ≤ (\d+)k 输入 tokens(?: (.+))?$/;
+  const upper = /^\*\*MiniMax-M3\*\* > (\d+)k 输入 tokens(?:\\\*)?(?: (.+))?$/;
+  const low = only(
+    bands.filter((row) => lower.test(cells(row)[0])),
+    'MiniMax M3 lower band',
+  );
+  const high = only(
+    bands.filter((row) => upper.test(cells(row)[0])),
+    'MiniMax M3 upper band',
+  );
+  const [, lowerLimit, lowerNote] = lower.exec(cells(low)[0]);
+  const [, upperLimit, upperNote] = upper.exec(cells(high)[0]);
+  if (lowerLimit !== upperLimit) throw Error('Discontinuous MiniMax M3 input bands');
+  for (const note of [lowerNote, upperNote]) {
+    if (note && !promotionNote.test(note))
+      throw Error('Unsupported MiniMax M3 Standard pricing condition: ' + note);
+  }
+  const limit = number(lowerLimit) * 1000;
+  const lowPrice = charges(low, currentPrice);
+  const highPrice = charges(high, currentPrice);
+  const m3 = tariff(
+    models[0],
+    { ...lowPrice, tiers: [{ tier: { size: limit }, ...highPrice }] },
+    { ...conditions, inputThreshold: limit, serviceTier: 'standard' },
+  );
+  m3.required = Object.keys(lowPrice).concat(Object.keys(highPrice).map((key) => 'tiers.0.' + key));
+  return m3;
 }
 
 export const adapter = {
@@ -235,33 +267,12 @@ export const adapter = {
       text.split('\n').filter((line) => line.startsWith('| **MiniMax-M3.1-Flash** |')),
       'MiniMax M3.1 Flash',
     );
-    const bands = standard.split('\n').filter((line) => line.startsWith('> | **MiniMax-M3** '));
-    const low = only(
-      bands.filter((row) => /^> \| \*\*MiniMax-M3\*\* ≤ \d+k 输入 tokens 永久五折 \|/.test(row)),
-      'MiniMax M3 lower band',
-    );
-    const high = only(
-      bands.filter((row) =>
-        /^> \| \*\*MiniMax-M3\*\* > \d+k 输入 tokens\\\* 永久五折 \|/.test(row),
-      ),
-      'MiniMax M3 upper band',
-    );
-    const limit = Number(/≤ (\d+)k/.exec(low)[1]);
-    if (limit !== Number(/> (\d+)k/.exec(high)[1]))
-      throw Error('Discontinuous MiniMax M3 input bands');
-    const lowPrice = charges(low, original);
-    const highPrice = charges(high, original);
-    const m3 = tariff(
-      models[0],
-      {
-        ...lowPrice,
-        tiers: [{ tier: { size: limit * 1000 }, ...highPrice }],
-      },
-      { ...conditions, inputThreshold: limit * 1000, serviceTier: 'standard' },
-    );
-    m3.required = Object.keys(lowPrice).concat(
-      Object.keys(highPrice).map((key) => 'tiers.0.' + key),
-    );
+    let m3;
+    try {
+      m3 = standardM3Tariff(standard, conditions);
+    } catch (error) {
+      m3 = { error: error.message };
+    }
     const imageSection = /^## 图片\s*$([^]*?)^## 语音\s*$/m.exec(markdown)?.[1];
     const imageRow = imageSection
       ?.split('\n')

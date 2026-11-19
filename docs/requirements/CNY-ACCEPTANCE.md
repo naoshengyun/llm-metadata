@@ -19,3 +19,25 @@
 ## 复现
 
 在本轮提交运行 `npm run test:cny`，再运行 `node --test tests/evidence/cny-acceptance-2026-11-19.test.mjs` 回放完整验收快照。锁定的覆盖 JSON 和同步 JSON 内容摘要见响应清单。三语浏览器验证与隔离版 New API rc.50 的预览、保存、配置读回使用同一候选，供应商推理调用数为 0。平台审核与公网发布在合并后完成，生产实例应用属于独立流程。
+
+## #66 公网读回与收尾复核
+
+[#66](https://github.com/naoshengyun/llm-metadata/pull/66) 的合并提交 `ac76b63e8e8f80b5d12434286ffa0b52a656ca13` 已对应公网固定版 `eb48b5c85ca0bad81bd1b8946e8401a70c63c0a2d9cafbc18e51c27681656a0e`。公开固定版本和 New API 稳定入口价格 JSON 字节相同，SHA-256 为 `ad5a63794d79b302cee1d676c3e8352365dde57725bde619ae99e54a83d86a89`。三语目录均标记三个废弃型号，这些型号已退出同步 JSON。本次发布没有新增同步键。11 条表达式按审查更新。百炼新加坡 19 条报价和北京 27 条价格读回一致。[发版与公网验证](https://github.com/naoshengyun/llm-metadata/actions/runs/44520777595) · [公网指针](https://naoshengyun.github.io/llm-metadata/current.json)
+
+按 [#34 最终价格口径](https://github.com/naoshengyun/llm-metadata/issues/34#issuecomment-7008556062)，应使用官网当前适用的公开价。与 #66 对比，本次收尾候选更新五条国内报价。下表分别列每百万 Token 的未命中输入、输出、缓存读取，单位均为 CNY。
+
+| 型号 | #66 | 官网当前公开价 |
+| --- | --- | --- |
+| Ling-3.0-flash、Ling-3.0-flash-VL | 0.50 / 1.50 / 0.10 | 0.14 / 0.42 / 0.028 |
+| Ling-3.1-flash | 2.00 / 6.00 / 0.40 | 0.50 / 1.50 / 0.10 |
+| LongCat-2.0 | 5.00 / 20.00 / 0.10 | 2.00 / 8.00 / 0.04 |
+| MiniMax-M3 标准，≤512k | 4.20 / 16.80 / 0.84 | 2.10 / 8.40 / 0.42 |
+| MiniMax-M3 标准，>512k | 8.40 / 33.60 / 1.68 | 4.20 / 16.80 / 0.84 |
+
+国际 MiniMax 仍读取同一档位的现行 USD 金额。国内和国际适配器回归覆盖只变优惠标签或截止日的情形。LongCat 没有公布适用的当前金额时，检查失败并保留已审核价。公开资料或已批准业务范围的缺项沿用逐条矩阵，不生成同步键。41 条未选记录复核后原结论一致，已选候选有 194 条同价和 1 条正式未来价。[百灵定价](https://developer.ant-ling.com/zh-CN/docs/models/price/) · [LongCat 定价](https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0) · [MiniMax 中国定价](https://platform.minimax.cn/docs/pricing/overview) · [MiniMax 国际定价](https://platform.minimax.io/docs/pricing/overview)
+
+2026-11-19 11:39 UTC 和 12:10 UTC 两次独立采集覆盖同一组 114 个官方响应，第二次逐文件归档了新增原始字节，对内容相同的独立回包复用第一份夹具。两次都在完整候选逐键回放。对于同字节或价格未变的来源，金额变化和响应异常另以定向回归验证。两次采集日期和每个端点的证据均保留。[第二次响应和原始夹具索引](../../tests/fixtures/official-check/closeout-2026-11-19/responses.json)
+
+方舟同一官方模型列表地址实际返回过两种 HTML。一种有已渲染型号表，另一种把同一文档的 Markdown 放在静态路由数据中。已用两种官方回包验证精确型号和 Seedream 别名识别。第二种回包造成的 7 条已选核价失败均可复现并通过修正消除。[第二种官方回包](../../tests/fixtures/official-check/domestic/volcengine-models-reader-2026-11-19.gz)
+
+方舟第十批公告列出北京时间 2026-11-24 14:00 服务下线。现行报价核对按当日有效的 API 身份处理，未来退役记录供到期核对。[方舟下线公告](https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh)

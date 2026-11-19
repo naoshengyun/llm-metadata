@@ -19,6 +19,7 @@ function check(
   status = 200,
   supplementalStatus = 200,
   captureAt = attemptedAt,
+  sourceFixtures = {},
 ) {
   const captureDate = captureAt.slice(0, 10);
   const body = gunzipSync(
@@ -51,13 +52,11 @@ function check(
         : id.startsWith(sourceName + '-cn--') && supplementNames[id];
       if (supplement) {
         const supplementDate = supplement === 'volcengine-models' ? captureDate : '2026-11-18';
+        const fixture = sourceFixtures[id] ?? supplement + '-' + supplementDate;
         return {
           body: gunzipSync(
             readFileSync(
-              new URL(
-                `./fixtures/official-check/domestic/${supplement}-${supplementDate}.gz`,
-                import.meta.url,
-              ),
+              new URL(`./fixtures/official-check/domestic/${fixture}.gz`, import.meta.url),
             ),
           ),
           url,
@@ -87,13 +86,13 @@ test('Xiaomi uses the domestic real-time tariff and preserves separate cache-wri
   assert.equal(data.billing_expr['mimo-v2.6-pro'], 'tier("standard", p * 3 + cr * 0.025 + c * 6)');
 });
 
-test('Bailing and LongCat review original RMB prices from tables that also quote discounts', async () => {
+test('Bailing and LongCat use the current public RMB rates from the exact first-party tables', async () => {
   const bailing = resultFor(await check('bailing'), 'cn-bailing-Ling-3.1-flash-standard');
   const longcat = resultFor(await check('longcat'), 'cn-longcat-LongCat-2.0-standard');
   assert.equal(bailing?.status, 'unchanged');
   assert.equal(longcat?.status, 'unchanged');
-  assert.deepEqual(bailing.observed.sourcePrice, { input: 2, output: 6, cache_read: 0.4 });
-  assert.deepEqual(longcat.observed.sourcePrice, { input: 5, output: 20, cache_read: 0.1 });
+  assert.deepEqual(bailing.observed.sourcePrice, { input: 0.5, output: 1.5, cache_read: 0.1 });
+  assert.deepEqual(longcat.observed.sourcePrice, { input: 2, output: 8, cache_read: 0.04 });
 });
 
 test('BigModel China reads cache storage and model modalities as conditions alongside CNY charges', async () => {
@@ -279,17 +278,67 @@ test('StepFun verifies ASR when the CNY token table is missing', async () => {
   assert.equal(asr.evidence.supplemental.audio.status, 200);
 });
 
-test('MiniMax uses the original standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
+test('MiniMax uses the current public standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
   const report = await check('minimax');
   const m3 = resultFor(report, 'cn-minimax-MiniMax-M3-standard');
   assert.equal(m3?.status, 'unchanged', m3?.reason);
-  assert.equal(m3.observed.sourcePrice.input, 4.2);
+  assert.equal(m3.observed.sourcePrice.input, 2.1);
   assert.equal(m3.observed.sourcePrice.tiers[0].tier.size, 512000);
-  assert.equal(m3.observed.sourcePrice.tiers[0].output, 33.6);
+  assert.equal(m3.observed.sourcePrice.tiers[0].output, 16.8);
   const flash = resultFor(report, 'cn-minimax-MiniMax-M3.1-Flash-standard');
   assert.equal(flash?.status, 'unchanged', flash?.reason);
   assert.deepEqual(flash.observed.sourcePrice, { input: 1, output: 4, cache_read: 0.1 });
   assert.equal(flash.observed.conditions.cacheMinimumInputTokens, 512);
+});
+
+test('MiniMax China tolerates a promotion deadline or an unlabeled current tariff', async () => {
+  const id = 'cn-minimax-MiniMax-M3-standard';
+  for (const note of [' 优惠至 2026-12-07', '']) {
+    const report = await check('minimax', (body) => {
+      const page = body.toString().replaceAll(' 永久五折', note);
+      return Buffer.from(note ? page : page.replace(/~~[^~]+~~ +/g, ''));
+    });
+    const result = resultFor(report, id);
+    assert.equal(result.status, 'unchanged', result.reason);
+    assert.equal(result.observed.sourcePrice.cache_read, 0.42);
+    assert.equal(result.observed.sourcePrice.tiers[0].cache_read, 0.84);
+    assert.ok(!report.changes.some((change) => change.id === id));
+  }
+});
+
+test('MiniMax China rejects unrecognized request conditions and formal future prices', async () => {
+  const id = 'cn-minimax-MiniMax-M3-standard';
+  const cases = [
+    ['≤ 512k 输入 tokens 永久五折', '≤ 512k 输入 tokens 仅限批量请求', '仅限批量请求'],
+    [
+      '> 512k 输入 tokens\\* 永久五折',
+      '> 512k 输入 tokens\\* 正式报价自 2026-12-01 00:00 UTC+8 起生效',
+      '正式报价自 2026-12-01',
+    ],
+    ['≤ 512k 输入 tokens 永久五折', '≤ 512k 输入 tokens 永久五折 仅限批量请求', '仅限批量请求'],
+  ];
+  for (const [original, replacement, reason] of cases) {
+    const report = await check('minimax', (body) => {
+      const page = body.toString();
+      assert.ok(page.includes(original));
+      return Buffer.from(page.replace(original, replacement));
+    });
+    const result = resultFor(report, id);
+    assert.equal(result.status, 'failed', result.reason);
+    assert.ok(result.reason.includes(reason), result.reason);
+    assert.equal(result.observed, undefined);
+    assert.ok(!report.changes.some((change) => change.id === id));
+    assert.equal(resultFor(report, 'cn-minimax-MiniMax-H3-video').status, 'unchanged');
+  }
+});
+
+test('a missing active LongCat price cannot fall back to the comparison amount', async () => {
+  const result = resultFor(
+    await check('longcat', (body) => Buffer.from(body.toString().replace('¥0.04</td>', '—</td>'))),
+    'cn-longcat-LongCat-2.0-standard',
+  );
+  assert.equal(result.status, 'failed', result.reason);
+  assert.equal(result.observed, undefined);
 });
 
 test('missing official structure and HTTP errors fail through the daily checker', async () => {
@@ -505,6 +554,17 @@ test('Ark model IDs bind evolving text, character tariffs and the published Seed
   assert.equal(image.status, 'unchanged', image.reason);
   assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.22);
   assert.equal(image.observed.conditions.publicPriceName, 'doubao-seedream-5-0-lite');
+});
+
+test('Ark uses the real model list on the client-rendered response', async () => {
+  const report = await check('volcengine', undefined, 200, 200, '2026-11-19T12:13:00Z', {
+    'volcengine-cn--model-list': 'volcengine-models-reader-2026-11-19',
+  });
+  const ark = report.results.filter(
+    ({ sourceId, selected }) => sourceId === 'volcengine-cn' && selected,
+  );
+  assert.ok(ark.some(({ nativeKey }) => nativeKey === 'doubao-seedream-5-0-260128'));
+  for (const row of ark) assert.equal(row.status, 'unchanged', row.id + ': ' + row.reason);
 });
 
 test('Ark audio-cache amounts remain readable without exporting the incomplete old token expression', async () => {
