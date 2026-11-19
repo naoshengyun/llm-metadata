@@ -20,3 +20,5 @@
 `npm run test:cny` 在该代码共通过 149 项，其中 18 项覆盖国外读表、缓存及模态、候选复建单次乘 7、金额和条件变化、网络失败、误用来源 URL 与未来价。Morph 和 xAI 视频保留两份不同的真实响应。其他来源的独立历史版本夹具仍有缺项。明确撤价由 #41 的公共核价契约测试覆盖，本轮没有观察到明确撤价。
 
 剩余缺项见矩阵的 `reason`。Alibaba 新加坡仍有缓存、多阶梯和混合媒体待核价。Google 缺若干旧 ID、别名以及音频缓存、视频输入或混合单位的原生计费形状。Mistral 旧型号存在精确价、退役或混合单位缺口。Z.AI 限时免费存储缺少可对应上游独立缓存写入的条件。Upstage Pro 2/3 明示服务终止。Sakana Fugu Ultra 两个已选 ID 的控制台公开 GET 返回 404，公开产品页只有 v2.0 精确费率。MiniMax 国际旧型号、按字符计费和 H3 Max 的原生支持仍有缺口。保留 #35 精确延期与非 USD 排除，Google Developer API 与 Vertex 价目保持独立。
+
+2026-11-19 增量复核覆盖两个已选的 Gemini Developer API 请求 ID。Google 明确记录 `gemini-3.5-flash` 自动路由至 `gemini-3.6-flash`，`gemini-3.7-flash` 自动路由至 `gemini-3.8-flash`。核价以对应替代型号的付费 Standard 价目生成待审候选，保留原请求 ID 和路由目标。两者截至 2026-12-31 的原始 USD 每百万 Token 输入（含音频）、输出及缓存读取依次为 `0.75`、`3.75` 和 `0.075`，显式缓存存储另为 USD `0.50` 每百万 Token 小时。自 2027-01-01 起的公告金额单独记录。仅有迁移推荐、缺少精确路由或出现冲突价目时，检查失败。固定的退役文档响应已归档，原始字节 SHA-256 为 `92c195006e7eb922a9caa131670551885a63bbf1b7f6d95bcfa9de12d47a2518`。价目目录及选价文件保持原样。[Google Gemini 退役文档](https://aistudio.google.com/docs/deprecations#gemini-3-models) · [Developer API 价目](https://aistudio.google.com/docs/pricing#gemini-3.8-flash)

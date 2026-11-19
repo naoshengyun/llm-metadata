@@ -40,6 +40,7 @@ const fixtures = {
   'alibaba-international': 'alibaba',
   'alibaba-international--singapore': 'alibaba-sg-endpoint',
   'gemini-developer': 'gemini-developer',
+  'gemini-routed': 'gemini-developer',
   'mistral-standard': 'mistral',
   'mistral-standard--archive-medium': 'm-model-mistral-medium-3-5-26-04',
   'mistral-standard--archive-largex': 'm-model-mistral-large-3-25-12',
@@ -78,11 +79,9 @@ function run(mutate = (body) => body, options = {}) {
     attemptedAt: checkedAt,
     previous: options.previous,
     getResponse: async ({ id, url }) => {
-      if (!fixtures[id]) throw Error('Outside foreign fixture scope');
-      const fixture = new URL(
-        './fixtures/official-check/' + fixtures[id] + '-2026-11-18.gz',
-        import.meta.url,
-      );
+      const filename = options.fixtures?.[id] ?? (fixtures[id] && fixtures[id] + '-2026-11-18');
+      if (!filename) throw Error('Outside foreign fixture scope');
+      const fixture = new URL('./fixtures/official-check/' + filename + '.gz', import.meta.url);
       return {
         url,
         body: mutate(gunzipSync(readFileSync(fixture)), id),
@@ -256,7 +255,7 @@ test('Z.AI explicit Free rows are distinct from limited-time free storage and mi
 test('Google Developer API preserves Standard modality prices, context tiers and announced future prices separately', async () => {
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'gemini-developer');
-  assert.equal(rows.length, 37);
+  assert.equal(rows.length, 35);
   const get = (id) => rows.find(({ nativeKey }) => nativeKey === id);
   const carbon = get('gemini-4-carbon');
   assert.equal(carbon.observed.sourcePrice.input, 2);
@@ -273,6 +272,63 @@ test('Google Developer API preserves Standard modality prices, context tiers and
     report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,
     'deferred',
   );
+});
+
+const googleRoutingEvidence = {
+  attemptedAt: '2026-11-19T04:45:00Z',
+  fixtures: { 'gemini-routed--deprecations': 'gemini-deprecations-2026-11-19' },
+};
+
+test('Google verifies paid Standard tariffs for exact IDs it still routes automatically', async () => {
+  const report = await run(undefined, googleRoutingEvidence);
+  for (const [requested, routed] of [
+    ['gemini-3.5-flash', 'gemini-3.6-flash'],
+    ['gemini-3.7-flash', 'gemini-3.8-flash'],
+  ]) {
+    const id = 'upstream:google:' + requested + ':USD';
+    const row = report.results.find((result) => result.id === id);
+    assert.equal(row.status, 'changed', row.reason);
+    assert.equal(row.selected, true);
+    assert.equal(row.observed.identity.modelId, requested);
+    assert.equal(row.observed.identity.endpoint, 'https://generativelanguage.googleapis.com');
+    assert.equal(row.observed.identity.currency, 'USD');
+    assert.deepEqual(row.observed.sourcePrice, {
+      input: 0.75,
+      input_audio: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    });
+    assert.equal(row.observed.cnyCost.output, 26.25);
+    assert.equal(row.observed.conditions.routedModelId, routed);
+    assert.equal(row.observed.conditions.explicitCacheStorage.amount, 0.5);
+    assert.equal(row.observed.conditions.announcedPrices.output.amount, 7.5);
+    assert.equal(row.observed.conditions.announcedPrices.output.starts, 'January 1, 2027');
+    assert.match(row.evidence.supplemental.deprecations.sha256, /^[0-9a-f]{64}$/);
+  }
+});
+
+test('A Gemini migration recommendation cannot price the old request ID', async () => {
+  const report = await run(
+    (body, id) =>
+      id === 'gemini-routed--deprecations'
+        ? Buffer.from(
+            body
+              .toString()
+              .replace(
+                'automatically routes API requests to `gemini-3.6-flash`',
+                'recommends upgrading to `gemini-3.6-flash`',
+              ),
+          )
+        : body,
+    googleRoutingEvidence,
+  );
+  const affected = report.results.find(({ id }) => id === 'upstream:google:gemini-3.5-flash:USD');
+  assert.equal(affected.status, 'failed');
+  assert.match(affected.reason, /No exact automatic routing/);
+  assert.equal(affected.observed, undefined);
+  assert.ok(!report.changes.some(({ id }) => id === affected.id));
+  const other = report.results.find(({ id }) => id === 'upstream:google:gemini-3.7-flash:USD');
+  assert.equal(other.status, 'changed', other.reason);
 });
 
 test('MiniMax international preserves the Standard threshold and charges H3 only beyond its free image quota', async () => {
