@@ -44,15 +44,23 @@ test('unified candidate covers the researched catalog and exports every selected
   assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
   const selectedQuoteIds = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
   const english = read('api/all.json');
-  const foreignExclusions = Object.entries(input('unified-policy.json').nativeCapabilityExclusions)
-    .filter(([, price]) => price.currency === 'USD');
+  const { notOfferedModels, nativeCapabilityExclusions } = input('unified-policy.json');
+  const foreignExclusions = Object.entries(nativeCapabilityExclusions).filter(
+    ([, price]) => price.currency === 'USD',
+  );
   assert.ok(foreignExclusions.some(([id]) => id === 'lyria-3-clip-preview'));
   for (const [id, price] of foreignExclusions) {
     assert.ok(!Object.hasOwn(billing_expr, id), id);
     const model = english[price.providerId].models[id];
-    assert.equal(model.cnyPrice.status, 'unsupported', id);
+    const notOffered = notOfferedModels.includes(id);
+    assert.equal(model.cnyPrice.status, notOffered ? 'not-offered' : 'unsupported', id);
     assert.equal(model.cnyPrice.exported, false, id);
-    const quote = model.cnyPrice.quotes.find(({ source }) => source?.sha256 === price.source.sha256);
+    const quote = notOffered
+      ? coverage.models.find(
+          ({ modelId, providerId }) => modelId === id && providerId === price.providerId,
+        ).upstreamPrice
+      : model.cnyPrice.quotes.find(({ source }) => source?.sha256 === price.source.sha256);
+    assert.equal(quote.source.sha256, price.source.sha256, id);
     assert.equal(quote.sourceCurrency, 'USD', id);
     assert.equal(quote.sourceUnit, price.sourceUnit, id);
     assert.deepEqual(quote.sourcePrice, price.sourcePrice, id);
@@ -103,12 +111,17 @@ test('subscription and retired providers are omitted from the catalog and offici
     assert.ok(providers.every(({ id, subscription }) => !removed.has(id) && !subscription));
     assert.ok(models.every(({ providerId }) => !removed.has(providerId)));
     assert.ok(models.every(({ id }) => id !== 'hunyuan-a13b'));
-    assert.deepEqual(
-      Object.keys(catalog['tencent-tokenhub'].models).sort(),
-      ['hy3', 'hy3-preview', 'hy4', 'hy4-preview'],
-    );
+    assert.deepEqual(Object.keys(catalog['tencent-tokenhub'].models).sort(), [
+      'hy3',
+      'hy3-preview',
+      'hy4',
+      'hy4-preview',
+    ]);
     const qwen = catalog['alibaba-cn'].models['qwen3.7-max'].cnyPrice;
-    assert.equal(qwen.selectedQuoteId, 'dashscope--qwen3.7-max--cn-beijing-online-original-implicit');
+    assert.equal(
+      qwen.selectedQuoteId,
+      'dashscope--qwen3.7-max--cn-beijing-online-original-implicit',
+    );
     const anthropicQuotes = qwen.quotes.filter(
       ({ sourceProviderId }) => sourceProviderId === 'dashscope-anthropic',
     );
@@ -171,10 +184,21 @@ test('service scope and model deprecation remove only approved native prices', a
   const config = load(prior, filename);
   assert.ok(keys.includes('MiniMax-M2'));
   assert.ok(deprecated.includes('doubao-seed-1-8-251228'));
-  const unpricedDeprecated = 'gpt-image-1-mini';
-  assert.ok(deprecated.includes(unpricedDeprecated));
-  assert.ok(!Object.hasOwn(config.data.billing_expr, unpricedDeprecated));
-  const removed = [...keys, ...deprecated.filter((key) => key !== unpricedDeprecated)];
+  const excludedKeys = [...keys, ...deprecated];
+  const alreadyUnpriced = [
+    'gemini-embedding-2',
+    'glm-4.5',
+    'glm-4.5-x',
+    'glm-4.6',
+    'gpt-image-1-mini',
+    'qwen3-max',
+    'qwen3.6-max-preview',
+  ];
+  assert.deepEqual(
+    excludedKeys.filter((key) => !Object.hasOwn(config.data.billing_expr, key)).sort(),
+    alreadyUnpriced,
+  );
+  const removed = excludedKeys.filter((key) => !alreadyUnpriced.includes(key));
   for (const key of removed) {
     assert.ok(Object.hasOwn(config.data.billing_expr, key), key);
     delete config.data.billing_mode[key];
@@ -182,10 +206,7 @@ test('service scope and model deprecation remove only approved native prices', a
   }
   assert.deepEqual(load(candidate, filename), config);
   const { changes } = load(candidate, 'price-diff.json');
-  assert.deepEqual(
-    changes.map(({ nativeKey }) => nativeKey).sort(),
-    removed.sort(),
-  );
+  assert.deepEqual(changes.map(({ nativeKey }) => nativeKey).sort(), removed.sort());
   assert.ok(
     changes.every(
       ({ nativeKey, type, reason, evidence }) =>
@@ -198,12 +219,19 @@ test('service scope and model deprecation remove only approved native prices', a
   );
 
   const coverage = load(candidate, 'coverage.json');
-  const excluded = coverage.models.filter(({ nativeKey }) =>
-    keys.includes(nativeKey) || deprecated.includes(nativeKey),
+  const excluded = coverage.models.filter(
+    ({ nativeKey }) => keys.includes(nativeKey) || deprecated.includes(nativeKey),
   );
   assert.ok(excluded.every(({ syncable }) => !syncable));
   for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
     const catalog = load(candidate, path);
+    assert.equal(catalog.minimax.models['image-01'].cnyPrice.status, 'not-offered');
+    assert.equal(catalog['minimax-cn'].models['image-01'].cnyPrice.status, 'not-offered');
+    for (const provider of Object.values(catalog)) {
+      for (const model of Object.values(provider.models)) {
+        if (model.type === 'embedding') assert.equal(model.cnyPrice.status, 'not-offered');
+      }
+    }
     for (const { providerId, modelId, status, lifecycle: event } of excluded) {
       const model = catalog[providerId].models[modelId];
       assert.equal(status, keys.includes(modelId) ? 'not-offered' : 'deprecated');
