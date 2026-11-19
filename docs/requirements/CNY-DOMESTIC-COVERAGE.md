@@ -63,3 +63,9 @@
 | Kimi 实时 | `a25b776ac50999b18f0c7f6a1b61e7abf0cc1ebaccb51f989311df1ad9045e2d` |
 | 阶跃主价页 | `c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3` |
 | 阶跃语音说明 | `6267ae40b2460dd85c44ef2359a437f343d2392a26671944c171216ae3722613` |
+
+## 方舟 Seed 1.8
+
+`doubao-seed-1-8-251228` 的官方型号页列出四档在线 CNY 价。输入在 32,000 Token 内时，输出不超过 200 Token 的单价为 2 CNY/百万 Token，超过 200 时为 8 CNY/百万 Token。另两档按输入量计价，输出单价为 16 和 24 CNY/百万 Token。每档的缓存存储为 0.017 CNY/百万 Token·小时。批量价在原表独立列示，核查报告也独立保留。[官方型号及价目](https://docs.volcengine.com/docs/ark/bytedance-seed-1-8?lang=zh)
+
+2026-11-19 的公开核价收到 HTTP 200，响应 SHA-256 为 `5792e1ca6dd068b67864829f2be60f980287a3031af1740b9355bd8ec3bdb8e7`。现有原生模型同步缺少缓存存储时长收费项，核查将完整原价保留为参考，继续使用此前审核的同步 JSON。
