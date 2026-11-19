@@ -39,3 +39,14 @@ npm run cny:official:check -- /tmp/cny-unified /tmp/cny-official-recheck /tmp/cn
 拟议价目的 `source.supplemental` 保留这些官方文件的 URL、哈希和日期。
 
 `targets` 可用 `referenceOnlyReason` 标明已成功提取、但完整收费条件超出现有原生计费能力的价目。这些结果以 `unsupported` 报告。未到正式生效时间的新价以 `future-effective` 报告，附原价和有效时间，候选中没有替代表达式。
+
+## 每日核价和人工审核
+
+[#46](https://github.com/naoshengyun/llm-metadata/issues/46) 在业务分支每天北京时间 09:47 核对固定公网版本。Actions 的手动入口支持同一运行方式和 `observe_only`。观察模式会记录结果及构建证据。公网指针尚未指向当前业务提交时，运行等待后续再触发，以免混用报价版本和源码。
+
+- 同价只更新核查时间。读取或解析失败保留该固定版本的上次成功时间，并记录本次失败。改价候选只接收已选或已维护的确切价目，未选且缺完整证据的报价保留在报告。共享收费表仍按同组验证。
+- 语义差异生成稳定的候选分支名，来源时间或响应哈希变化本身不会产生新 PR。已打开的相同差异继续使用原 PR，人工关闭且未合并的相同差异继续显示已关闭。已合并后若同样的改价在新的发布版本再次真实发生，则开启新一轮审核。推送候选后若创建 PR 中断，后续运行核验遗留提交的 Actions 机器人身份、改动文件和业务祖先，再以原分支提交为租约续跑。GitHub App 创建 PR，#44 校验候选及人工审核合并。Actions 运行产物保存原始响应和完整差异 90 天。
+- 正式未生效的价目保留生效时间和时区，达到生效时间后再次取证才进入评审。正式撤价需要确切官方引文，并持久维护停用记录。适配器可以声明 `checkWithdrawn` 检查既有正式撤价；只有新的 `restoration.statement` 和完整适用收费表才能提出恢复候选。单纯价目重现保留原停用记录。已审核的同一恢复公告可持续出现在官网，后续核价按普通报价比较。后续改价按新报价的生效时间判断，原恢复证据保留。正式撤价及恢复的接通测试使用结构化夹具，实际消息需由厂商适配器按明确格式识别。
+- 结果写入独立的 `cny-official-check-state` 分支。分支树只含 `official-check.json`，包含确切价目、已发布版本、最近尝试、最近成功、结果和关联 PR。只允许按时间追加。页面读取与展示由 #47 接续。[核价工作流](../../.github/workflows/naoshengyun-official-price-check.yml) · [状态入口](https://raw.githubusercontent.com/naoshengyun/llm-metadata/cny-official-check-state/official-check.json)
+
+复核使用与 #67 公网价格匹配的固定版本 `fa59cf847c3a2a9361bbb8b2a79b7857d6282dbe3573f0b6fedf426f059c4415`。两次独立实跑各取得 114 份官方响应，已选报价均核价成功，其中一条正式未来价保留现价。两次识别的六条已维护但未选价目产生相同语义摘要，验证候选的 195 个同步键和表达式逐字节一致。GitHub 自动调度、状态发布和真实改价 PR 的验收以工作流合并后的运行证据为准。

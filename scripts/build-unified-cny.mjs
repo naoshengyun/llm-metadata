@@ -108,6 +108,7 @@ function validateServiceScope(policy, selection) {
 function lifecycleState(policy, selection, legacySelection, previous) {
   const asOf = effectiveTime(policy.asOf, 'asOf');
   const state = new Map();
+  const approvedRestorations = new Set();
   const priorSelection = { ...legacySelection, ...previous?.officialSelection };
   if (previous && asOf < Date.parse(previous.policy.asOf))
     throw Error('Candidate effective time cannot precede the previous reviewed cutoff');
@@ -152,6 +153,13 @@ function lifecycleState(policy, selection, legacySelection, previous) {
       throw Error('Restoration requires explicit selection: ' + key);
     if (lastEvent.state === 'withdrawn' && selection[key] && selection[key] !== lastEvent.quoteId)
       throw Error('Withdrawn native key requires explicit restoration: ' + key);
+    if (
+      lastEvent.state === 'restored' &&
+      existingEvents?.length === events.length &&
+      previous.selected[key] === lastEvent.quoteId
+    ) {
+      approvedRestorations.add(key);
+    }
     state.set(key, lastEvent);
   }
   for (const key of Object.keys(previous?.policy.upstreamSelection ?? {}))
@@ -171,7 +179,7 @@ function lifecycleState(policy, selection, legacySelection, previous) {
       !Object.hasOwn(policy.upstreamSelection, key)
     )
       throw Error('Selected price removed without withdrawal: ' + key);
-  return { asOf, state };
+  return { asOf, state, approvedRestorations, hasPrevious: Boolean(previous) };
 }
 
 function withdrawalStatus(event) {
@@ -336,6 +344,14 @@ function requiredShape(quote) {
   }
 }
 
+function sameRestorationEvidence(source, evidence) {
+  return (
+    source?.url === evidence.url &&
+    source?.sha256 === evidence.sha256 &&
+    source?.checkedAt === evidence.checkedAt
+  );
+}
+
 function officialRows(
   officialRecords,
   selection,
@@ -471,9 +487,11 @@ function officialRows(
     if (pending) throw Error('Selected quote is not yet effective: ' + quote.id);
     if (
       event?.state === 'restored' &&
-      (quote.source?.url !== event.evidence.url ||
-        quote.source?.sha256 !== event.evidence.sha256 ||
-        quote.source?.checkedAt !== event.evidence.checkedAt)
+      !sameRestorationEvidence(quote.source, event.evidence) &&
+      !(
+        (!lifecycle.hasPrevious || lifecycle.approvedRestorations.has(key)) &&
+        sameRestorationEvidence(quote.restorationEvidence, event.evidence)
+      )
     )
       throw Error('Restored quote needs matching new official evidence: ' + quote.id);
     if (diagnostic.status !== 'ready' || !applicationShapeValid)

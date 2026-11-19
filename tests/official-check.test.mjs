@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { gunzipSync } from 'node:zlib';
 import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
+import {
+  loadPublished,
+  prepareOfficialChanges,
+  validateOfficialBuild,
+} from '../scripts/prepare-official-cny.mjs';
+import { summarizeOfficialCheck } from '../scripts/official-check-state.mjs';
 import { adapter as kimi } from '../scripts/official-sources/kimi-cn.mjs';
 import { writeHistoricalCny } from './fixtures/november-2026-cny.mjs';
 
@@ -275,4 +281,249 @@ test('official future dates and evidenced withdrawals are distinct from missing 
       assert.equal(report.changes[0].observed.withdrawal.statement, statement);
     if (status === 'failed') assert.equal(report.changes.length, 0);
   }
+});
+
+const localInputs = () => ({
+  catalog: JSON.parse(readFileSync(catalogPath)),
+  selection: JSON.parse(readFileSync(selectionPath)),
+  policy: JSON.parse(readFileSync(policyPath)),
+});
+
+function publishedSnapshot(candidate, name) {
+  const snapshot = join(directory, name);
+  const bytes = readFileSync(join(candidate, 'manifest.json'));
+  const { candidateId, sourceSha } = JSON.parse(bytes);
+  const fixedBase = 'versions/' + candidateId + '/';
+  mkdirSync(join(snapshot, 'versions'), { recursive: true });
+  symlinkSync(candidate, join(snapshot, 'versions', candidateId));
+  writeFileSync(
+    join(snapshot, 'current.json'),
+    JSON.stringify({
+      schemaVersion: 3,
+      releaseId: candidateId,
+      sourceSha,
+      fixedBase,
+      manifestSha256: createHash('sha256').update(bytes).digest('hex'),
+    }),
+  );
+  return loadPublished(snapshot);
+}
+
+function buildProposal(proposal, published, name) {
+  const paths = ['policy', 'catalog', 'selection'].map((field) => {
+    const file = join(directory, name + '-' + field + '.json');
+    writeFileSync(file, JSON.stringify(proposal[field]));
+    return file;
+  });
+  const output = join(directory, name);
+  execFileSync(process.execPath, [
+    'scripts/build-unified-cny.mjs',
+    output,
+    ...paths,
+    'data/upstream/24d3f35c',
+    published.root,
+  ]);
+  validateOfficialBuild(published, proposal.plan, output);
+  return output;
+}
+
+test('official automation keeps success history and gives the same change the same review identity', async () => {
+  const published = publishedSnapshot(baseline, 'automatic-original');
+  const later = '2026-11-19T08:00:00Z';
+  const latest = '2026-11-19T09:00:00Z';
+  const first = await check();
+  const second = await check(current, {
+    attemptedAt: later,
+    previous: summarizeOfficialCheck(first, undefined, undefined, '31'),
+    getResponse: async () => ({ body: current, url, obtainedAt: later }),
+  });
+  assert.equal(prepareOfficialChanges(published, second, localInputs()).plan.changes.length, 0);
+  assert.equal(second.results.find(({ id }) => id === pro).latestSuccessfulAt, later);
+  const failed = await check(current, {
+    attemptedAt: latest,
+    previous: summarizeOfficialCheck(second, undefined, undefined, '32'),
+    getResponse: async () => {
+      throw Error('Fixture HTTP failure');
+    },
+  });
+  const failure = failed.results.find(({ id }) => id === pro);
+  assert.equal(failure.status, 'failed');
+  assert.equal(failure.latestAttemptedAt, latest);
+  assert.equal(failure.latestSuccessfulAt, later);
+  assert.equal(prepareOfficialChanges(published, failed, localInputs()).plan.changes.length, 0);
+
+  const price = mutate('¥68.00 / MTok', '¥69.25 / MTok');
+  const samePriceOtherBytes = Buffer.concat([price, Buffer.from('<!-- refreshed document -->')]);
+  const changed = await check(price);
+  const rechecked = await check(samePriceOtherBytes, {
+    attemptedAt: latest,
+    getResponse: async () => ({ body: samePriceOtherBytes, url, obtainedAt: latest }),
+  });
+  const firstProposal = prepareOfficialChanges(published, changed, localInputs());
+  const secondProposal = prepareOfficialChanges(published, rechecked, localInputs());
+  assert.equal(firstProposal.plan.digest, secondProposal.plan.digest);
+  assert.deepEqual(firstProposal.plan.changedKeys, ['kimi-k3.1-pro']);
+  buildProposal(firstProposal, published, 'automatic-changed');
+  const state = summarizeOfficialCheck(
+    changed,
+    firstProposal.plan,
+    {
+      digest: firstProposal.plan.digest,
+      status: 'opened',
+      number: 123,
+      url: 'https://github.com/naoshengyun/llm-metadata/pull/123',
+    },
+    '33',
+  );
+  assert.equal(state.results.find(({ id }) => id === pro).proposal.number, 123);
+  assert.equal(state.results.filter(({ proposal }) => proposal).length, 1);
+});
+
+test('official automation stages only effective lifecycle events with explicit evidence', async () => {
+  const inputs = localInputs();
+  const published = publishedSnapshot(baseline, 'automatic-lifecycle-original');
+  const [target] = kimi.targets.filter(({ quoteId }) => quoteId === pro);
+  const { providerId, endpoint, modelId, priceList, currency } = target;
+  const identity = { providerId, endpoint, modelId, priceList, currency };
+  const source = {
+    id: 'automatic-lifecycle',
+    url,
+    targets: [{ ...target, checkWithdrawn: true }],
+    parse: ({ body }) => new Map([[pro, JSON.parse(body)]]),
+  };
+  const row = {
+    identity,
+    sourcePrice: { input: 13, output: 68, cache_read: 1.3, cache_write: 13, cache_write_1h: 26 },
+    sourceUnit: 'per_million_tokens',
+    required: ['input', 'output', 'cache_read', 'cache_write', 'cache_write_1h'],
+    conditions: target.baselineConditions,
+  };
+  function observe(parsed, candidate = baseline, at = '2026-11-20T08:00:00Z', previous) {
+    const body = Buffer.from(JSON.stringify(parsed));
+    return check(body, {
+      baseline: candidate,
+      adapters: [source],
+      previous,
+      attemptedAt: at,
+      getResponse: async () => ({ body, url, obtainedAt: at }),
+    });
+  }
+  const future = await observe({ ...row, effectiveAt: '2026-12-01T00:00:00+08:00' });
+  assert.equal(future.results.find(({ id }) => id === pro).status, 'future-effective');
+  assert.equal(prepareOfficialChanges(published, future, inputs).plan.changes.length, 0);
+
+  const stopped = await observe({
+    identity,
+    withdrawal: { statement: 'The Standard tariff for kimi-k3.1-pro is withdrawn.' },
+  });
+  const withdrawal = prepareOfficialChanges(published, stopped, inputs);
+  assert.equal(withdrawal.policy.lifecycle['kimi-k3.1-pro'].at(-1).state, 'withdrawn');
+  const inactive = buildProposal(withdrawal, published, 'automatic-withdrawn');
+  const inactiveSnapshot = publishedSnapshot(inactive, 'automatic-lifecycle-inactive');
+  const next = '2026-11-21T08:00:00Z';
+  const reappeared = await observe(row, inactive, next);
+  assert.equal(reappeared.results.find(({ id }) => id === pro).status, 'withdrawn');
+  assert.equal(
+    prepareOfficialChanges(inactiveSnapshot, reappeared, withdrawal).plan.changes.length,
+    0,
+  );
+  const notice = 'The Standard tariff for kimi-k3.1-pro is restored.';
+  const returned = { ...row, restoration: { statement: notice } };
+  const rejected = await observe(returned);
+  assert.equal(rejected.results.find(({ id }) => id === pro).status, 'failed');
+
+  const restored = await observe(returned, inactive, next);
+  const restoration = prepareOfficialChanges(inactiveSnapshot, restored, withdrawal);
+  const event = restoration.policy.lifecycle['kimi-k3.1-pro'].at(-1);
+  assert.equal(event.state, 'restored');
+  assert.equal(restoration.selection.selection['kimi-k3.1-pro'], pro);
+  const unreviewed = structuredClone(restoration);
+  const forged = unreviewed.catalog.records.find(({ id }) => id === pro);
+  forged.restorationEvidence = event.evidence;
+  forged.source.sha256 = 'a'.repeat(64);
+  assert.throws(
+    () => buildProposal(unreviewed, inactiveSnapshot, 'unreviewed-restore'),
+    /Restored quote needs matching new official evidence/,
+  );
+
+  const active = buildProposal(restoration, inactiveSnapshot, 'automatic-restored');
+  const activeSnapshot = publishedSnapshot(active, 'automatic-lifecycle-active');
+  const sameTime = '2026-11-22T08:00:00Z';
+  const same = await observe(returned, active, sameTime);
+  const result = (report) => report.results.find(({ id }) => id === pro);
+  assert.equal(result(same).status, 'unchanged', result(same).reason);
+  assert.equal(result(same).latestSuccessfulAt, sameTime);
+  assert.equal(prepareOfficialChanges(activeSnapshot, same, restoration).plan.changes.length, 0);
+
+  const changedTime = '2026-11-23T08:00:00Z';
+  const updated = {
+    ...returned,
+    effectiveAt: '2026-11-23T00:00:00+08:00',
+    sourcePrice: { ...row.sourcePrice, output: 69 },
+  };
+  const changed = await observe(updated, active, changedTime, same);
+  assert.equal(result(changed).status, 'changed', result(changed).reason);
+  assert.equal(result(changed).latestSuccessfulAt, changedTime);
+  assert.equal(result(changed).difference.amounts.after.output, 69);
+  const repriced = prepareOfficialChanges(activeSnapshot, changed, restoration);
+  assert.deepEqual(repriced.policy.lifecycle, restoration.policy.lifecycle);
+  const after = buildProposal(repriced, activeSnapshot, 'automatic-restored-reprice');
+  assert.match(
+    JSON.parse(readFileSync(join(after, 'api/newapi/ratio_config.json'))).data.billing_expr[
+      'kimi-k3.1-pro'
+    ],
+    /c \* 69/,
+  );
+  const standalone = join(directory, 'automatic-restored-standalone');
+  execFileSync(process.execPath, [
+    'scripts/build-unified-cny.mjs',
+    standalone,
+    ...['policy', 'catalog', 'selection'].map((field) =>
+      join(directory, 'automatic-restored-reprice-' + field + '.json'),
+    ),
+  ]);
+
+  const invalid = await observe(
+    {
+      ...row,
+      restoration: { statement: 'A different restoration announcement.' },
+    },
+    active,
+    '2026-11-24T08:00:00Z',
+    changed,
+  );
+  assert.equal(result(invalid).status, 'failed');
+  assert.equal(result(invalid).latestSuccessfulAt, changedTime);
+  assert.equal(invalid.changes.length, 0);
+
+  const futureTime = '2026-11-25T08:00:00Z';
+  const nextPrice = {
+    ...returned,
+    effectiveAt: '2026-12-01T00:00:00+08:00',
+    sourcePrice: { ...row.sourcePrice, output: 70 },
+  };
+  const scheduled = await observe(nextPrice, active, futureTime, invalid);
+  assert.equal(result(scheduled).status, 'future-effective', result(scheduled).reason);
+  assert.equal(result(scheduled).latestSuccessfulAt, futureTime);
+  assert.equal(result(scheduled).observed.effectiveAt, nextPrice.effectiveAt);
+  assert.deepEqual(scheduled.changes[0].candidate.record.cost, nextPrice.sourcePrice);
+  assert.equal(
+    prepareOfficialChanges(activeSnapshot, scheduled, restoration).plan.changes.length,
+    0,
+  );
+
+  const due = await observe(nextPrice, active, '2026-11-30T16:00:00Z', scheduled);
+  assert.equal(result(due).status, 'changed', result(due).reason);
+  const activated = prepareOfficialChanges(activeSnapshot, due, restoration);
+  assert.deepEqual(activated.policy.lifecycle, restoration.policy.lifecycle);
+  const activatedCandidate = buildProposal(
+    activated,
+    activeSnapshot,
+    'automatic-restored-effective-date',
+  );
+  assert.match(
+    JSON.parse(readFileSync(join(activatedCandidate, 'api/newapi/ratio_config.json'))).data
+      .billing_expr['kimi-k3.1-pro'],
+    /c \* 70/,
+  );
 });

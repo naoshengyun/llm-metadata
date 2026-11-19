@@ -200,10 +200,7 @@ function registeredTargets(adapters, entries, notOfferedModels, excludedProvider
       httpsUrl(request.url);
     }
     for (const target of source.targets) {
-      if (
-        notOfferedModels?.includes(target.modelId) ||
-        excludedProviders.has(target.providerId)
-      )
+      if (notOfferedModels?.includes(target.modelId) || excludedProviders.has(target.providerId))
         continue;
       if (!target.group || registered.has(target.quoteId)) {
         throw Error('Invalid or duplicate official quote registration: ' + target.quoteId);
@@ -355,7 +352,7 @@ function originalRecord(entry, parsed, evidence) {
   return { record, cnyCost, expression };
 }
 
-function evaluate(entry, registration, parsed, evidence, attemptedAt) {
+function evaluate(entry, registration, parsed, evidence, attemptedAt, lifecycle) {
   const { target, identity } = registration;
   const { quote } = entry;
   if (!parsed) throw Error('Exact official price row is missing');
@@ -374,6 +371,56 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt) {
   }
   const future =
     parsed.effectiveAt !== undefined && timestamp(parsed.effectiveAt) > timestamp(attemptedAt);
+  if (lifecycle?.state === 'withdrawn') {
+    if (!parsed.restoration) {
+      return { status: 'withdrawn', reason: 'explicit-official-restoration-required' };
+    }
+    const statement = parsed.restoration.statement;
+    if (
+      parsed.withdrawal ||
+      typeof statement !== 'string' ||
+      !statement.trim() ||
+      !new TextDecoder().decode(registration.body).includes(statement) ||
+      evidence.sha256 === lifecycle.evidence.sha256 ||
+      target.referenceOnlyReason
+    ) {
+      throw Error('Formal restoration requires new explicit official evidence and a full tariff');
+    }
+    const candidate = originalRecord(entry, parsed, evidence);
+    if (!candidate.expression) throw Error('Official restoration did not emit a valid price');
+    const observed = {
+      identity,
+      restoration: { statement },
+      sourcePrice: parsed.sourcePrice,
+      sourceUnit: parsed.sourceUnit,
+      conditions: parsed.conditions,
+      effectiveAt: parsed.effectiveAt,
+      cnyCost: candidate.cnyCost,
+    };
+    return {
+      status: future ? 'future-effective' : 'restoration',
+      observed,
+      difference: { restoration: { before: lifecycle, after: observed } },
+      candidate,
+    };
+  }
+  if (parsed.restoration) {
+    const statement = parsed.restoration.statement;
+    const matchesReviewedRestoration =
+      entry.selected &&
+      lifecycle?.state === 'restored' &&
+      !parsed.withdrawal &&
+      typeof statement === 'string' &&
+      statement.trim() &&
+      statement === lifecycle.evidence.detail &&
+      evidence.finalUrl === lifecycle.evidence.url &&
+      new TextDecoder().decode(registration.body).includes(statement);
+    if (!matchesReviewedRestoration) {
+      throw Error(
+        'Formal restoration requires a withdrawn quote or the reviewed restoration notice',
+      );
+    }
+  }
   if (parsed.withdrawal) {
     if (typeof parsed.withdrawal.statement !== 'string' || !parsed.withdrawal.statement.trim()) {
       throw Error('Formal withdrawal requires an explicit official statement');
@@ -480,6 +527,14 @@ export async function checkOfficialPrices({
   for (const entry of entries) {
     const { id, quote, status, reason, selected } = entry;
     const registration = registered.get(id);
+    const previousEvent = policy.lifecycle[quote.nativeKey]?.at(-1);
+    const withdrawn =
+      status === 'withdrawn' &&
+      registration?.target.checkWithdrawn &&
+      previousEvent?.state === 'withdrawn' &&
+      previousEvent.quoteId === id
+        ? previousEvent
+        : undefined;
     const result = {
       id,
       quoteId: quote.quoteId ?? null,
@@ -494,7 +549,7 @@ export async function checkOfficialPrices({
       latestSuccessfulAt: old.get(id)?.latestSuccessfulAt ?? null,
     };
     results.push(result);
-    if (skipped.has(status)) {
+    if (skipped.has(status) && !withdrawn) {
       Object.assign(result, { status, reason });
     } else if (quote.outputKind === 'tool-reference') {
       Object.assign(result, { status: 'tool-reference', reason: 'tool-price-managed-in-New-API' });
@@ -504,7 +559,11 @@ export async function checkOfficialPrices({
         reason: 'no-official-adapter-for-exact-quote',
       });
     } else {
-      staged.push({ entry, result, registration });
+      const restored =
+        selected && previousEvent?.state === 'restored' && previousEvent.quoteId === id
+          ? previousEvent
+          : undefined;
+      staged.push({ entry, result, registration, lifecycle: withdrawn ?? restored });
     }
   }
 
@@ -516,7 +575,9 @@ export async function checkOfficialPrices({
       ? (event.reason ?? 'official-price-withdrawn')
       : 'official-registration-missing-from-unified-coverage';
     const status = withdrawn
-      ? event.reason === 'model-deprecated' ? 'deprecated' : 'withdrawn'
+      ? event.reason === 'model-deprecated'
+        ? 'deprecated'
+        : 'withdrawn'
       : 'failed';
     results.push({
       id,
@@ -604,6 +665,7 @@ export async function checkOfficialPrices({
               parsed.get(entry.id),
               evidence,
               attemptedAt,
+              item.lifecycle,
             );
           } catch (error) {
             Object.assign(result, {
@@ -636,7 +698,7 @@ export async function checkOfficialPrices({
               difference,
               latestSuccessfulAt: attemptedAt,
             });
-            if (status !== 'unchanged' && status !== 'unsupported') {
+            if (['changed', 'future-effective', 'withdrawal', 'restoration'].includes(status)) {
               changes.push({
                 id: entry.id,
                 nativeKey: entry.quote.nativeKey,
