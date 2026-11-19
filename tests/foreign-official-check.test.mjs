@@ -267,7 +267,7 @@ test('Google Developer API preserves Standard modality prices, context tiers and
   assert.equal(get('gemini-3.1-flash-image').observed.sourcePrice.output_image, 60);
   assert.equal(get('gemini-3.1-flash-lite-image').observed.sourcePrice.output_image, 30);
   assert.equal(get('gemini-3.5-live-translate-preview').observed.sourcePrice.output_audio, 21);
-  assert.match(get('gemini-2.5-flash').reason, /audio cache rate.*native/);
+  assert.equal(get('gemini-2.5-flash').status, 'unsupported');
   assert.equal(
     report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,
     'deferred',
@@ -416,7 +416,14 @@ test('international Step and Upstage retain USD precision and distinguish retire
   assert.equal(row('upstream:stepfun-ai:step-3.7-flash:USD').observed.cnyCost.output, 8.05);
   assert.equal(row('upstream:upstage:solar-pro4:USD').status, 'unchanged');
   assert.equal(row('upstream:upstage:solar-mini4:USD').observed.sourcePrice.cache_read, 0.01);
-  assert.match(row('upstream:upstage:solar-pro3:USD').reason, /retired.*2026-10-30/);
+  for (const model of ['solar-pro2', 'solar-pro3']) {
+    const retired = row('upstream:upstage:' + model + ':USD');
+    assert.equal(retired.status, 'unsupported', retired.reason);
+    assert.deepEqual(retired.observed.sourcePrice, { input: 0.15, cache_read: 0.015, output: 0.6 });
+    assert.equal(retired.observed.conditions.endOfServiceDate, '2026-10-30');
+    assert.equal(retired.observed.conditions.timeZone, 'Asia/Seoul');
+    assert.ok(!report.changes.some(({ id }) => id === retired.id));
+  }
 });
 test('Sakana reports a formal future Namazu rate without treating it as currently effective', async () => {
   const report = await run();
@@ -565,4 +572,59 @@ test('Morph checks prior real API JSON and rejects the third-party channel respo
   const row = incorrect.results.find(({ id }) => id === 'upstream:morph:morph-v3-fast:USD');
   assert.equal(row.status, 'failed');
   assert.match(row.reason, /unregistered official URL|unregistered URL/);
+});
+
+test('Gemini preserves per-song and distinct audio-cache rates without compiling partial quotes', async () => {
+  for (const file of ['gemini-developer-2026-11-18', 'gemini-reference-2026-11-19']) {
+    const report = await run(undefined, { fixtures: { 'gemini-developer': file } });
+    const find = (modelId) =>
+      report.results.find(({ id }) => id === 'upstream:google:' + modelId + ':USD');
+    const clip = find('lyria-3-clip-preview');
+    const pro = find('lyria-3-pro-preview');
+    const flash = find('gemini-2.5-flash');
+    assert.equal(clip.status, 'unsupported', clip.reason);
+    assert.equal(pro.status, 'unsupported', pro.reason);
+    assert.equal(clip.observed.sourceUnit, 'per_song');
+    assert.deepEqual(clip.observed.sourcePrice, { output: 0.04 });
+    assert.deepEqual(clip.observed.conditions, { durationSeconds: 30 });
+    assert.deepEqual(pro.observed.sourcePrice, { output: 0.08 });
+    assert.deepEqual(pro.observed.conditions, { fullSong: true });
+    assert.equal(flash.status, 'unsupported', flash.reason);
+    assert.equal(flash.observed.sourcePrice.cache_read, 0.03);
+    assert.equal(flash.observed.conditions.audioCacheRead.amount, 0.1);
+    assert.equal(flash.observed.conditions.explicitCacheStorage.amount, 1);
+    assert.ok(!report.changes.some(({ id }) => [clip.id, pro.id, flash.id].includes(id)));
+  }
+});
+
+test('Gemini reference results require the exact duration, modality, and storage units', async () => {
+  const report = await run((body, id) =>
+    id === 'gemini-developer'
+      ? replaceEvidence(
+          replaceEvidence(body, '$0.04 per song', '$0.04 per second'),
+          '$0.1 (audio)',
+          '$0.1 (video)',
+        )
+      : body,
+  );
+  const result = (id) => report.results.find(({ nativeKey }) => nativeKey === id);
+  assert.equal(result('lyria-3-clip-preview').status, 'failed');
+  assert.equal(result('lyria-3-pro-preview').status, 'unsupported');
+  assert.equal(result('gemini-2.5-flash').status, 'failed');
+});
+
+test('Upstage keeps a future or mismatched retired card out of historical results', async () => {
+  const report = await run(undefined, { attemptedAt: '2026-10-30T14:59:00Z' });
+  const result = (report) =>
+    report.results.find(({ id }) => id === 'upstream:upstage:solar-pro3:USD');
+  assert.equal(result(report).status, 'failed');
+  assert.match(result(report).reason, /Past end of service/);
+
+  const altered = await run((body, id) =>
+    id === 'upstage-api'
+      ? Buffer.from(body.toString().replaceAll('utm_content=solar-pro3"', 'utm_content=unknown"'))
+      : body,
+  );
+  assert.equal(result(altered).status, 'failed');
+  assert.match(result(altered).reason, /Exact Upstage alias/);
 });
