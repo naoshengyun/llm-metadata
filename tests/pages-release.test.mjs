@@ -56,6 +56,40 @@ function release(marker) {
   };
 }
 
+test('retaining the verified Pages archive retries a transient 503', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'pages-retain-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const previous = release('a');
+  const current = JSON.parse(previous.files['current.json']);
+  const archivePath = current.fixedBase + 'manifest.json';
+  const precedingPath = 'versions/' + 'b'.repeat(64) + '/manifest.json';
+  const preceding = release('b').files[precedingPath];
+  const manifest = JSON.parse(previous.files['site-manifest.json']);
+  manifest.files[precedingPath] = { sha256: sha(preceding), bytes: Buffer.byteLength(preceding) };
+  const files = {
+    ...previous.files,
+    [precedingPath]: preceding,
+    'site-manifest.json': json(manifest),
+  };
+  let attempts = 0;
+  const server = createServer(({ url }, response) => {
+    const path = new URL(url, 'http://localhost').pathname.slice(1);
+    if (path === precedingPath && ++attempts <= 2) {
+      response.writeHead(503).end();
+      return;
+    }
+    response.writeHead(files[path] === undefined ? 404 : 200).end(files[path]);
+  });
+  t.after(() => server.close());
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port + '/';
+  const backup = join(dir, 'retain');
+  await run('snapshot', origin, backup, previous.sourceSha, 'retain');
+  assert.equal(attempts, 3);
+  assert.equal(readFileSync(join(backup, archivePath), 'utf8'), previous.files[archivePath]);
+  assert.equal(readFileSync(join(backup, precedingPath), 'utf8'), preceding);
+});
+
 test('a verified Pages backup can recover a failed publication without replacing a newer pointer', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'pages-recovery-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
