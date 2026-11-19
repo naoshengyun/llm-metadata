@@ -5,6 +5,976 @@
   "purpose": "Official original-list maintenance candidate; not a production price or route approval",
   "records": [
     {
+      "id": "us-google-gemini-3-pro-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3-pro-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "output_image": 120
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-flash-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-flash-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "output_image": 60
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-flash-lite-image-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-flash-lite-image",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "output_image"
+      ],
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "output_image": 30
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-pro-preview-customtools-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-pro-preview-customtools",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "context_over_200k.input",
+        "tiers.0.output",
+        "context_over_200k.output",
+        "tiers.0.cache_read",
+        "context_over_200k.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 4.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.1-pro-preview-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.1-pro-preview",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "context_over_200k.input",
+        "tiers.0.output",
+        "context_over_200k.output",
+        "tiers.0.cache_read",
+        "context_over_200k.cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 200000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 4.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.5-flash-lite-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.03
+      },
+      "conditions": {
+        "explicitCacheStorage": {
+          "amount": 1,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour"
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.5-live-translate-preview-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.5-live-translate-preview",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "output_audio"
+      ],
+      "cost": {
+        "input": 3.5,
+        "input_audio": 3.5,
+        "output": 21,
+        "output_audio": 21
+      },
+      "conditions": {
+        "modalities": "audio-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.6-flash-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.6-flash",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.75,
+        "input_audio": 0.75,
+        "output": 3.75,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 1.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "output": {
+            "amount": 7.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "cache_read": {
+            "amount": 0.15,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        },
+        "explicitCacheStorage": {
+          "amount": 0.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour",
+          "announcedPrice": {
+            "amount": 1,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-3.8-flash-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-3.8-flash",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 0.75,
+        "input_audio": 0.75,
+        "output": 3.75,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 1.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "output": {
+            "amount": 7.5,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          },
+          "cache_read": {
+            "amount": 0.15,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        },
+        "explicitCacheStorage": {
+          "amount": 0.5,
+          "currency": "USD",
+          "unit": "per_million_tokens_per_hour",
+          "announcedPrice": {
+            "amount": 1,
+            "currency": "USD",
+            "through": "December 31, 2026",
+            "starts": "January 1, 2027"
+          }
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-argon-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-argon",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "input_audio": 2,
+        "output": 10,
+        "cache_read": 0.1
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 4,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "output": {
+            "amount": 20,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "cache_read": {
+            "amount": 0.2,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          }
+        },
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-carbon-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-carbon",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 2,
+        "input_audio": 2,
+        "output": 10,
+        "cache_read": 0.1
+      },
+      "conditions": {
+        "announcedPrices": {
+          "input": {
+            "amount": 4,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "output": {
+            "amount": 20,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          },
+          "cache_read": {
+            "amount": 0.2,
+            "currency": "USD",
+            "through": "November 30, 2026",
+            "starts": "December 1, 2026"
+          }
+        },
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-google-gemini-4-hydrogen-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-hydrogen",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 1.5,
+        "input_audio": 1.5,
+        "output": 7.5,
+        "cache_read": 0.075
+      },
+      "conditions": {
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+        "checkedAt": "2026-11-19"
+      }
+    },
+    {
+      "id": "us-openai-gpt-5.6-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-5.6",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.4,
+        "cache_write": 5,
+        "cache_write_12h": 10,
+        "context_over_200k": {
+          "input": 8,
+          "output": 30,
+          "cache_read": 0.8,
+          "cache_write": 10
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.8,
+            "cache_write": 10,
+            "cache_write_12h": 20
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-openai-gpt-6.2-astra-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 8,
+        "output": 40,
+        "cache_read": 0.4,
+        "cache_write": 10,
+        "cache_write_12h": 20,
+        "context_over_200k": {
+          "input": 16,
+          "output": 60,
+          "cache_read": 0.8,
+          "cache_write": 20
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 16,
+            "output": 60,
+            "cache_read": 0.8,
+            "cache_write": 20,
+            "cache_write_12h": 40
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-openai-gpt-6.2-sol-global-standard",
+      "provider": "openai",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Standard / global",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "cache_write_12h",
+        "context_over_200k.input",
+        "context_over_200k.output",
+        "context_over_200k.cache_read",
+        "context_over_200k.cache_write",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read",
+        "tiers.0.cache_write",
+        "tiers.0.cache_write_12h"
+      ],
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 0.1,
+        "cache_write": 2.5,
+        "cache_write_12h": 5,
+        "context_over_200k": {
+          "input": 4,
+          "output": 15,
+          "cache_read": 0.2,
+          "cache_write": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 15,
+            "cache_read": 0.2,
+            "cache_write": 5,
+            "cache_write_12h": 10
+          }
+        ]
+      },
+      "conditions": {},
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+            "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.md",
+            "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+            "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+            "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+            "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+            "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1.md",
+            "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o1-pro.md",
+            "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o3-mini.md",
+            "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/o4-mini.md",
+            "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+            "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+            "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "volcengine--doubao-seed-character-260628--cn-beijing-online-regular-implicit-original",
+      "provider": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seed-character-260628",
+      "priceList": "cn-beijing-online-regular-implicit-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "tiers.0.input",
+        "tiers.0.output",
+        "tiers.0.cache_read"
+      ],
+      "cost": {
+        "input": 0.8,
+        "output": 2,
+        "cache_read": 0.16,
+        "tiers": [
+          {
+            "tier": {
+              "size": 32000
+            },
+            "input": 1.2,
+            "output": 6,
+            "cache_read": 0.16
+          }
+        ]
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 128000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017,
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "49ddd0c4fc4f4474c6cdd68d99d232475981d191a232aabef93fc9ba2c3f9824",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "volcengine--doubao-seed-evolving--cn-beijing-online-regular-implicit-original",
+      "provider": "volcengine",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seed-evolving",
+      "priceList": "cn-beijing-online-regular-implicit-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "required": [
+        "input",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 6,
+        "output": 30,
+        "cache_read": 1.2
+      },
+      "conditions": {
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 1024000
+          }
+        ],
+        "cacheMode": "implicit",
+        "separateExplicitCacheStorage": {
+          "unit": "per_million_token_hours",
+          "rates": [
+            0.017
+          ]
+        }
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "49ddd0c4fc4f4474c6cdd68d99d232475981d191a232aabef93fc9ba2c3f9824",
+            "checkedAt": "2026-11-19"
+          }
+        ]
+      }
+    },
+    {
       "id": "us-xai-grok-4.20-0309-non-reasoning-global-standard",
       "provider": "xai",
       "endpoint": "https://api.x.ai/v1",

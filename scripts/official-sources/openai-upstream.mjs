@@ -108,6 +108,8 @@ const mediaKeys = {
   'Cached input': 'cache_read_image',
 };
 
+const reviewedStandardModels = new Set(['gpt-5.6', 'gpt-6.2-astra', 'gpt-6.2-sol']);
+
 export const adapter = {
   id: 'openai-upstream',
   url: 'https://developers.openai.com/api/docs/pricing.md',
@@ -117,14 +119,21 @@ export const adapter = {
     ...(id === 'gpt-5.6' && { allowedFinalUrls: [modelDocUrl('gpt-5.6-sol')] }),
   })),
   targets: models.map((modelId) => ({
-    quoteId: 'upstream:openai:' + modelId + ':USD',
+    quoteId: reviewedStandardModels.has(modelId)
+      ? 'us-openai-' + modelId + '-global-standard'
+      : 'upstream:openai:' + modelId + ':USD',
     providerId,
     endpoint,
     modelId,
     priceList,
     currency,
     group: modelId,
-    baselineIdentity: { endpoint: null, priceList: 'fixed upstream primary or original CNY sheet' },
+    ...(!reviewedStandardModels.has(modelId) && {
+      baselineIdentity: {
+        endpoint: null,
+        priceList: 'fixed upstream primary or original CNY sheet',
+      },
+    }),
     ...(historicalModels.has(modelId) && {
       referenceOnlyReason: 'OpenAI shut down this exact API model; these are historical rates',
     }),

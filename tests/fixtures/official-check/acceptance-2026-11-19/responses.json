@@ -1,0 +1,938 @@
+{
+  "attemptedAt": "2026-11-19T11:39:05.265Z",
+  "inputs": {
+    "unified-policy": "33992bcf374a00fd8c1647fe79b66867f55fa8b9f9bafab9cd38d7224e553aae",
+    "upstream/source.json": "efd97297fb22b7530ec600b8e865f041bbd00bbd5ada9e578e6f72c9f9d1ebce",
+    "upstream/en.json": "dff920e7f26fe30ec4bebf42363259f8da90ac880bd5b0f99c0a88de35a6cea3",
+    "upstream/zh.json": "fa59685c0bc110814fea697574be2345c491c040e204ecf740e87e1dc65f4b7c",
+    "upstream/ja.json": "c4b5227e7717c2e6da022d44a86a1305e59fe4df11e34c8c65ac3e1eb0f9bbdb",
+    "upstream/native.json": "86c9a45ef71ed9e0eea73a1032bc70a5a6e64ca9e08a346162a8563fa7f0ebff",
+    "data/cny/publication/artifact.json": "f2f6540a24b7730b1d2122c5cba1c5904d5797a715dcb97c2d75d6ee624ab914",
+    "data/cny/publication/upstream-release.json": "d39f499965cd9a6d418933b312a686a1a748c89868a53ed43ac74a999656c9d0",
+    "previous/ratio_config.json": "a60f815fe6bee7209dacc1af30abfe178319668551fdbfb921229bf0f373b948",
+    "previous/manifest.json": "c12f500c1f871f2a3e3d0f5e9d866654f36e6656c23f93e8a5328851b375a1a0",
+    "previous/policy.json": "ac5262232a92ec30f1fcfd094f0fc2761e60c1d60ac85b0178df509237262484",
+    "previous/coverage.json": "25ded43f5e0988476b908aeff4d84fef0aa06b3fdf2bb2a72f5a606b8ba6eae4",
+    "previous/selection.json": "cc72e026bdd4d516dc1854c2f8f8ea664b4084ddcb8fca1bb451e66c72fc18f9",
+    "previous/official-selection.json": "805ae60f93556ccdf87b9c453598551f2eee539778e0a759716a69a3950528ee",
+    "previous/api/newapi/ratio_config.json": "916926f201c9149aa9762522324fe6ff2ab39d9f44f536dd2d8e1558417e8662",
+    "official-catalog": "99838bcac65451628b6ea29f8e13ef734b26e16690c899a33fa7771bc3732fe0",
+    "official-selection": "a3371c42245b18ce0bca5a37a90a71777160e5a823c572c21fbeb7debd31d466"
+  },
+  "coverageSha256": "9e5358bbb73bffced1ebc2fe1692f8602d63e769fdb80ac7382eb65f7e7ceb26",
+  "ratioSha256": "ad5a63794d79b302cee1d676c3e8352365dde57725bde619ae99e54a83d86a89",
+  "responses": {
+    "alibaba-cn": {
+      "requestedUrl": "https://help.aliyun.com/zh/model-studio/model-pricing",
+      "finalUrl": "https://help.aliyun.com/zh/model-studio/model-pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.129Z",
+      "sha256": "f9264aaf10dceb6eb2baf504706811f087f39d3c7e1364eeaad5e6f4b72122fe",
+      "fixture": "acceptance-2026-11-19/alibaba-cn.gz"
+    },
+    "alibaba-cn--cache": {
+      "requestedUrl": "https://help.aliyun.com/zh/model-studio/context-cache",
+      "finalUrl": "https://help.aliyun.com/zh/model-studio/context-cache",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.520Z",
+      "sha256": "e51047dc98ded2f9dc5ca7930af4b46c1bcdc824918b5fb29d7ad72e2a71c6b7",
+      "fixture": "acceptance-2026-11-19/alibaba-cn--cache.gz"
+    },
+    "alibaba-cn--character": {
+      "requestedUrl": "https://help.aliyun.com/zh/model-studio/role-play",
+      "finalUrl": "https://help.aliyun.com/zh/model-studio/role-play",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.810Z",
+      "sha256": "401989d0a06dcf2bbfeaff6d0bebca9e70143135d89c0d689421990b5b14a587",
+      "fixture": "acceptance-2026-11-19/alibaba-cn--character.gz"
+    },
+    "alibaba-cn--omni": {
+      "requestedUrl": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+      "finalUrl": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.374Z",
+      "sha256": "f2959fc848b33743c2daedfb7d1c098d9501327dc2062f2e60be27ffc03bc124",
+      "fixture": "acceptance-2026-11-19/alibaba-cn--omni.gz"
+    },
+    "alibaba-cn--thinking": {
+      "requestedUrl": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+      "finalUrl": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.874Z",
+      "sha256": "fb3c51d5390575471d2143129e97f1598a6c39ab35db584648a9a10384936a9a",
+      "fixture": "acceptance-2026-11-19/alibaba-cn--thinking.gz"
+    },
+    "alibaba-international": {
+      "requestedUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+      "finalUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.857Z",
+      "sha256": "5ba89ca20f54dff4caecf0b3e07150d86cc98c93bccfe3f070c7df10ed1d3345",
+      "fixture": "acceptance-2026-11-19/alibaba-international.gz"
+    },
+    "alibaba-international--singapore": {
+      "requestedUrl": "https://www.alibabacloud.com/help/en/model-studio/singapore-regional-access-information",
+      "finalUrl": "https://www.alibabacloud.com/help/en/model-studio/singapore-regional-access-information",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.010Z",
+      "sha256": "c6e0c74bd6e13bb995eb7c4a4ac3a77a81b337754c260d42bc4ebf433fd25d94",
+      "fixture": "acceptance-2026-11-19/alibaba-international--singapore.gz"
+    },
+    "anthropic-global": {
+      "requestedUrl": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+      "finalUrl": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.522Z",
+      "sha256": "8fba19f5dbcab60a1ebb3f68b7d3785f6286f76e239d9a3191f2a2a1e06de9d3",
+      "fixture": "acceptance-2026-11-19/anthropic-global.gz"
+    },
+    "anthropic-global--ids": {
+      "requestedUrl": "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions.md",
+      "finalUrl": "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.185Z",
+      "sha256": "821abd1b54ba7704c07c9fc7337e42c58f53da2fbd9956fd1fce3f307a3958bf",
+      "fixture": "acceptance-2026-11-19/anthropic-global--ids.gz"
+    },
+    "anthropic-global--opus-4-5": {
+      "requestedUrl": "https://platform.claude.com/docs/en/models/opus-4-5/overview.md",
+      "finalUrl": "https://platform.claude.com/docs/en/models/opus-4-5/overview.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.859Z",
+      "sha256": "05e1a2c031950ef63be8567edc615d7bd4e76ec09e5af652aa19eff774bda633",
+      "fixture": "anth-opus45-2026-11-18.gz"
+    },
+    "bailian-cny-qwen3-8-flash": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-flash.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.518Z",
+      "sha256": "ad8108b728cb0100427f4ad7d9f4a04166de50b25074397cd5b45dba4b5edec2",
+      "fixture": "bailian-cny-qwen3-8-flash-2026-11-19.gz"
+    },
+    "bailian-cny-qwen3-8-flash--cache": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.529Z",
+      "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe",
+      "fixture": "bailian-card-cache-2026-11-19.gz"
+    },
+    "bailian-cny-qwen3-8-max": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-max.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/qwen3-8-max.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.516Z",
+      "sha256": "528cad6ecb741253233ff83ee1525729a8184d946cbcb0d33b5bf690ba458a88",
+      "fixture": "bailian-cny-qwen3-8-max-2026-11-19.gz"
+    },
+    "bailian-cny-qwen3-8-max--cache": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.540Z",
+      "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe",
+      "fixture": "bailian-card-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.725Z",
+      "sha256": "19320c7ed2947ef5727e4fe6004e6f2b077b4f69fa2efa9c84c37c7648951e57",
+      "fixture": "bailian-sg-qwen-flash-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-flash--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.971Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-max": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-max.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-max.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.065Z",
+      "sha256": "68a31eef2fe05e5463744cb4433147c4e1519e1c93ce4f8859448892db6b9ee4",
+      "fixture": "bailian-sg-qwen-max-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-max--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.371Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-plus": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-plus.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-plus.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.529Z",
+      "sha256": "c73e8b8043ce7cf47ce0c5895706f9e5fb5cc896ec86d0cf75cbdc2c592c114c",
+      "fixture": "bailian-sg-qwen-plus-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-plus--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.808Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen-plus--thinking": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/deep-thinking.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/deep-thinking.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.645Z",
+      "sha256": "474010ef2cc94c0f0b596468c007a327f21a67c37cdba8dfc39915fd8c5d3297",
+      "fixture": "bailian-sg-thinking-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-5-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.173Z",
+      "sha256": "f57c10b34612d8d52df58bd690122c410e1f32eaad47ae3dd728e40f9eb871db",
+      "fixture": "bailian-sg-qwen3-5-flash-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-5-flash--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.547Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-5-plus": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-plus.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-5-plus.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.278Z",
+      "sha256": "872e74415a21521dcc42eadd1689841b560f2a93b7636f074364bda78bd2dca6",
+      "fixture": "bailian-sg-qwen3-5-plus-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-5-plus--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.564Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-6-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.299Z",
+      "sha256": "82572aad21fa681b8139752aea7e6baaafac59d7d8427176fec83c9874bfec4f",
+      "fixture": "bailian-sg-qwen3-6-flash-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-6-flash--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.588Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-6-plus": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-plus.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-6-plus.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.417Z",
+      "sha256": "6589ed07a7d7525cb4898169e017585d9253c916247be4d3f63a8d0fb0504335",
+      "fixture": "bailian-sg-qwen3-6-plus-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-6-plus--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.703Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.441Z",
+      "sha256": "c35a3e414c7d55452b5bf3021300882705d54f4aa53c2dc348e5cc6bfd1cbb8e",
+      "fixture": "bailian-sg-qwen3-7-flash-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-flash--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.748Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-max": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-max.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-max.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.333Z",
+      "sha256": "0b7e6d26342ec8df3ae8d7edd7443fac209fcc9c1a8700c499392884686b586f",
+      "fixture": "bailian-sg-qwen3-7-max-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-max--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.638Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-plus": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-plus.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-7-plus.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.245Z",
+      "sha256": "2f2d39ba0321f9e2d2ff572c8b7cffad27bde28a16697162fe2a771fe7d966a6",
+      "fixture": "bailian-sg-qwen3-7-plus-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-7-plus--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.553Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-coder-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-coder-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-coder-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.743Z",
+      "sha256": "d53bbe9393c7aa443ad0994e8c885115ab60285a0d89e4bbe33a015d16bab31f",
+      "fixture": "bailian-sg-qwen3-coder-flash-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-coder-flash--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.225Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-vl-plus": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-vl-plus.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-vl-plus.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.870Z",
+      "sha256": "fa2c601d21bc4a71b7441e34f3ee596abbb965767942a309709b1fae856e4697",
+      "fixture": "bailian-sg-qwen3-vl-plus-2026-11-19.gz"
+    },
+    "bailian-sg-qwen3-vl-plus--cache": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.409Z",
+      "sha256": "e74aa6886c295d16160dfc90a3a5743e49faa0ef4a9a4fa7a2abcf2aab6e52f9",
+      "fixture": "bailian-sg-cache-2026-11-19.gz"
+    },
+    "bailian-usd-qwen3-8-flash": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-flash.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-flash.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.284Z",
+      "sha256": "528b3da95b51a1335c8463c5c2b5d175180fb8e8c89fbd393436a6cfddbedd4d",
+      "fixture": "bailian-usd-qwen3-8-flash-2026-11-19.gz"
+    },
+    "bailian-usd-qwen3-8-flash--cache": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.303Z",
+      "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe",
+      "fixture": "bailian-card-cache-2026-11-19.gz"
+    },
+    "bailian-usd-qwen3-8-max": {
+      "requestedUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-max.md",
+      "finalUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen3-8-max.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.983Z",
+      "sha256": "0dd74dd382bdb21a135376257b31e7b779d01b8d40693cd46538f5a3129b2b79",
+      "fixture": "bailian-usd-qwen3-8-max-2026-11-19.gz"
+    },
+    "bailian-usd-qwen3-8-max--cache": {
+      "requestedUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "finalUrl": "https://docs.bailian.console.aliyun.com/zh/model-studio/context-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.001Z",
+      "sha256": "4bf05142656879679cba646ef200a296503f862a3e20b495cb9c8cf41ce844fe",
+      "fixture": "bailian-card-cache-2026-11-19.gz"
+    },
+    "bailing-cn": {
+      "requestedUrl": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+      "finalUrl": "https://developer.ant-ling.com/zh-CN/docs/models/price/",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.986Z",
+      "sha256": "23e721f988f8b4b83dcc7ab6efe8d8eb68224827664d54c30ad5cc9e22edd54d",
+      "fixture": "domestic/bailing-2026-11-18.gz"
+    },
+    "cohere-api": {
+      "requestedUrl": "https://cohere.com/pricing",
+      "finalUrl": "https://cohere.com/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.729Z",
+      "sha256": "1315e784ab8625cf61e32789ccd88c2010ece9ca6bfe8606ebca1b9fa52171fb",
+      "fixture": "co-pricing-2026-11-18.gz"
+    },
+    "cohere-api--aya-expanse": {
+      "requestedUrl": "https://docs.cohere.com/docs/aya-expanse",
+      "finalUrl": "https://docs.cohere.com/docs/aya-expanse",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:10.230Z",
+      "sha256": "da3025a095a7a631c628e1efd168cae13dadd68138a385d5102220856b1f44f0",
+      "fixture": "acceptance-2026-11-19/cohere-api--aya-expanse.gz"
+    },
+    "cohere-api--command-a": {
+      "requestedUrl": "https://docs.cohere.com/docs/command-a",
+      "finalUrl": "https://docs.cohere.com/docs/command-a",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.227Z",
+      "sha256": "658bd6ea0b533b264148075bb2097f23bb6a4777b983de9d64f8704a7784a5d6",
+      "fixture": "acceptance-2026-11-19/cohere-api--command-a.gz"
+    },
+    "cohere-api--command-r": {
+      "requestedUrl": "https://docs.cohere.com/docs/command-r",
+      "finalUrl": "https://docs.cohere.com/docs/command-r",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.707Z",
+      "sha256": "a53f88d4b0420f7bd6b93285225292b3bad5363d4a400609812d5f2362b88003",
+      "fixture": "acceptance-2026-11-19/cohere-api--command-r.gz"
+    },
+    "cohere-api--command-r-plus": {
+      "requestedUrl": "https://docs.cohere.com/docs/command-r-plus",
+      "finalUrl": "https://docs.cohere.com/docs/command-r-plus",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.150Z",
+      "sha256": "a79c6e30577c4ff5acdfb52c702a1b6319158ec3e407f9f14c22cf9f238fdad5",
+      "fixture": "acceptance-2026-11-19/cohere-api--command-r-plus.gz"
+    },
+    "cohere-api--command-r7b": {
+      "requestedUrl": "https://docs.cohere.com/docs/command-r7b",
+      "finalUrl": "https://docs.cohere.com/docs/command-r7b",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.577Z",
+      "sha256": "18cb6e86dfec4a2eb2130537f75ee966b025e3bbe9b0c6f8fde35f8600d5a34e",
+      "fixture": "acceptance-2026-11-19/cohere-api--command-r7b.gz"
+    },
+    "deepseek-cn": {
+      "requestedUrl": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+      "finalUrl": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.536Z",
+      "sha256": "08a4637872372fa040b7bd0f8f5b7688817e30b1d056a0a58eb9fa5d4cf00234",
+      "fixture": "acceptance-2026-11-19/deepseek-cn.gz"
+    },
+    "gemini-developer": {
+      "requestedUrl": "https://aistudio.google.com/docs/pricing.md",
+      "finalUrl": "https://aistudio.google.com/docs/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.524Z",
+      "sha256": "9c7ea643955f30d793c3b18d0b49ee85d5eb946c7d5cda3dcef3170f4b8ef92d",
+      "fixture": "gemini-developer-2026-11-19.gz"
+    },
+    "kimi-batch-cn": {
+      "requestedUrl": "https://platform.kimi.com/docs/pricing/batch",
+      "finalUrl": "https://platform.kimi.com/docs/pricing/batch",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:16.092Z",
+      "sha256": "d3e1d0715f9536d0fdba097f4808a9a9536a63232b477b576046559a177a0cd1",
+      "fixture": "acceptance-2026-11-19/kimi-batch-cn.gz"
+    },
+    "kimi-cn-chat": {
+      "requestedUrl": "https://platform.kimi.com/docs/pricing/chat",
+      "finalUrl": "https://platform.kimi.com/docs/pricing/chat",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.330Z",
+      "sha256": "9e467c4d2ad60546e9536efc5b923011631d2e32b352d001c54d87a41817a301",
+      "fixture": "acceptance-2026-11-19/kimi-cn-chat.gz"
+    },
+    "kimi-global": {
+      "requestedUrl": "https://platform.kimi.ai/docs/pricing/chat",
+      "finalUrl": "https://platform.kimi.ai/docs/pricing/chat",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.706Z",
+      "sha256": "364dd74b8cce6f657f9526c373f1cfc83676d74e1b19857193dc7d59dcaf1dbf",
+      "fixture": "acceptance-2026-11-19/kimi-global.gz"
+    },
+    "kimi-global--currency": {
+      "requestedUrl": "https://platform.kimi.ai/docs/api/balance.md",
+      "finalUrl": "https://platform.kimi.ai/docs/api/balance.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.168Z",
+      "sha256": "18b0c3cc06be8b54c4f67cc3c9166dc901b6a643200e50f101240f0c062aca0f",
+      "fixture": "kimi-balance-2026-11-18.gz"
+    },
+    "longcat-cn": {
+      "requestedUrl": "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0",
+      "finalUrl": "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.696Z",
+      "sha256": "a3db027207849bb7161a17f940eee945fe06ae0cefe6be8f273bc42d0ba3de4c",
+      "fixture": "domestic/longcat-2026-11-18.gz"
+    },
+    "minimax-cn": {
+      "requestedUrl": "https://platform.minimax.cn/docs/pricing/overview.md",
+      "finalUrl": "https://platform.minimax.cn/docs/pricing/overview.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.893Z",
+      "sha256": "0eb2be5257573c796b8a2aa3b9d581a2344693c75f8869b413c52f3dab3bb71d",
+      "fixture": "acceptance-2026-11-19/minimax-cn.gz"
+    },
+    "minimax-cn--cache": {
+      "requestedUrl": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+      "finalUrl": "https://platform.minimax.cn/docs/api-reference/text-prompt-caching.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.266Z",
+      "sha256": "57c21cc1354c8b52070b0526461b85cf32c63f937a3ecdb27c53736046c46e74",
+      "fixture": "domestic/minimax-cache-2026-11-18.gz"
+    },
+    "minimax-cn--video": {
+      "requestedUrl": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create.md",
+      "finalUrl": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.703Z",
+      "sha256": "685b347f6fbf1fdda56c350275fe52c68de05e78e9d2d63d0a8d54cf8c2ed8ac",
+      "fixture": "domestic/minimax-video-2026-11-18.gz"
+    },
+    "minimax-international": {
+      "requestedUrl": "https://platform.minimax.io/docs/pricing/overview.md",
+      "finalUrl": "https://platform.minimax.io/docs/pricing/overview.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.379Z",
+      "sha256": "aaa2c8c860fd072e80d3f794ccdea13da89fe24c8a792b176239f8928f9116dd",
+      "fixture": "acceptance-2026-11-19/minimax-international.gz"
+    },
+    "minimax-international--video-api": {
+      "requestedUrl": "https://platform.minimax.io/docs/api-reference/video-generation-v2-create.md",
+      "finalUrl": "https://platform.minimax.io/docs/api-reference/video-generation-v2-create.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.694Z",
+      "sha256": "6d47dabc50f1ffd09763e0a07549240efd32752fef94c5c898aff2472cd1be55",
+      "fixture": "minimax-video-api-2026-11-18.gz"
+    },
+    "mistral-standard": {
+      "requestedUrl": "https://docs.mistral.ai/inference/pricing",
+      "finalUrl": "https://docs.mistral.ai/inference/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.440Z",
+      "sha256": "4300488037b6a57d1ca560204678142e669d7e0e467c70510bbfbd27c595e4b3",
+      "fixture": "acceptance-2026-11-19/mistral-standard.gz"
+    },
+    "mistral-standard--alias-codestral": {
+      "requestedUrl": "https://docs.mistral.ai/models/codestral-25-08.md",
+      "finalUrl": "https://docs.mistral.ai/models/codestral-25-08.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.838Z",
+      "sha256": "5c2ab43c049ff358ea9628947d190c0e40170bf0fc43591cb8443e040ac9cecd",
+      "fixture": "m-model-codestral-25-08-2026-11-18.gz"
+    },
+    "mistral-standard--alias-embed": {
+      "requestedUrl": "https://docs.mistral.ai/models/mistral-embed-23-12.md",
+      "finalUrl": "https://docs.mistral.ai/models/mistral-embed-23-12.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.804Z",
+      "sha256": "1262c242805f0ab576894630f07a212fa4dfe973f40ee5936004219875e7fd73",
+      "fixture": "m-model-mistral-embed-23-12-2026-11-18.gz"
+    },
+    "mistral-standard--alias-large": {
+      "requestedUrl": "https://docs.mistral.ai/models/mistral-large-4-0.md",
+      "finalUrl": "https://docs.mistral.ai/models/mistral-large-4-0.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.410Z",
+      "sha256": "1dc73a45b5b6472c7cc8d0858c9349fdee03950808971b7683eb39843e0f2e0a",
+      "fixture": "m-model-mistral-large-4-0-2026-11-18.gz"
+    },
+    "mistral-standard--alias-ministral3": {
+      "requestedUrl": "https://docs.mistral.ai/models/ministral-3-3b-25-12.md",
+      "finalUrl": "https://docs.mistral.ai/models/ministral-3-3b-25-12.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.012Z",
+      "sha256": "57f2c51d03f52e0db408b5767744b7153bfec982504797d24e2e9167b00c48b6",
+      "fixture": "m-model-ministral-3-3b-25-12-2026-11-18.gz"
+    },
+    "mistral-standard--alias-ministral8": {
+      "requestedUrl": "https://docs.mistral.ai/models/ministral-3-8b-25-12.md",
+      "finalUrl": "https://docs.mistral.ai/models/ministral-3-8b-25-12.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.237Z",
+      "sha256": "0a8ed9e708fe89799cdc89a1b6b48c8f4e8bb6151291bd1f20e28c0e2967fa9d",
+      "fixture": "m-model-ministral-3-8b-25-12-2026-11-18.gz"
+    },
+    "mistral-standard--alias-small": {
+      "requestedUrl": "https://docs.mistral.ai/models/mistral-small-4-0-26-03.md",
+      "finalUrl": "https://docs.mistral.ai/models/mistral-small-4-0-26-03.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.635Z",
+      "sha256": "50a7c2c6d5a74da1994d46e55f02da57320d87cb619bc6503529c0950fefb489",
+      "fixture": "m-model-mistral-small-4-0-26-03-2026-11-18.gz"
+    },
+    "mistral-standard--api-ids": {
+      "requestedUrl": "https://docs.mistral.ai/inference/pricing.md",
+      "finalUrl": "https://docs.mistral.ai/inference/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.606Z",
+      "sha256": "928ce23d99ade5f8395a5cd3d07d390b1d1af84a6c75397760024f367198b4b1",
+      "fixture": "mistral-md-2026-11-18.gz"
+    },
+    "mistral-standard--archive-medium": {
+      "requestedUrl": "https://docs.mistral.ai/models/mistral-medium-3-5-26-04.md",
+      "finalUrl": "https://docs.mistral.ai/models/mistral-medium-3-5-26-04.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.196Z",
+      "sha256": "1699f8c712e4982f74c32ef0e1e3901fec8b5ab2f4c4efe87d3ecab9de8fc00c",
+      "fixture": "m-model-mistral-medium-3-5-26-04-2026-11-18.gz"
+    },
+    "mistral-voxtral": {
+      "requestedUrl": "https://docs.mistral.ai/inference/pricing",
+      "finalUrl": "https://docs.mistral.ai/inference/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.441Z",
+      "sha256": "4300488037b6a57d1ca560204678142e669d7e0e467c70510bbfbd27c595e4b3",
+      "fixture": "acceptance-2026-11-19/mistral-standard.gz"
+    },
+    "mistral-voxtral--model": {
+      "requestedUrl": "https://docs.mistral.ai/models/voxtral-small-25-07.md",
+      "finalUrl": "https://docs.mistral.ai/models/voxtral-small-25-07.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.674Z",
+      "sha256": "8d6a3a4a2025b68f4cf8d0f7d0b072837bf6f5aad9ea2b102244978662cd0ed2",
+      "fixture": "m-legacy-voxtral-small-25-07-2026-11-19.gz"
+    },
+    "morph-list": {
+      "requestedUrl": "https://www.morphllm.com/api/models/json?prices=list",
+      "finalUrl": "https://www.morphllm.com/api/models/json?prices=list",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.616Z",
+      "sha256": "616f4ce2b6502ad918fc8bf54af5cde824a310a4102dcebe86a5e7d78438c421",
+      "fixture": "acceptance-2026-11-19/morph-list.gz"
+    },
+    "morph-list--api-docs": {
+      "requestedUrl": "https://docs.morphllm.com/llms.txt",
+      "finalUrl": "https://docs.morphllm.com/llms.txt",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.665Z",
+      "sha256": "4a107e1e60d15b29adc6882dc08819f42ffdf05c05884fc3a6937f0b627bf4ac",
+      "fixture": "acceptance-2026-11-19/morph-list--api-docs.gz"
+    },
+    "openai-standard": {
+      "requestedUrl": "https://developers.openai.com/api/docs/pricing.md",
+      "finalUrl": "https://developers.openai.com/api/docs/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.361Z",
+      "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+      "fixture": "openai-upstream-2026-11-19.gz"
+    },
+    "openai-standard--cache": {
+      "requestedUrl": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+      "finalUrl": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.815Z",
+      "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+      "fixture": "oic-2026-11-18.gz"
+    },
+    "openai-standard--currency": {
+      "requestedUrl": "https://developers.openai.com/api/docs/guides/chatgpt-api-credits.md",
+      "finalUrl": "https://developers.openai.com/api/docs/guides/chatgpt-api-credits.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.578Z",
+      "sha256": "9b67d001e3b6e7c49087b64e37eb223e61f6a332199e2cd432b17e80cecfe360",
+      "fixture": "openai-currency-2026-11-18.gz"
+    },
+    "openai-standard--images": {
+      "requestedUrl": "https://developers.openai.com/api/docs/guides/image-generation.md",
+      "finalUrl": "https://developers.openai.com/api/docs/guides/image-generation.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.076Z",
+      "sha256": "8eeb505c3b50ac3bbd17f72b066797971ce4b1b3285cddb3e480426abd8a4de5",
+      "fixture": "ois-2026-11-18.gz"
+    },
+    "openai-upstream": {
+      "requestedUrl": "https://developers.openai.com/api/docs/pricing.md",
+      "finalUrl": "https://developers.openai.com/api/docs/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.328Z",
+      "sha256": "427698a0c4f1cf4abb2569cb0f9a4ca7fcacfa2f45d61a75f221f0b590ac5114",
+      "fixture": "openai-upstream-2026-11-19.gz"
+    },
+    "openai-upstream--chatgpt-image-latest": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/chatgpt-image-latest.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.958Z",
+      "sha256": "6d50945ddd1515709ea037d61a3c70c2ed00ca3025546c5099722a871afd88e4",
+      "fixture": "o-model-chatgpt-image-latest-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-3-5-turbo": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-3.5-turbo.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.690Z",
+      "sha256": "79aca5d4e7c5a75ada316c9b39198a3b40a0779a77dd7511718f266edfa3a816",
+      "fixture": "o-model-gpt-3.5-turbo-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-4": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-4.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-4.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.943Z",
+      "sha256": "d24bd9115e8af73b346485073f5c79d4c8e0d414937c1b3460d5560a14ec3252",
+      "fixture": "o-model-gpt-4-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-4-1-nano": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-4.1-nano.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.458Z",
+      "sha256": "1ea6f18490e66d7a10f6cf5963474fa1af2f72075239029e4037fc2464a5ff3c",
+      "fixture": "o-model-gpt-4.1-nano-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-4-turbo": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-4-turbo.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.193Z",
+      "sha256": "c4f2ec72dacf6e38cd29153a33c91f71181b1473487828960eba900da712571b",
+      "fixture": "o-model-gpt-4-turbo-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-4o": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.714Z",
+      "sha256": "c98d07da49edad494c7c945dbd70666f151d6acda57671802118c8515f3c0986",
+      "fixture": "o-model-gpt-4o-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-5-6": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-5.6.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.284Z",
+      "sha256": "c0c7f9a635a572335cfe0ba4ea9b920d9b3d2b40aa1ba9f31f3adff203834637",
+      "fixture": "o-model-gpt-5.6-2026-11-18.gz"
+    },
+    "openai-upstream--gpt-image-1-5": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/gpt-image-1.5.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.700Z",
+      "sha256": "4bef0bcda731e0067f678e5629e29ea07d9773d17491c6c3fd6359981b703939",
+      "fixture": "o-model-gpt-image-1.5-2026-11-18.gz"
+    },
+    "openai-upstream--o1": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/o1.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/o1.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.692Z",
+      "sha256": "4691931cc034f2e001c0edb4347deb3e8d4d2358cc516e2b417e688ec9237105",
+      "fixture": "o-model-o1-2026-11-18.gz"
+    },
+    "openai-upstream--o1-pro": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/o1-pro.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/o1-pro.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.939Z",
+      "sha256": "e818d89baa5ed7693559a3703452b0170214c3cde6ea590011ad8f36ac7115ad",
+      "fixture": "o-model-o1-pro-2026-11-18.gz"
+    },
+    "openai-upstream--o3-mini": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/o3-mini.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/o3-mini.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.194Z",
+      "sha256": "23d810d39bda7e60494d7c7e9b5eb72d09121706197b083ed5adbb47bba75bdc",
+      "fixture": "o-model-o3-mini-2026-11-18.gz"
+    },
+    "openai-upstream--o4-mini": {
+      "requestedUrl": "https://developers.openai.com/api/docs/models/o4-mini.md",
+      "finalUrl": "https://developers.openai.com/api/docs/models/o4-mini.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:09.448Z",
+      "sha256": "c4e89653bfa6b1f0649cf7f2bf9a453d4cb95d102263a0df0038827db41bb1a0",
+      "fixture": "o-model-o4-mini-2026-11-18.gz"
+    },
+    "sakana-namazu": {
+      "requestedUrl": "https://sakana.ai/namazu/",
+      "finalUrl": "https://sakana.ai/namazu/",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.545Z",
+      "sha256": "ad528d70b001a0c123f6cfc21566564fd54f9ecd861e8551445949799a714fc1",
+      "fixture": "sakana-namazu-2026-11-18.gz"
+    },
+    "stepfun-cn": {
+      "requestedUrl": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+      "finalUrl": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.153Z",
+      "sha256": "c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3",
+      "fixture": "domestic/stepfun-2026-11-18.gz"
+    },
+    "stepfun-cn-asr": {
+      "requestedUrl": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+      "finalUrl": "https://platform.stepfun.com/docs/zh/guides/pricing/details.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.154Z",
+      "sha256": "c9613abfa436faeb75f33c72e491a4a49fa8e5de547e338d5dc02038bbd39cf3",
+      "fixture": "domestic/stepfun-2026-11-18.gz"
+    },
+    "stepfun-cn-asr--audio": {
+      "requestedUrl": "https://platform.stepfun.com/docs/zh/guides/models/audio.md",
+      "finalUrl": "https://platform.stepfun.com/docs/zh/guides/models/audio.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.500Z",
+      "sha256": "6267ae40b2460dd85c44ef2359a437f343d2392a26671944c171216ae3722613",
+      "fixture": "domestic/stepfun-audio-2026-11-18.gz"
+    },
+    "stepfun-international": {
+      "requestedUrl": "https://platform.stepfun.ai/docs/en/guides/pricing/details.md",
+      "finalUrl": "https://platform.stepfun.ai/docs/en/guides/pricing/details.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.723Z",
+      "sha256": "8bfea3c76414bfb4717d4c99c84c07d26f873f4661eacb3980c614a65321dc6f",
+      "fixture": "step-intl-2026-11-18.gz"
+    },
+    "stepfun-international--cache": {
+      "requestedUrl": "https://platform.stepfun.ai/docs/en/guides/developer/prompt-cache.md",
+      "finalUrl": "https://platform.stepfun.ai/docs/en/guides/developer/prompt-cache.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.057Z",
+      "sha256": "ce95ac0a0d2952f0b8d231a92c381cae16614bba88b6ca993e9f5267fe528509",
+      "fixture": "step-cache-2026-11-18.gz"
+    },
+    "tencent-cn": {
+      "requestedUrl": "https://cloud.tencent.com/document/product/1823/130055",
+      "finalUrl": "https://cloud.tencent.com/document/product/1823/130055",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.206Z",
+      "sha256": "b9e2f0515c4051c3337db81c59f515ca8a4f34199ebbd8203f504f3c9bae3c49",
+      "fixture": "acceptance-2026-11-19/tencent-cn.gz"
+    },
+    "tencent-cn--migration": {
+      "requestedUrl": "https://cloud.tencent.com/announce/detail/2391",
+      "finalUrl": "https://cloud.tencent.com/announce/detail/2391",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.550Z",
+      "sha256": "553cfdc165fde5e78146a7e5987fb534fc3c315705873a6f72c7a8bf07761772",
+      "fixture": "acceptance-2026-11-19/tencent-cn--migration.gz"
+    },
+    "upstage-api": {
+      "requestedUrl": "https://www.upstage.ai/pricing/api",
+      "finalUrl": "https://www.upstage.ai/pricing/api",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.510Z",
+      "sha256": "7ff062961d52a3183dd821824d56ed58b5c440b6e7993ec49985f2f5b41461d0",
+      "fixture": "upstage-2026-11-18.gz"
+    },
+    "upstage-api--solar-mini4": {
+      "requestedUrl": "https://console.upstage.ai/docs/models/solar-mini-4",
+      "finalUrl": "https://console.upstage.ai/docs/models/solar-mini-4",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:08.271Z",
+      "sha256": "5e6c1708adb0cfe0945165ace50c12aeeba9024447d8e0faa2f3a67947ef495a",
+      "fixture": "acceptance-2026-11-19/upstage-api--solar-mini4.gz"
+    },
+    "upstage-api--solar-pro4": {
+      "requestedUrl": "https://console.upstage.ai/docs/models/solar-pro-4",
+      "finalUrl": "https://console.upstage.ai/docs/models/solar-pro-4",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:07.661Z",
+      "sha256": "3c76292a7148cb1ae36e745c96e4d7d7aea62aca69571a944b885acabaace473",
+      "fixture": "acceptance-2026-11-19/upstage-api--solar-pro4.gz"
+    },
+    "volcengine-cn": {
+      "requestedUrl": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+      "finalUrl": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.716Z",
+      "sha256": "b73f601f517b5a80b6c864a0bfb0dcc44b4aafcadaa63fcd46796bcd87e202a4",
+      "fixture": "domestic/volcengine-2026-11-19.gz"
+    },
+    "volcengine-cn--model-list": {
+      "requestedUrl": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+      "finalUrl": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.479Z",
+      "sha256": "b6f036772aef43c2da79557c4bdc8e1bf4a6089c9c6d1d9119e261c8cd8537bc",
+      "fixture": "acceptance-2026-11-19/volcengine-cn--model-list.gz"
+    },
+    "xai-text": {
+      "requestedUrl": "https://docs.x.ai/developers/pricing",
+      "finalUrl": "https://docs.x.ai/developers/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.681Z",
+      "sha256": "80ad4948c7c4a6c8cbfe3711eaedc50e1e8d7730eef4f94cdec29eb2a84298fe",
+      "fixture": "acceptance-2026-11-19/xai-text.gz"
+    },
+    "xai-text--cache": {
+      "requestedUrl": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+      "finalUrl": "https://docs.x.ai/developers/advanced-api-usage/prompt-caching.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.936Z",
+      "sha256": "9b2a2b882b3a9d0c49b7bf3b2bfd1b9feef1cdca31a5ae5f949e733e556fe074",
+      "fixture": "xcache-2026-11-18.gz"
+    },
+    "xai-video": {
+      "requestedUrl": "https://docs.x.ai/developers/pricing",
+      "finalUrl": "https://docs.x.ai/developers/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.656Z",
+      "sha256": "14c13f3bb14a6579cf11c2fd0cdf8a2438540c3b797033af8a2db073771ca190",
+      "fixture": "acceptance-2026-11-19/xai-video.gz"
+    },
+    "xiaomi-cn": {
+      "requestedUrl": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+      "finalUrl": "https://mimo.mi.com/static/docs/price/pay-as-you-go.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.624Z",
+      "sha256": "548ee13deef4a98b6c8384bb21cab609444a9e43dae4dd2e6a988bb9288c2b52",
+      "fixture": "domestic/xiaomi-2026-11-18.gz"
+    },
+    "xiaomi-v25-history": {
+      "requestedUrl": "https://mimo.mi.com/docs/zh-CN/news/latest/v2.5-price-update",
+      "finalUrl": "https://mimo.mi.com/docs/zh-CN/news/latest/v2.5-price-update",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.642Z",
+      "sha256": "09c920e78c8a616c89641c3d0add4797089a1a9a01dd63f7d5ef95fc3c44fca7",
+      "fixture": "domestic/xiaomi-v25-notice-2026-11-19.gz"
+    },
+    "xiaomi-v25-history--cny-table": {
+      "requestedUrl": "https://aistudio-cdn.xiaomimimo.com/xiaomimimo-static/mimo-docs-figures/display/KdqUbJSGzohXwhxRBjEcCQuOn77.webp",
+      "finalUrl": "https://aistudio-cdn.xiaomimimo.com/xiaomimimo-static/mimo-docs-figures/display/KdqUbJSGzohXwhxRBjEcCQuOn77.webp",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.744Z",
+      "sha256": "35e1d42f2d81c94307dff70c6cf75b1c044f3dbe65e10563b5869fb60eaa0d40",
+      "fixture": "domestic/xiaomi-v25-cny-2026-11-19.gz"
+    },
+    "xiaomi-v25-history--deprecation": {
+      "requestedUrl": "https://mimo.mi.com/static/docs/updates/deprecate.md",
+      "finalUrl": "https://mimo.mi.com/static/docs/updates/deprecate.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.787Z",
+      "sha256": "f5c856884116df8ebba552550ec5c6912b1d0bd8edad66e2bf1e973da6270068",
+      "fixture": "domestic/xiaomi-v25-deprecation-2026-11-19.gz"
+    },
+    "zai-international": {
+      "requestedUrl": "https://docs.z.ai/guides/overview/pricing.md",
+      "finalUrl": "https://docs.z.ai/guides/overview/pricing.md",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:06.377Z",
+      "sha256": "4ee3a3e9eab6eab9d8a06309fe6984d82db7351586786bb8422deee1f16f78bf",
+      "fixture": "zai-2026-11-18.gz"
+    },
+    "zhipu-cn": {
+      "requestedUrl": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+      "finalUrl": "https://docs.bigmodel.cn/cn/guide/start/pricing",
+      "status": 200,
+      "obtainedAt": "2026-11-19T11:39:05.596Z",
+      "sha256": "5853d435bb2f5fdc50bdc824b989a539c03629d818a43c3cbb4a37eee961f826",
+      "fixture": "domestic/zhipu-2026-11-19.gz"
+    }
+  }
+}

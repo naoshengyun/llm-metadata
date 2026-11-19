@@ -51,18 +51,18 @@ function targets(models, priceList) {
 }
 
 const textTargets = targets(textModels, implicitList).map((target) => {
-  if (!/evolving|character|2-0-(?:lite|mini)/.test(target.modelId)) return target;
+  if (!/2-0-(?:lite|mini)/.test(target.modelId)) {
+    return /evolving|character/.test(target.modelId)
+      ? { ...target, group: target.modelId }
+      : target;
+  }
   return {
     ...target,
     quoteId: 'upstream:volcengine:' + target.modelId + ':CNY',
     priceList: 'fixed upstream primary or original CNY sheet',
     group: target.modelId,
-    ...(target.modelId.includes('lite') || target.modelId.includes('mini')
-      ? {
-          referenceOnlyReason:
-            'Native audio usage has no separate audio-cache read meter for the official tariff',
-        }
-      : {}),
+    referenceOnlyReason:
+      'Native audio usage has no separate audio-cache read meter for the official tariff',
   };
 });
 const imageTargets = targets(imageModels, taskList).map((target) => ({

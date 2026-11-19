@@ -1,5 +1,7 @@
 # 国内官方 CNY 核价记录
 
+最新状态与当前报价请看[联合验收和逐条证据](CNY-ACCEPTANCE.md)。以下记录保留各轮候选和当时的核价结果。
+
 本次输入是 [#39 统一构建](https://github.com/naoshengyun/llm-metadata/issues/39) 经 [#41 核价入口](https://github.com/naoshengyun/llm-metadata/issues/41) 验证的固定候选 `90cd9054db54c26056fb3a5132928dc71f9c79be2d1dbe4af06b92ab1b647659`（源码 `277d20ec393b14d1fbf711ee3abc9b662d814e7e`，上游 `24d3f35cc82f21bdc2a049888c71af5fb4f4d7b4`）。逐行按该候选的 provider/model 身份冻结，共 147 条模型记录，包含自有任务增补。批量及其他价目身份保留在各行。直接读取的每份官方响应、原始金额、收费条件、核查结果和候选去向见 [逐条矩阵](CNY-DOMESTIC-COVERAGE.tsv)。
 
 ## 首轮核价结果

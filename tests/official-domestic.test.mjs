@@ -50,11 +50,12 @@ function check(
         ? 'stepfun-audio'
         : id.startsWith(sourceName + '-cn--') && supplementNames[id];
       if (supplement) {
+        const supplementDate = supplement === 'volcengine-models' ? captureDate : '2026-11-18';
         return {
           body: gunzipSync(
             readFileSync(
               new URL(
-                `./fixtures/official-check/domestic/${supplement}-2026-11-18.gz`,
+                `./fixtures/official-check/domestic/${supplement}-${supplementDate}.gz`,
                 import.meta.url,
               ),
             ),
@@ -475,13 +476,28 @@ test('Bailian Character preserves the native session-cache rate and header condi
 });
 
 test('Ark model IDs bind evolving text, character tariffs and the published Seedream alias', async () => {
-  const report = await check('volcengine');
-  const evolving = resultFor(report, 'upstream:volcengine:doubao-seed-evolving:CNY');
-  assert.equal(evolving.status, 'changed', evolving.reason);
+  const report = await check('volcengine', undefined, 200, 200, '2026-11-19T11:30:38Z');
+  const evolving = resultFor(
+    report,
+    'volcengine--doubao-seed-evolving--cn-beijing-online-regular-implicit-original',
+  );
+  assert.equal(evolving.status, 'unchanged', evolving.reason);
   assert.equal(evolving.observed.sourcePrice.input, 6);
-  const character = resultFor(report, 'upstream:volcengine:doubao-seed-character-260628:CNY');
-  assert.equal(character.status, 'changed', character.reason);
+  const character = resultFor(
+    report,
+    'volcengine--doubao-seed-character-260628--cn-beijing-online-regular-implicit-original',
+  );
+  assert.equal(character.status, 'unchanged', character.reason);
   assert.equal(character.observed.sourcePrice.tiers[0].output, 6);
+  assert.equal(character.observed.sourcePrice.tiers[0].cache_read, 0.16);
+  assert.equal(
+    character.observed.conditions.separateExplicitCacheStorage.unit,
+    'per_million_token_hours',
+  );
+  const { billing_expr } = JSON.parse(
+    readFileSync(join(baseline, 'api/newapi/ratio_config.json')),
+  ).data;
+  assert.match(billing_expr['doubao-seed-character-260628'], /p \* 1\.2 \+ cr \* 0\.16 \+ c \* 6/);
   const image = resultFor(
     report,
     'volcengine--doubao-seedream-5-0-260128--cn-beijing-task-online-original',

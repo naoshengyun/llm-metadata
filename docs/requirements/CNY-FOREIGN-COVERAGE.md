@@ -1,5 +1,7 @@
 # #43 国外官方价目覆盖证据
 
+最新状态与当前报价请看[联合验收和逐条证据](CNY-ACCEPTANCE.md)。以下记录保留各轮候选和当时的核价结果。
+
 [逐价目矩阵](CNY-FOREIGN-COVERAGE.tsv)有 442 条数据、20 列，使用 UTF-8 和带引号的 TSV 单元格。首轮检查绑定代码 `04da3c13cdb01ecaf3c0fa584f41069a0a6044ff`、固定候选 `74048b76dc422eddc9a1b5a784a0851c90e18d859892d755572a53e8c6a3209f` 与覆盖文件 SHA-256 `9358d52bcacfe9daa5fea4354611960523d24f772623b34460220270ce9b052b`。首轮矩阵 SHA-256 为 `cb668fa71cf7e8a872276913acc8998cd2640ba15b65413dd4a2f93c02aab408`。上一轮矩阵更新了两条 Gemini 路由的参考结果，SHA-256 为 `7a87a543629db97bb58f60a4ecd17058eecabd9b8ca1a89871a66b5978557aad`。
 
 `npm run cny:unified:build` 生成固定候选。首次 `npm run cny:official:check` 于 2026-11-18T13:21:11.795Z 返回 29 份官方响应，8 个来源发生连接故障。回执 SHA-256 为 `3670b111adb8403dc7c054b50437e839f31c0c1f83e5732564751922c072457f`。使用同一候选、首次报告和 `NODE_OPTIONS=--dns-result-order=ipv4first` 于 2026-11-18T13:22:04.552Z 重试，57 份公开 HTTP GET 全部返回 200。下表记录首轮结果，回执 SHA-256 为 `96484305751a62229fa58b95dc5d2e0e483e61bae09b071e5bc487f5d1eb7fd3`。本轮使用公开资料，没有使用凭据或调用推理。
