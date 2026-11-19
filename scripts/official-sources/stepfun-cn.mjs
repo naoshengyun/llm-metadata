@@ -14,48 +14,6 @@ const targets = models.map((model) =>
   ),
 );
 
-const audioTarget = {
-  ...standardTarget(
-    'stepfun',
-    'https://api.stepfun.com/v1',
-    'stepaudio-2.5-asr',
-    upstreamPriceList,
-    'upstream:stepfun:stepaudio-2.5-asr:unknown',
-  ),
-  baselineIdentity: { currency: null },
-  referenceOnlyReason: 'Native model prices cannot represent SSE input audio hours',
-};
-
-function audioTariff(source, audio) {
-  const future =
-    /调整后的价格同样自北京时间 (\d{4}) 年 (\d{1,2}) 月 (\d{1,2}) 日 中午 (\d{2}:\d{2}:\d{2}) 起生效。收费币种为人民币。/.exec(
-      source,
-    );
-  const next = /^\| `stepaudio-2\.5-asr` \| (\d+(?:\.\d+)?) 元／小时 \|$/m.exec(source);
-  const previous = /一次性提交（SSE）API 定价 (\d+(?:\.\d+)?) 元 \/ 小时/.exec(audio);
-  if (
-    !future ||
-    !next ||
-    !previous ||
-    !audio.includes('一次性提交（SSE，模型字符串 `stepaudio-2.5-asr`）')
-  ) {
-    throw Error('Incomplete StepFun ASR current and future timing evidence');
-  }
-  const [, year, month, day, time] = future;
-  return {
-    ...tariff(
-      audioTarget,
-      { amount: number(next[1]) },
-      {
-        transport: 'SSE',
-        beforeEffectiveRate: { amount: number(previous[1]), unit: 'per_audio_hour' },
-      },
-      'per_audio_hour',
-    ),
-    effectiveAt: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}+08:00`,
-  };
-}
-
 function textTariff(text, target) {
   const rows = text.split('\n').filter((line) => line.startsWith('| `' + target.modelId + '` |'));
   const row = only(rows, target.modelId)
@@ -97,11 +55,8 @@ function textTariff(text, target) {
 export const adapter = {
   id: 'stepfun-cn',
   url: 'https://platform.stepfun.com/docs/zh/guides/pricing/details.md',
-  supplemental: [
-    { id: 'audio', url: 'https://platform.stepfun.com/docs/zh/guides/models/audio.md' },
-  ],
-  targets: [...targets, audioTarget],
-  parse({ body, supplemental }) {
+  targets,
+  parse({ body }) {
     const source = decode(body);
     const text = /^## 文本与多模态模型\s*$([^]*?)^## 语音模型\s*$/m.exec(source)?.[1];
     if (
@@ -117,11 +72,6 @@ export const adapter = {
       } catch (error) {
         rates.set(target.quoteId, { error: error.message });
       }
-    }
-    try {
-      rates.set(audioTarget.quoteId, audioTariff(source, decode(supplemental.get('audio').body)));
-    } catch (error) {
-      rates.set(audioTarget.quoteId, { error: error.message });
     }
     return rates;
   },

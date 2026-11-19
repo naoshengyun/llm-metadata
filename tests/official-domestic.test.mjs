@@ -13,7 +13,7 @@ after(() => rmSync(directory, { recursive: true, force: true }));
 execFileSync(process.execPath, ['scripts/build-unified-cny.mjs', baseline]);
 const attemptedAt = '2026-11-18T13:00:00Z';
 
-function check(sourceName, transform = (body) => body, status = 200) {
+function check(sourceName, transform = (body) => body, status = 200, supplementalStatus = 200) {
   const body = gunzipSync(
     readFileSync(
       new URL(`./fixtures/official-check/domestic/${sourceName}-2026-11-18.gz`, import.meta.url),
@@ -30,25 +30,35 @@ function check(sourceName, transform = (body) => body, status = 200) {
         'alibaba-cn--omni': 'alibaba-omni',
         'alibaba-cn--character': 'alibaba-character',
         'volcengine-cn--model-list': 'volcengine-models',
-        'stepfun-cn--audio': 'stepfun-audio',
         'minimax-cn--cache': 'minimax-cache',
         'minimax-cn--video': 'minimax-video',
       };
-      if (supplementNames[id] && id.startsWith(sourceName + '-cn--')) {
+      const stepfunAudio =
+        sourceName === 'stepfun' &&
+        url === 'https://platform.stepfun.com/docs/zh/guides/models/audio.md';
+      const supplement = stepfunAudio
+        ? 'stepfun-audio'
+        : id.startsWith(sourceName + '-cn--') && supplementNames[id];
+      if (supplement) {
         return {
           body: gunzipSync(
             readFileSync(
               new URL(
-                `./fixtures/official-check/domestic/${supplementNames[id]}-2026-11-18.gz`,
+                `./fixtures/official-check/domestic/${supplement}-2026-11-18.gz`,
                 import.meta.url,
               ),
             ),
           ),
           url,
           obtainedAt: attemptedAt,
+          status: supplementalStatus,
         };
       }
-      if (id !== `${sourceName}-cn`) throw Error('Response outside fixture scope');
+      const stepfunPricing =
+        sourceName === 'stepfun' &&
+        url === 'https://platform.stepfun.com/docs/zh/guides/pricing/details.md';
+      if (!stepfunPricing && id !== `${sourceName}-cn`)
+        throw Error('Response outside fixture scope');
       return { body: transform(body), url, obtainedAt: attemptedAt, status };
     },
   });
@@ -230,6 +240,29 @@ test('a missing StepFun model row leaves other verified tariffs and ASR availabl
   assert.equal(unchanged.latestSuccessfulAt, attemptedAt);
   const asr = resultFor(report, 'upstream:stepfun:stepaudio-2.5-asr:unknown');
   assert.equal(asr.status, 'future-effective');
+});
+
+test('StepFun verifies text tariffs when the ASR documentation is unavailable', async () => {
+  const report = await check('stepfun', (body) => body, 200, 503);
+  const asr = resultFor(report, 'upstream:stepfun:stepaudio-2.5-asr:unknown');
+  assert.equal(asr.status, 'failed');
+  assert.match(asr.reason, /Supplemental official source audio HTTP 503/);
+  const text = resultFor(report, 'upstream:stepfun:step-3.5-flash:CNY');
+  assert.equal(text.status, 'unchanged', text.reason);
+  assert.equal(text.latestSuccessfulAt, attemptedAt);
+});
+
+test('StepFun verifies ASR when the CNY token table is missing', async () => {
+  const report = await check('stepfun', (body) =>
+    Buffer.from(body.toString().replace(/^## 文本与多模态模型[^]*?(?=^## 语音模型)/m, '')),
+  );
+  const text = resultFor(report, 'upstream:stepfun:step-3.5-flash:CNY');
+  assert.equal(text.status, 'failed');
+  assert.match(text.reason, /Missing StepFun CNY token table/);
+  const asr = resultFor(report, 'upstream:stepfun:stepaudio-2.5-asr:unknown');
+  assert.equal(asr.status, 'future-effective', asr.reason);
+  assert.equal(asr.latestSuccessfulAt, attemptedAt);
+  assert.equal(asr.evidence.supplemental.audio.status, 200);
 });
 
 test('MiniMax uses the original standard M3 bands and confirms the M3.1 prompt-cache meter', async () => {
