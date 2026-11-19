@@ -53,3 +53,7 @@ Upstage 官方价格卡仍列两条旧 Solar Pro，且将精确别名写在卡�
 - **Gemini 3 条参考。** Gemini 2.5 Flash Image 的 Standard 图片输出保留官方 USD 30/百万 Token，以及 1,290 Token 约 USD 0.039 的适用尺寸。Gemini 3.1 Flash Live Preview 和 Gemini Embedding 2 保留独立视频输入价。两个 Deep Research Preview ID 采用代理底层模型、循环中间 Token 和工具用量的计价规则。另有两个已停用预览 ID 欠独立历史价，三条滚动别名和两条 Gemma 4 欠精确 Developer API 付费费率。[Gemini Developer API 价目](https://aistudio.google.com/docs/pricing) · [官方退役记录](https://aistudio.google.com/docs/deprecations)
 
 这些参考价不进入改价候选。剩余国外价目中另有 Alibaba 新加坡旧实时翻译、两个 Sakana 版本、xAI Fast 和 Z.AI Turbo，分别在矩阵保留端点或适用条款的缺口。
+
+## 服务范围调整
+
+此前已选待证的 24 条国外价目进入脑生云未提供清单，继续按既有矩阵保留历史证据。当前核价跳过这 24 条，待审同步候选逐项列出移除原因。[服务范围与精确清单](CNY-SOURCE-REGISTRY.md#naoshengyun-service-scope)

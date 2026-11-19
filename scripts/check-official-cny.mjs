@@ -22,7 +22,7 @@ const identityOf = (row) => ({
   currency: row.sourceCurrency,
 });
 const fields = (obj) => Object.keys(obj ?? {});
-const skipped = new Set(['deferred', 'subscription', 'excluded', 'withdrawn']);
+const skipped = new Set(['deferred', 'subscription', 'excluded', 'withdrawn', 'not-offered']);
 const timestamp = (value) => {
   const valid =
     typeof value === 'string' &&
@@ -167,7 +167,7 @@ function coverageEntries(coverage, selection) {
   ];
 }
 
-function registeredTargets(adapters, entries) {
+function registeredTargets(adapters, entries, notOfferedModels) {
   const sources = new Set();
   const registered = new Map();
   const available = new Map(entries.map((entry) => [entry.id, entry]));
@@ -190,6 +190,7 @@ function registeredTargets(adapters, entries) {
       httpsUrl(request.url);
     }
     for (const target of source.targets) {
+      if (notOfferedModels?.includes(target.modelId)) continue;
       if (!target.group || registered.has(target.quoteId)) {
         throw Error('Invalid or duplicate official quote registration: ' + target.quoteId);
       }
@@ -452,7 +453,11 @@ export async function checkOfficialPrices({
   const { baseline, coverage, selection, policy } = readBaseline(directory);
   const old = previousResults(previous, baseline, attemptedAt);
   const entries = coverageEntries(coverage, selection);
-  const registered = registeredTargets(adapters ?? (await loadAdapters()), entries);
+  const registered = registeredTargets(
+    adapters ?? (await loadAdapters()),
+    entries,
+    policy.notOfferedModels,
+  );
   const responses = new Map();
   const results = [];
   const changes = [];

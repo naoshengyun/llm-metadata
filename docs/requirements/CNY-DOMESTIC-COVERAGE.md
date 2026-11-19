@@ -92,3 +92,7 @@ MiniMax 发布公告给出原 M2 的历史 CNY 输入 2.10、输出 8.40 元/百
 PR #57 追踪的 62 条已选缺项中有 11 条属国内。公开回读了 MiniMax M2 官方发布公告，核价入口可重复提取每百万 Token 输入 2.10、输出 8.40 的原始人民币报价。公告说明按量 API 的限时试用和挂牌金额，公开资料仍缺这条选价在 Anthropic 兼容端点的缓存读写价及 TTL。核价标记为参考，不生成改价候选。[MiniMax M2 发布公告](https://www.minimax.io/news/minimax-m2)
 
 六条国内 M2.1、M2.5、M2.7 标准或高速型号逐条核对了公开身份与缓存说明。已有发布资料能确认部分速度档或自动缓存，未取得适用中国兼容端点的完整人民币读写费。剩余国内 10 条为上述六条、三个方舟已下线旧版本和一个智谱旧型号，保留在 [逐条矩阵](CNY-DOMESTIC-COVERAGE.tsv)。[MiniMax M2.1 发布说明](https://www.minimax.cn/news/minimax-m21) · [M2.5 国内模型页](https://www.minimax.cn/models/text) · [M2.7 国内模型页](https://www.minimax.cn/models/text/m27)
+
+## 服务范围调整
+
+此前已选待证的 10 条国内价目进入脑生云未提供清单，继续按既有矩阵保留历史证据。当前核价跳过这 10 条，待审同步候选逐项列出移除原因。[服务范围与精确清单](CNY-SOURCE-REGISTRY.md#naoshengyun-service-scope)

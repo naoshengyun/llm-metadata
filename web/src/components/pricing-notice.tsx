@@ -1,6 +1,11 @@
 import type { Model } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 const statusLabels: Record<string, [string, string, string]> = {
+  'not-offered': [
+    'Not offered by Naoshengyun',
+    '脑生云未提供此模型',
+    'Naoshengyun では提供していません',
+  ],
   'not-selected': [
     'Price reference · selection required',
     '区域价目参考 · 未选定同步',
@@ -68,7 +73,7 @@ export function PricingNotice({ model }: { model: Model }) {
       {p.exported && p.sourceCurrency && p.sourceCurrency !== 'CNY'
         ? ` · ${p.sourceCurrency} → CNY`
         : ''}
-      {p.reason ? ` · ${p.reason}` : ''}
+      {p.reason && p.status !== 'not-offered' ? ` · ${p.reason}` : ''}
     </p>
   );
 }

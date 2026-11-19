@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { readHistoricalCny } from './fixtures/november-2026-cny.mjs';
+import { checkOfficialPrices } from '../scripts/check-official-cny.mjs';
 
 const input = (name) => JSON.parse(readFileSync('data/cny/' + name));
 const run = (output, args = []) =>
@@ -57,6 +58,89 @@ test('unified candidate covers the researched catalog and exports every selected
     assert.equal(bytes.byteLength, meta.bytes);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), meta.sha256);
   }
+});
+
+test('service scope removes only approved native prices and skips their official checks', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'cny-service-scope-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const policy = input('unified-policy.json');
+  const priorPolicy = join(dir, 'prior-policy.json');
+  const { notOfferedModels: keys, ...before } = policy;
+  writeFileSync(priorPolicy, JSON.stringify(before));
+  const prior = join(dir, 'prior');
+  const candidate = join(dir, 'candidate');
+  run(prior, [priorPolicy]);
+  run(candidate, [
+    'data/cny/unified-policy.json',
+    'data/cny/official-catalog.json',
+    'data/cny/proposed-selection.json',
+    policy.upstreamDirectory,
+    prior,
+  ]);
+  const load = (directory, filename) => JSON.parse(readFileSync(join(directory, filename)));
+  const filename = 'api/newapi/ratio_config.json';
+  const config = load(prior, filename);
+  assert.equal(keys.length, 34);
+  for (const key of keys) {
+    assert.ok(Object.hasOwn(config.data.billing_expr, key), key);
+    delete config.data.billing_mode[key];
+    delete config.data.billing_expr[key];
+  }
+  assert.deepEqual(load(candidate, filename), config);
+  const { changes } = load(candidate, 'price-diff.json');
+  assert.deepEqual(changes.map(({ nativeKey }) => nativeKey).sort(), [...keys].sort());
+  assert.ok(
+    changes.every(
+      ({ type, reason, evidence }) =>
+        type === 'removed' &&
+        reason === 'naoshengyun-service-scope' &&
+        evidence.url === policy.sources.notOffered,
+    ),
+  );
+
+  const coverage = load(candidate, 'coverage.json');
+  const excluded = coverage.models.filter(({ nativeKey }) => keys.includes(nativeKey));
+  assert.ok(excluded.every(({ status, syncable }) => status === 'not-offered' && !syncable));
+  for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
+    const catalog = load(candidate, path);
+    for (const { providerId, modelId } of excluded) {
+      const model = catalog[providerId].models[modelId];
+      assert.equal(model.cnyPrice.status, 'not-offered');
+      assert.equal(model.cnyPrice.exported, false);
+      assert.equal(model.cnyPrice.quotes, undefined);
+      assert.equal(model.cost, undefined);
+      assert.equal(model.sourceCost, undefined);
+    }
+  }
+
+  const model = excluded.find(({ modelId }) => modelId === 'gpt-4o-2024-05-13');
+  const entry = model.upstreamPrice;
+  const report = await checkOfficialPrices({
+    baseline: candidate,
+    adapters: [
+      {
+        id: 'excluded-test',
+        url: 'https://example.com/pricing',
+        targets: [
+          {
+            quoteId: entry.quoteId,
+            providerId: entry.providerId,
+            modelId: entry.modelId,
+            endpoint: 'https://api.openai.com/v1',
+            currency: entry.sourceCurrency,
+            priceList: entry.priceList,
+            group: entry.modelId,
+          },
+        ],
+      },
+    ],
+    getResponse: async () => assert.fail('Excluded model triggered a network check'),
+  });
+  const skipped = report.results.find(({ quoteId }) => quoteId === entry.quoteId);
+  assert.equal(skipped.status, 'not-offered');
+  assert.equal(skipped.latestAttemptedAt, null);
+  assert.equal(skipped.selected, false);
+  assert.deepEqual(report.changes, []);
 });
 
 function fixture(t) {

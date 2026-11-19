@@ -89,6 +89,22 @@ function effectiveTime(value, label) {
   return Date.parse(value);
 }
 
+function validateServiceScope(policy, selection) {
+  const keys = policy.notOfferedModels ?? [];
+  if (
+    !Array.isArray(keys) ||
+    keys.some((key) => typeof key !== 'string' || !key || /\s/.test(key)) ||
+    new Set(keys).size !== keys.length ||
+    (keys.length && !policy.sources.notOffered?.startsWith('https://'))
+  ) {
+    throw Error('Invalid model service scope or decision source');
+  }
+  for (const key of keys) {
+    if (Object.hasOwn(selection, key) || Object.hasOwn(policy.upstreamSelection, key))
+      throw Error('Model outside service scope has an explicit price selection: ' + key);
+  }
+}
+
 function lifecycleState(policy, selection, legacySelection, previous) {
   const asOf = effectiveTime(policy.asOf, 'asOf');
   const state = new Map();
@@ -140,6 +156,7 @@ function lifecycleState(policy, selection, legacySelection, previous) {
     if (
       !Object.hasOwn(selection, key) &&
       !Object.hasOwn(policy.upstreamSelection, key) &&
+      !policy.notOfferedModels?.includes(key) &&
       state.get(key)?.state !== 'withdrawn'
     )
       throw Error('Selected upstream identity removed without withdrawal or replacement: ' + key);
@@ -147,6 +164,7 @@ function lifecycleState(policy, selection, legacySelection, previous) {
     if (
       !Object.hasOwn(selection, key) &&
       priorSelection[key] &&
+      !policy.notOfferedModels?.includes(key) &&
       state.get(key)?.state !== 'withdrawn' &&
       !Object.hasOwn(policy.upstreamSelection, key)
     )
@@ -350,6 +368,7 @@ function officialRows(official, selection, policy, records, providers, lifecycle
       effectiveTime(quote.effectiveAt, quote.id) > lifecycle.asOf;
     const event = lifecycle.state.get(quote.model);
     const withdrawn = event?.state === 'withdrawn';
+    const notOffered = !tool && policy.notOfferedModels?.includes(quote.model);
     const row = {
       quoteId: quote.id,
       providerId,
@@ -375,12 +394,20 @@ function officialRows(official, selection, policy, records, providers, lifecycle
             : undefined,
       },
       originalQuote: quote,
-      status: withdrawn ? 'withdrawn' : pending ? 'pending-effective' : diagnostic.status,
-      reason: withdrawn
-        ? 'official-price-withdrawn'
-        : pending
-          ? 'official-price-not-yet-effective'
-          : diagnostic.fields.join('; ') || null,
+      status: notOffered
+        ? 'not-offered'
+        : withdrawn
+          ? 'withdrawn'
+          : pending
+            ? 'pending-effective'
+            : diagnostic.status,
+      reason: notOffered
+        ? 'naoshengyun-service-scope'
+        : withdrawn
+          ? 'official-price-withdrawn'
+          : pending
+            ? 'official-price-not-yet-effective'
+            : diagnostic.fields.join('; ') || null,
       lifecycle: event,
       selected: key !== undefined,
       syncable: false,
@@ -522,6 +549,18 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
   const selected = Object.create(null);
   for (const [modelId, group] of groups) {
     const current = group.filter(({ status }) => status !== 'subscription');
+    if (policy.notOfferedModels?.includes(modelId)) {
+      for (const row of current) {
+        row.status = 'not-offered';
+        row.reason = 'naoshengyun-service-scope';
+        if (row.upstreamPrice) {
+          row.upstreamPrice.status = row.status;
+          row.upstreamPrice.reason = row.reason;
+          delete row.upstreamPrice.billing_expr;
+        }
+      }
+      continue;
+    }
     const official = quotes.get(selection[modelId]);
     const held = current.find(({ status }) => status === 'validation-held');
     if (held) continue;
@@ -650,7 +689,8 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
     if (former?.quoteId !== quoteId) throw Error('Missing previous selected identity: ' + key);
     const current = selected[key];
     if (!current) {
-      if (lifecycle.state.get(key)?.state === 'withdrawn') continue;
+      if (policy.notOfferedModels?.includes(key) || lifecycle.state.get(key)?.state === 'withdrawn')
+        continue;
       const row = records.get(providerModel(former.providerId, former.modelId))?.upstreamPrice;
       if (former === formerUpstream && row && row.endpoint === former.endpoint) {
         const capability = policy.nativeCapabilityExclusions?.[key];
@@ -697,6 +737,12 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
+      if (status === 'not-offered') {
+        delete model.cost;
+        model.cnyPrice = { status, reason, exported: false, outputKind: 'model' };
+        provider.models[modelId] = model;
+        continue;
+      }
       model.sourceCost = model.cost;
       if (status === 'subscription') {
         model.cnyPrice = { status, reason, exported: false, outputKind: 'subscription' };
@@ -815,8 +861,10 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
     const event = lifecycle.state.get(key);
     const capability = policy.nativeCapabilityExclusions?.[key];
     const priorRow = underlying.find((row) => row.providerId === former?.providerId);
-    const reason =
-      event?.state === 'withdrawn'
+    const notOffered = policy.notOfferedModels?.includes(key);
+    const reason = notOffered
+      ? 'naoshengyun-service-scope'
+      : event?.state === 'withdrawn'
         ? 'formal-withdrawal'
         : correction && former?.providerId === correction.providerId
           ? 'source-currency-correction'
@@ -829,11 +877,13 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
       nativeKey: key,
       type: before && after ? 'changed' : before ? 'removed' : 'added',
       reason,
-      evidence: correction
-        ? { url: correction.source, detail: correction.reason }
-        : (event?.evidence ??
-          (capability && { ...capability.source, detail: capability.reason }) ??
-          (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
+      evidence: notOffered
+        ? { url: policy.sources.notOffered }
+        : correction
+          ? { url: correction.source, detail: correction.reason }
+          : (event?.evidence ??
+            (capability && { ...capability.source, detail: capability.reason }) ??
+            (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
       before: before
         ? {
             quoteId: formerQuoteId,
@@ -873,6 +923,7 @@ function buildCandidate({
   prior,
   previous,
 }) {
+  validateServiceScope(policy, selection);
   const lifecycle = lifecycleState(policy, selection, legacy.selection, previous);
   const records = upstreamRows(snapshots.en, policy, source);
   const quotes = officialRows(official, selection, policy, records, snapshots.en, lifecycle, [
