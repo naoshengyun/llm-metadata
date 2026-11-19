@@ -1,0 +1,148 @@
+name: CNY official price check
+run-name: CNY official price check from ${{ github.sha }}
+on:
+  schedule:
+    - cron: '47 1 * * *'
+  workflow_dispatch:
+    inputs:
+      observe_only:
+        description: Record the complete check without opening a price PR
+        type: boolean
+        default: false
+concurrency:
+  group: naoshengyun-official-price-check
+  cancel-in-progress: false
+permissions:
+  contents: read
+env:
+  PAGES_ORIGIN: https://naoshengyun.github.io/llm-metadata/
+
+jobs:
+  check:
+    if: github.repository == 'naoshengyun/llm-metadata' && github.ref == 'refs/heads/naoshengyun'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies and compile the checker
+        run: |
+          npm ci --ignore-scripts
+          ./node_modules/.bin/tsc --outDir .cache/cny-build
+      - name: Check official prices against the current verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/official-check"
+          mkdir "$work"
+          node scripts/cny-pages-release.mjs snapshot "$PAGES_ORIGIN" "$work/published" "$GITHUB_SHA" review
+          pointer="$work/published/current.json"
+          previous="$work/previous.json"
+          node scripts/official-check-state.mjs read "$(jq -er .releaseId "$pointer")" "$previous"
+          args=("$work/published/$(jq -er .fixedBase "$pointer")" "$work/result")
+          if test -f "$previous"; then args+=("$previous"); fi
+          node --dns-result-order=ipv4first scripts/check-official-cny.mjs "${args[@]}"
+          {
+            printf '### Official price check\n\n'
+            jq -r '.summary | to_entries[] | "- " + .key + ": " + (.value | tostring)' "$work/result/official-check.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-official-check-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/official-check/published
+            ${{ runner.temp }}/official-check/result
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 90
+
+  reconcile:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: cny-upstream-sync
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        id: receipt
+        with:
+          name: cny-official-check-${{ github.run_id }}
+          path: ${{ runner.temp }}/official-check
+      - name: Build and validate proposed price changes
+        id: candidate
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          ./node_modules/.bin/tsc --outDir .cache/cny-build
+          work="$RUNNER_TEMP/official-check"
+          plan="$work/inputs/plan.json"
+          report="$work/result/official-check.json"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/prepare-official-cny.mjs prepare "$work/published" "$report" "$work/inputs"
+          digest="$(jq -r '.digest // empty' "$plan")"
+          if test -z "$digest"; then exit 0; fi
+          for input in official-catalog.json proposed-selection.json unified-policy.json; do
+            cp "$work/inputs/$input" "data/cny/$input"
+            git add "data/cny/$input"
+          done
+          node scripts/check-cny-effective-time.mjs
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Review current official prices" -m "CNY official semantic change: $digest"
+          prior="$work/published/$(jq -er .fixedBase "$work/published/current.json")"
+          node scripts/build-unified-cny.mjs "$work/candidate" data/cny/unified-policy.json \
+            data/cny/official-catalog.json data/cny/proposed-selection.json \
+            "$(jq -er .upstreamDirectory data/cny/unified-policy.json)" "$prior"
+          node scripts/prepare-official-cny.mjs validate "$work/published" "$plan" "$work/candidate"
+          printf 'ready=true\n' >> "$GITHUB_OUTPUT"
+      - name: Open or reuse the official price review PR
+        id: proposal
+        if: steps.candidate.outputs.ready == 'true' && inputs.observe_only != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CNY_UPSTREAM_PR_APP_PRIVATE_KEY: ${{ secrets.CNY_UPSTREAM_PR_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/official-check"
+          node scripts/publish-official-cny.mjs "$work/inputs/plan.json" > "$work/proposal-new.json"
+          mv "$work/proposal-new.json" "$work/proposal.json"
+          cat "$work/proposal.json"
+      - name: Publish price check status independently of price publication
+        if: always() && steps.receipt.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROPOSAL_FAILED: ${{ steps.candidate.outcome == 'failure' || steps.proposal.outcome == 'failure' }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/official-check"
+          report="$work/result/official-check.json"
+          curl --fail --silent --show-error --max-time 25 "${PAGES_ORIGIN}current.json?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" > "$work/public-pointer.json"
+          test "$(jq -er .releaseId "$work/public-pointer.json")" = "$(jq -er .publishedVersion.candidateId "$report")"
+          node scripts/official-check-state.mjs publish "$report" "$work/inputs/plan.json" "$work/proposal.json" |
+            tee "$work/state-receipt.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always() && steps.receipt.outcome == 'success'
+        with:
+          name: cny-official-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/official-check/inputs/plan.json
+            ${{ runner.temp }}/official-check/candidate/manifest.json
+            ${{ runner.temp }}/official-check/candidate/price-diff.json
+            ${{ runner.temp }}/official-check/proposal.json
+            ${{ runner.temp }}/official-check/state-receipt.json
+          if-no-files-found: warn
+          retention-days: 90

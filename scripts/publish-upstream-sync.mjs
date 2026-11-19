@@ -59,7 +59,7 @@ function checkReports(preparation, validation) {
   assert(validation.omittedPriceChanges === undefined || isCount(validation.omittedPriceChanges), 'Invalid omitted price changes count');
 }
 
-function candidateGit(execGit, cwd, path) {
+export function candidateGit(execGit, cwd, path) {
   const env = {
     PATH: path,
     LC_ALL: 'C',
@@ -192,7 +192,7 @@ class GitHubError extends Error {
   }
 }
 
-async function githubApi(fetchApi, operation, path, token, { method = 'GET', body, allowMissing = false } = {}) {
+export async function githubApi(fetchApi, operation, path, token, { method = 'GET', body, allowMissing = false } = {}) {
   let response;
   try {
     response = await fetchApi('https://api.github.com' + path, {
@@ -253,7 +253,7 @@ function checkBodySize(body) {
   assert(Buffer.byteLength(body) <= PR_BODY_BYTES, 'Managed pull request body exceeds GitHub size limit');
 }
 
-function pushCandidate(git, token, candidate, ref, expected = '') {
+export function pushCandidate(git, token, candidate, ref, expected = '') {
   const header = 'Authorization: Basic ' + Buffer.from('x-access-token:' + token).toString('base64');
   git([
     '-c', 'core.hooksPath=/dev/null',
@@ -268,7 +268,7 @@ function pushCandidate(git, token, candidate, ref, expected = '') {
   });
 }
 
-async function withAppToken(fetchApi, privateKey, useApp) {
+export async function withAppToken(fetchApi, privateKey, useApp) {
   assert(typeof privateKey === 'string' && privateKey.length > 0, 'CNY_UPSTREAM_PR_APP_PRIVATE_KEY is missing');
   const jwt = appJwt(privateKey);
   const installation = await githubApi(fetchApi, 'find app installation', API_REPO + '/installation', jwt);

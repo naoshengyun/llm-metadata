@@ -1,0 +1,196 @@
+/** Open or reuse the human-reviewed PR for one semantic change set. */
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { candidateGit, githubApi, pushCandidate, withAppToken } from './publish-upstream-sync.mjs';
+
+const repo = 'naoshengyun/llm-metadata';
+const api = '/repos/' + repo;
+const url = 'https://github.com/' + repo;
+const base = 'naoshengyun';
+const bot = 'naoshengyun-cny-pr-codex[bot]';
+const ref = (name) => 'refs/heads/' + name;
+const inputPaths = new Set([
+  'data/cny/official-catalog.json',
+  'data/cny/proposed-selection.json',
+  'data/cny/unified-policy.json',
+]);
+const read = (file) => JSON.parse(readFileSync(file));
+
+const marker = (digest) => 'CNY official semantic change: ' + digest;
+const bodyMarker = (digest) => '<!-- ' + marker(digest) + ' -->';
+const safeJson = (row) =>
+  JSON.stringify(row, null, 2).replace(
+    /[<>&@`\u2028-\u202e\u2066-\u2069]/g,
+    (char) => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'),
+  );
+
+function reviewBody(plan, runId) {
+  const evidence = url + '/actions/runs/' + runId;
+  const lines = [
+    bodyMarker(plan.digest),
+    '## 官方核价候选',
+    '',
+    '已发布版本 `' + plan.version.candidateId + '`',
+    '本次尝试 `' + plan.attemptedAt + '`',
+    '',
+    '合并由人工审核后执行。完整原始响应、来源哈希、收费条件和逐条差异见 [核价运行与产物](' +
+      evidence +
+      ')。',
+  ];
+  let used = Buffer.byteLength(lines.join('\n'));
+  let omitted = 0;
+  for (const { id, nativeKey, status, observed, evidence, difference } of plan.changes) {
+    const snippet =
+      '\n\n```json\n' +
+      safeJson({ id, nativeKey, status, observed, evidence, difference }) +
+      '\n```';
+    if (used + Buffer.byteLength(snippet) > 50_000) {
+      omitted++;
+      continue;
+    }
+    used += Buffer.byteLength(snippet);
+    lines.push(snippet);
+  }
+  if (omitted) lines.push('', '另有 ' + omitted + ' 项变更，请在完整运行产物核对。');
+  return lines.join('\n');
+}
+
+export async function publishOfficialProposal(
+  plan,
+  { env = process.env, fetchApi = fetch, execGit = execFileSync, cwd = process.cwd() } = {},
+) {
+  assert.equal(env.GITHUB_REPOSITORY, repo);
+  assert.equal(env.GITHUB_REF, ref(base));
+  assert.equal(env.GITHUB_SHA, plan.version.sourceSha);
+  assert.match(env.GITHUB_RUN_ID, /^[1-9]\d*$/);
+  assert.match(plan.digest, /^[a-f0-9]{64}$/);
+  assert.ok(plan.changes.length > 0);
+  const git = candidateGit(execGit, cwd, process.env.PATH);
+  const parent = plan.version.sourceSha;
+  const [commit, ...parents] = git(
+    ['rev-list', '--parents', '-n', '1', 'HEAD'],
+    'Could not read the official candidate',
+  )
+    .trim()
+    .split(' ');
+  assert.match(commit, /^[a-f0-9]{40}$/);
+  assert.deepEqual(parents, [parent]);
+  const changed = git(
+    ['diff', '--name-only', parent, commit, '--'],
+    'Could not read the proposal files',
+  )
+    .trim()
+    .split('\n');
+  assert.ok(
+    changed.length && changed.every((path) => inputPaths.has(path)),
+    'Official proposal changes unexpected files',
+  );
+  const head = 'codex/official-prices/' + plan.digest;
+  const token = env.GH_TOKEN;
+  assert.match(token, /^[A-Za-z0-9._~+\/-]+={0,2}$/);
+  const github = (operation, path, options) =>
+    githubApi(fetchApi, operation, api + path, token, options);
+  const getRef = async (name, allowMissing = false) => {
+    const result = await github('read branch', '/git/ref/heads/' + name, { allowMissing });
+    if (result === null) return null;
+    assert.equal(result.ref, ref(name));
+    assert.equal(result.object.type, 'commit');
+    assert.match(result.object.sha, /^[a-f0-9]{40}$/);
+    return result.object.sha;
+  };
+  const checkBase = async () =>
+    assert.equal(await getRef(base), parent, 'Business branch advanced during official check');
+  const exact = (item) =>
+    item.head?.ref === head &&
+    item.head.repo?.full_name === repo &&
+    item.base?.ref === base &&
+    item.base.repo?.full_name === repo;
+  const inspect = async () => {
+    const query = new URLSearchParams({
+      state: 'all',
+      head: 'naoshengyun:' + head,
+      base,
+      per_page: '100',
+    });
+    const pulls = await github('list official price PRs', '/pulls?' + query);
+    assert.ok(Array.isArray(pulls));
+    const matches = pulls.filter(exact);
+    assert.ok(matches.length <= 1, 'Multiple pull requests for this semantic change');
+    return matches[0];
+  };
+  const link = (pull, opened = false) => {
+    assert.ok(
+      exact(pull) &&
+        pull.user?.login === bot &&
+        pull.user.type === 'Bot' &&
+        pull.body?.startsWith(bodyMarker(plan.digest)) &&
+        ['open', 'closed'].includes(pull.state) &&
+        Number.isSafeInteger(pull.number) &&
+        pull.html_url === url + '/pull/' + pull.number,
+      'Official price PR identity does not match the managed proposal',
+    );
+    return {
+      status: opened ? 'opened' : pull.state === 'open' ? 'reused' : 'closed',
+      number: pull.number,
+      url: pull.html_url,
+      digest: plan.digest,
+    };
+  };
+  await checkBase();
+  const prior = await inspect();
+  if (prior) return link(prior);
+  let current = await getRef(head, true);
+  if (current === null) {
+    await checkBase();
+    pushCandidate(git, token, commit, ref(head));
+    current = await getRef(head);
+    assert.equal(current, commit);
+  } else if (current !== commit) {
+    const existing = await github('read interrupted official proposal', '/git/commits/' + current);
+    assert.ok(
+      existing.message?.split('\n').includes(marker(plan.digest)) &&
+        existing.parents?.length === 1 &&
+        existing.parents[0].sha === parent,
+      'Existing official proposal ref does not match this review',
+    );
+    const alreadyOpen = await inspect();
+    if (alreadyOpen) return link(alreadyOpen);
+    await checkBase();
+    pushCandidate(git, token, commit, ref(head), current);
+    current = await getRef(head);
+    assert.equal(current, commit);
+  }
+  const reused = await inspect();
+  if (reused) return link(reused);
+  await checkBase();
+  assert.equal(await getRef(head), current, 'Official proposal head changed before review');
+  return withAppToken(fetchApi, env.CNY_UPSTREAM_PR_APP_PRIVATE_KEY, async (appApi) => {
+    let created;
+    try {
+      created = await appApi('create official price review PR', api + '/pulls', {
+        method: 'POST',
+        body: {
+          base,
+          head,
+          draft: false,
+          title: '官方价目更新 · ' + plan.digest.slice(0, 12),
+          body: reviewBody(plan, env.GITHUB_RUN_ID),
+        },
+      });
+    } catch (error) {
+      const discovered = await inspect();
+      if (!discovered) throw error;
+      return link(discovered);
+    }
+    assert.equal(created.head.sha, current);
+    return link(created, true);
+  });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const plan = read(process.argv[2]);
+  console.log(JSON.stringify(await publishOfficialProposal(plan)));
+}
