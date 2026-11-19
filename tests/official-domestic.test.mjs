@@ -19,6 +19,7 @@ function check(
   status = 200,
   supplementalStatus = 200,
   captureAt = attemptedAt,
+  sourceFixtures = {},
 ) {
   const captureDate = captureAt.slice(0, 10);
   const body = gunzipSync(
@@ -51,13 +52,11 @@ function check(
         : id.startsWith(sourceName + '-cn--') && supplementNames[id];
       if (supplement) {
         const supplementDate = supplement === 'volcengine-models' ? captureDate : '2026-11-18';
+        const fixture = sourceFixtures[id] ?? supplement + '-' + supplementDate;
         return {
           body: gunzipSync(
             readFileSync(
-              new URL(
-                `./fixtures/official-check/domestic/${supplement}-${supplementDate}.gz`,
-                import.meta.url,
-              ),
+              new URL(`./fixtures/official-check/domestic/${fixture}.gz`, import.meta.url),
             ),
           ),
           url,
@@ -526,6 +525,17 @@ test('Ark model IDs bind evolving text, character tariffs and the published Seed
   assert.equal(image.status, 'unchanged', image.reason);
   assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.22);
   assert.equal(image.observed.conditions.publicPriceName, 'doubao-seedream-5-0-lite');
+});
+
+test('Ark uses the real model list on the client-rendered response', async () => {
+  const report = await check('volcengine', undefined, 200, 200, '2026-11-19T12:13:00Z', {
+    'volcengine-cn--model-list': 'volcengine-models-reader-2026-11-19',
+  });
+  const ark = report.results.filter(
+    ({ sourceId, selected }) => sourceId === 'volcengine-cn' && selected,
+  );
+  assert.ok(ark.some(({ nativeKey }) => nativeKey === 'doubao-seedream-5-0-260128'));
+  for (const row of ark) assert.equal(row.status, 'unchanged', row.id + ': ' + row.reason);
 });
 
 test('Ark audio-cache amounts remain readable without exporting the incomplete old token expression', async () => {

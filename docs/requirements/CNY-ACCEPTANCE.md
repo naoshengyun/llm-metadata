@@ -37,3 +37,7 @@
 国际 MiniMax 仍读取同一档位的现行 USD 金额。国内和国际适配器回归覆盖只变优惠标签或截止日的情形。LongCat 没有公布适用的当前金额时，检查失败并保留已审核价。公开资料或已批准业务范围的缺项沿用逐条矩阵，不生成同步键。41 条未选记录复核后原结论一致，已选候选有 194 条同价和 1 条正式未来价。[百灵定价](https://developer.ant-ling.com/zh-CN/docs/models/price/) · [LongCat 定价](https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0) · [MiniMax 中国定价](https://platform.minimax.cn/docs/pricing/overview) · [MiniMax 国际定价](https://platform.minimax.io/docs/pricing/overview)
 
 2026-11-19 11:39 UTC 和 12:10 UTC 两次独立采集覆盖同一组 114 个官方响应，第二次逐文件归档了新增原始字节，对内容相同的独立回包复用第一份夹具。两次都在完整候选逐键回放。对于同字节或价格未变的来源，金额变化和响应异常另以定向回归验证。两次采集日期和每个端点的证据均保留。[第二次响应和原始夹具索引](../../tests/fixtures/official-check/closeout-2026-11-19/responses.json)
+
+方舟同一官方模型列表地址实际返回过两种 HTML。一种有已渲染型号表，另一种把同一文档的 Markdown 放在静态路由数据中。已用两种官方回包验证精确型号和 Seedream 别名识别。第二种回包造成的 7 条已选核价失败均可复现并通过修正消除。[第二种官方回包](../../tests/fixtures/official-check/domestic/volcengine-models-reader-2026-11-19.gz)
+
+方舟第十批公告列出北京时间 2026-11-24 14:00 服务下线。现行报价核对按当日有效的 API 身份处理，未来退役记录供到期核对。[方舟下线公告](https://docs.volcengine.com/docs/ark/model-deprecation-notice?lang=zh)
