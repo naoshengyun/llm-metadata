@@ -5512,7 +5512,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://platform.kimi.com/docs/pricing/batch",
-        "checkedAt": "2026-11-16"
+        "sha256": "d3e1d0715f9536d0fdba097f4808a9a9536a63232b477b576046559a177a0cd1",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -5530,7 +5531,16 @@
       },
       "description": "Separate asynchronous Batch API price list; never select for synchronous requests. Cache hit best-effort. For K3, separate 5m / 1h writes apply. For K2.7-code, both write columns show dash (not a declared zero price); existing-user retirement condition remains.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens"
+      "unit": "per_million_tokens",
+      "conditions": {
+        "service": "async-batch",
+        "standardPricePercent": 60,
+        "cacheHit": "best-effort",
+        "cacheWriteTtlSeconds": {
+          "cache_write": 300,
+          "cache_write_1h": 3600
+        }
+      }
     },
     {
       "id": "cn-moonshot-kimi-k3-batch",
@@ -5541,7 +5551,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://platform.kimi.com/docs/pricing/batch",
-        "checkedAt": "2026-11-16"
+        "sha256": "d3e1d0715f9536d0fdba097f4808a9a9536a63232b477b576046559a177a0cd1",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -5559,7 +5570,16 @@
       },
       "description": "Separate asynchronous Batch API price list; never select for synchronous requests. Cache hit best-effort. For K3, separate 5m / 1h writes apply. For K2.7-code, both write columns show dash (not a declared zero price); existing-user retirement condition remains.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens"
+      "unit": "per_million_tokens",
+      "conditions": {
+        "service": "async-batch",
+        "standardPricePercent": 60,
+        "cacheHit": "best-effort",
+        "cacheWriteTtlSeconds": {
+          "cache_write": 300,
+          "cache_write_1h": 3600
+        }
+      }
     },
     {
       "id": "cn-moonshot-kimi-k2.7-code-batch",
@@ -5570,7 +5590,8 @@
       "currency": "CNY",
       "source": {
         "url": "https://platform.kimi.com/docs/pricing/batch",
-        "checkedAt": "2026-11-16"
+        "sha256": "d3e1d0715f9536d0fdba097f4808a9a9536a63232b477b576046559a177a0cd1",
+        "checkedAt": "2026-11-19"
       },
       "required": [
         "input",
@@ -5584,7 +5605,12 @@
       },
       "description": "Separate asynchronous Batch API price list; never select for synchronous requests. Cache hit best-effort. For K3, separate 5m / 1h writes apply. For K2.7-code, both write columns show dash (not a declared zero price); existing-user retirement condition remains.",
       "officialRegion": "China mainland domestic API",
-      "unit": "CNY per 1,000,000 tokens"
+      "unit": "per_million_tokens",
+      "conditions": {
+        "service": "async-batch",
+        "standardPricePercent": 60,
+        "cacheHit": "best-effort"
+      }
     },
     {
       "id": "cn-moonshot-kimi-k2.6-batch",
@@ -5851,7 +5877,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7e6685b53873ab66e2f46772f27b1c1d21542c38a89bc47091b13133bb5f46c7",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "9582e5edb7700ebb609c3315eae52e766dcca90f562f591c015238fe3acd6dde",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c1071b66c5736ef1ce52cf834139202a5540d5c9b1f9ef871bd7914a4a56588c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "406b32717617d26d300fe824e588caa75c0fbc8d8660b3d987e144a4ba5455ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "67fbd10033a7cbab0d260e84d2374070b27c68e4397110c7ae3acd358395a953",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -5863,7 +5912,7 @@
         "input": 12,
         "output": 36,
         "cache_read": 1.2,
-        "cache_write": 15.0
+        "cache_write": 15
       },
       "description": "Beijing online original list; 8-fold promotional discount for Plus is intentionally not applied. Cache mode is an explicit price-list scope, not automatic selection. Inputs and reasoning+answer output have same output rate. Maximum input 1,000,000. Tools are separate optional meters; see optionalToolFees.",
       "feeDeclarations": [
@@ -5889,7 +5938,22 @@
           "note": "5-minute explicit cache creation at 125% standard input.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-implicit",
@@ -6100,7 +6164,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7e6685b53873ab66e2f46772f27b1c1d21542c38a89bc47091b13133bb5f46c7",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "9582e5edb7700ebb609c3315eae52e766dcca90f562f591c015238fe3acd6dde",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c1071b66c5736ef1ce52cf834139202a5540d5c9b1f9ef871bd7914a4a56588c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "406b32717617d26d300fe824e588caa75c0fbc8d8660b3d987e144a4ba5455ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "67fbd10033a7cbab0d260e84d2374070b27c68e4397110c7ae3acd358395a953",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -6153,7 +6240,26 @@
           "note": "5-minute explicit cache creation at 125% standard input.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "dashscope--qwen3.7-flash--cn-beijing-online-original-implicit",
@@ -6281,7 +6387,30 @@
       "currency": "CNY",
       "source": {
         "url": "https://help.aliyun.com/zh/model-studio/model-pricing",
-        "checkedAt": "2026-11-16"
+        "sha256": "7e6685b53873ab66e2f46772f27b1c1d21542c38a89bc47091b13133bb5f46c7",
+        "checkedAt": "2026-11-19",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/context-cache",
+            "sha256": "9582e5edb7700ebb609c3315eae52e766dcca90f562f591c015238fe3acd6dde",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/deep-thinking",
+            "sha256": "c1071b66c5736ef1ce52cf834139202a5540d5c9b1f9ef871bd7914a4a56588c",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/qwen-omni",
+            "sha256": "406b32717617d26d300fe824e588caa75c0fbc8d8660b3d987e144a4ba5455ad",
+            "checkedAt": "2026-11-19"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/role-play",
+            "sha256": "67fbd10033a7cbab0d260e84d2374070b27c68e4397110c7ae3acd358395a953",
+            "checkedAt": "2026-11-19"
+          }
+        ]
       },
       "required": [
         "input",
@@ -6347,7 +6476,30 @@
           "note": "5-minute explicit cache creation at 125% standard input.",
           "sourceUrl": "https://help.aliyun.com/zh/model-studio/context-cache"
         }
-      ]
+      ],
+      "conditions": {
+        "region": "China mainland, Beijing",
+        "inputBands": [
+          {
+            "lower": 0,
+            "upper": 32000
+          },
+          {
+            "lower": 32000,
+            "upper": 256000
+          },
+          {
+            "lower": 256000,
+            "upper": 1000000
+          }
+        ],
+        "reasoningBilledAsOutput": true,
+        "cacheMode": "explicit",
+        "cacheMinimumInputTokens": 1024,
+        "cacheWriteTtlSeconds": 300,
+        "cacheHitRenewsTtl": true
+      },
+      "unit": "per_million_tokens"
     },
     {
       "id": "volcengine--doubao-seed-2-1-pro-260628--cn-beijing-online-regular-implicit-original",
