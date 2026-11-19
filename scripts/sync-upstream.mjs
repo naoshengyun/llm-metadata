@@ -44,6 +44,8 @@ try {
   if (output === repo || output.startsWith(`${repo}${sep}`)) throw new Error('Output must be outside the source repository');
   if (lstatSync(output, { throwIfNoEntry: false })) throw new Error('Output must not exist; existing work is never overwritten');
   if (values.reviewed) {
+    delete report.hostedActions;
+    report.execution = process.env.GITHUB_ACTIONS === 'true' ? 'github-actions' : 'local';
     prepareReviewedSync({ ...values, repo, output }, report);
   } else {
     // Resolve immutable commits before copying. Neither source branch is moved.
