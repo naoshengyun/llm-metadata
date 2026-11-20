@@ -1036,10 +1036,15 @@ export function reconcileDisplayCoverage({
     const normalized = officialPrices.get(source.id);
     let reason = null;
     if (source.kind === 'tool') reason = 'tool-reference-not-model-priced';
-    else if (!coverageQuotes.has(source.id) || !current)
-      reason = 'source-record-not-in-display-catalog';
+    else if (!current) reason = 'source-record-not-in-display-catalog';
     else if (normalized.status === 'not-offered') reason = 'model-not-offered';
     else if (normalized.status === 'deprecated') reason = 'model-deprecated';
+    if (current && source.kind !== 'tool' && !coverageQuotes.has(source.id))
+      fail('missing-candidate-quote', 'Raw official quote missing from candidate: ' + source.id, {
+        sourceRecordId: officialSourceId(source),
+        providerId,
+        modelId: source.model,
+      });
     expectedSources.push({
       source,
       sourceType: 'official-record',

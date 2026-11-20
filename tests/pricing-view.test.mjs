@@ -264,6 +264,56 @@ test('reconciliation derives official expectations from raw records under lockst
   assert.equal(ledger.comparisons.find(({ field }) => field === 'sourcePrice').expected.input, 2);
 });
 
+test('reconciliation rejects an omitted official group even when artifacts mark it non-displayed', (t) => {
+  const read = buildCandidate(t);
+  const coverage = read('coverage.json');
+  const displayCoverage = read('display-coverage.json');
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  const quoteId = 'us-openai-gpt-6.1-sol-standard';
+  const sourceRecordId = 'official-record:' + quoteId;
+  coverage.quotes = coverage.quotes.filter((quote) => quote.quoteId !== quoteId);
+  for (const catalog of Object.values(catalogs)) {
+    const view = catalog.openai.models['gpt-6.1-sol'].pricing_view;
+    view.groups = view.groups.filter(({ quotes }) =>
+      quotes.every((quote) => quote.quoteId !== quoteId),
+    );
+  }
+  const model = displayCoverage.models.find(
+    ({ providerId, modelId }) => providerId === 'openai' && modelId === 'gpt-6.1-sol',
+  );
+  model.quoteIds = model.quoteIds.filter((id) => id !== quoteId);
+  model.groups = model.groups.filter(({ quoteIds }) => !quoteIds.includes(quoteId));
+  const ledger = displayCoverage.sourceRecords.find(
+    (record) => record.sourceRecordId === sourceRecordId,
+  );
+  ledger.disposition = 'not-displayed';
+  ledger.locations = [];
+  ledger.notDisplayedReason = 'source-record-not-in-display-catalog';
+  ledger.comparisons = [];
+  const negative = reconcileDisplayCoverage({
+    ...rawReconciliationInputs(),
+    coverage,
+    displayCoverage,
+    catalogs,
+  });
+  assert.equal(negative.status, 'failed');
+  assert.ok(
+    negative.failures.some(
+      ({ code, sourceRecordId: id }) => code === 'missing-candidate-quote' && id === sourceRecordId,
+    ),
+    JSON.stringify(negative.failures),
+  );
+  assert.ok(
+    negative.failures.some(
+      ({ code, sourceRecordId: id }) => code === 'missing-source-location' && id === sourceRecordId,
+    ),
+  );
+});
+
 test('reconciliation derives upstream expectations from the fixed raw snapshot under lockstep mutations', (t) => {
   const read = buildCandidate(t);
   const coverage = read('coverage.json');
