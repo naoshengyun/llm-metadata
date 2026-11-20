@@ -10,6 +10,7 @@ export interface TaskCharge {
 export interface TaskQuote {
   plugin: string;
   model: string;
+  rejectUnmatched?: true;
   tiers: {
     name: string;
     when?: Record<string, string | boolean>;
@@ -81,11 +82,14 @@ export function compileTask(quote: TaskQuote): TaskResult {
         };
       conditions.push(`u(${JSON.stringify(key)}) == ${JSON.stringify(value)}`);
     }
-    if (index === quote.tiers.length - 1 ? conditions.length !== 0 : conditions.length === 0)
+    const fallback = index === quote.tiers.length - 1 && !quote.rejectUnmatched;
+    if (fallback ? conditions.length !== 0 : conditions.length === 0)
       return {
         status: 'incomplete',
         field: 'tiers.when',
-        reason: 'Conditional tiers must end with an unconditional fallback',
+        reason: quote.rejectUnmatched
+          ? 'Each tier requires a condition when unmatched usage is rejected'
+          : 'Conditional tiers must end with an unconditional fallback',
       };
     if (!tier.charges.length)
       return {
@@ -196,6 +200,8 @@ export function compileTask(quote: TaskQuote): TaskResult {
       `${conditions.length ? conditions.join(' && ') + ' ? ' : ''}tier(${JSON.stringify(tier.name)}, ${terms.join(' + ')})`,
     );
   }
+  // New API rejects a negative task price before reserving quota.
+  if (quote.rejectUnmatched) branches.push('-1');
   return { status: 'ready', expression: branches.join(' : ') };
 }
 // Official rc50 setting/operation_setting/tools.go seed names. These have native billing meters.

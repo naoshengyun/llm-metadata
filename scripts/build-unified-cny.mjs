@@ -534,7 +534,7 @@ function officialRows(
   return quoteById;
 }
 
-function addHeldModel(official, policy, records, quotes) {
+function addSeedanceReference(official, policy, selection, records, quotes) {
   const modelId = 'doubao-seedance-2-5-260628';
   const providerId = 'volcengine';
   const held = official.excludedQuotes.find((entry) => entry.officialModel === modelId);
@@ -549,8 +549,11 @@ function addHeldModel(official, policy, records, quotes) {
     domestic: true,
     quoteIds: [],
   };
-  record.status = 'validation-held';
-  record.reason = reason;
+  const selected = record.quoteIds.includes(selection[modelId]);
+  if (!selected) {
+    record.status = 'validation-held';
+    record.reason = reason;
+  }
   record.quoteIds.push(quoteId);
   records.set(providerModel(providerId, modelId), record);
   quotes.set(quoteId, {
@@ -561,7 +564,9 @@ function addHeldModel(official, policy, records, quotes) {
     sourceCurrency: 'CNY',
     priceList: 'Volcengine Ark / mainland / online',
     source: { ...held.source, sha256: hash(held) },
-    sourcePrice: held.rawFees,
+    sourcePrice: selected
+      ? { ...held.rawFees, rows: held.rawFees.rows.filter(([resolution]) => resolution === '4K') }
+      : held.rawFees,
     sourceUnit: held.rawFees.unit,
     status: 'validation-held',
     reason,
@@ -987,7 +992,7 @@ function buildCandidate({
       originalQuote ? [originalQuote] : [],
     ),
   ]);
-  addHeldModel(official, policy, records, quotes);
+  addSeedanceReference(official, policy, selection, records, quotes);
   const selected = selectPrices(records, quotes, selection, policy, lifecycle);
   checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle);
   const billing_mode = Object.fromEntries(entries(selected).map(([key]) => [key, 'tiered_expr']));
