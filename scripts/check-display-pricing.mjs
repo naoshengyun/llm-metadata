@@ -43,6 +43,7 @@ const sampleModels = [
   ['mistral', 'voxtral-small-2507'],
   ['google', 'gemini-3.8-flash'],
   ['xai', 'grok-4.20-0309-non-reasoning'],
+  ['zhipuai', 'glm-4.7'],
 ];
 const keyFor = (providerId, modelId) => JSON.stringify([providerId, modelId]);
 const quoteAt = (page, id) => page.locator(`[data-quote-id="${id}"]`);
@@ -224,6 +225,15 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       assert.equal(await row.getAttribute('data-cny-amount'), '0.7');
     }
     await card.locator('[data-condition="failedTasksFree"]').waitFor();
+  } else if (modelId === 'glm-4.7') {
+    const upstream = view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ sourceRecordId }) => sourceRecordId.startsWith('upstream:'));
+    const repeat = quoteAt(page, upstream.quoteId);
+    const cache = repeat.locator('[data-pricing-row="cost:cache_write"]');
+    await cache.waitFor();
+    assert.equal(await cache.locator('[data-tier-condition]').count(), 0);
+    assert.match(await repeat.locator('[data-pricing-row="cost:input"]').innerText(), /32000/);
   } else if (modelId === 'gemini-3.8-flash') {
     const labels = {
       en: ['Effective from', 'Valid through', 'Announced rate', 'Cache read'],

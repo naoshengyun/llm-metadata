@@ -156,7 +156,7 @@ function conditionValue(value: unknown, locale: Locale, key: string): ReactNode 
       ['Input and output video seconds', '输入与输出视频秒数', '入力と出力の動画秒数'],
       locale,
     );
-  if (key === 'textUnit' || key.endsWith('Unit')) return priceUnit(String(value), locale);
+  if (key === 'unit' || key.endsWith('Unit')) return priceUnit(String(value), locale);
   if (typeof value === 'boolean')
     return value
       ? localizePrice(['Yes', '是', 'はい'], locale)
@@ -238,9 +238,12 @@ function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], loc
   const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
   const structuredTiers = related.some(({ tier }) => tier?.size);
   if (structuredTiers && legacyTier(row)) return msg(locale, 'legacyTier');
+  const meterRows = related.filter(({ usageKey }) => usageKey === row.usageKey);
   const thresholds = [
     ...new Set(
-      related.map((entry) => lastLowerBandToken(entry, structuredTiers)).filter((n) => n !== null),
+      meterRows
+        .map((entry) => lastLowerBandToken(entry, structuredTiers))
+        .filter((n) => n !== null),
     ),
   ].sort((a, b) => a - b);
   if (!thresholds.length || !row.rowId.match(/^(?:cost|raw|service|fees):/)) return null;
@@ -362,7 +365,7 @@ function RateTable({
                   </td>
                   {hasConditions && (
                     <td className="px-2.5 py-2 space-y-1">
-                      {tier && <p>{tier}</p>}
+                      {tier && <p data-tier-condition>{tier}</p>}
                       {term?.condition && <p>{term.condition}</p>}
                       <Conditions values={conditions} locale={locale} usage={row.usageKey} />
                     </td>
