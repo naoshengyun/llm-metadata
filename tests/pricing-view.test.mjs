@@ -578,6 +578,82 @@ test('fixed reviewed references retain scheduled rates, explicit applicability a
     );
 });
 
+test('mixed-meter references preserve each unit and upstream domestic estimates have no CNY basis', (t) => {
+  const read = buildCandidate(t);
+  const getView = (catalog, provider, model) => catalog[provider].models[model].pricing_view;
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  const getUpstream = (view) =>
+    view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ sourceRecordId }) => sourceRecordId.startsWith('upstream:'));
+  const voxtral = getUpstream(getView(catalogs.en, 'mistral', 'voxtral-small-2507'));
+  assert.deepEqual(
+    voxtral.displayRows.map(({ usageKey, amount, unit }) => [usageKey, amount, unit]),
+    [
+      ['input', 0.1, 'per_million_tokens'],
+      ['output', 0.4, 'per_million_tokens'],
+      ['audioInput', 0.004, 'per_minute'],
+      ['cachedAudioInput', 0.0004, 'per_minute'],
+    ],
+  );
+  const live = getUpstream(getView(catalogs.en, 'google', 'gemini-3.1-flash-live-preview'));
+  const video = live.displayRows.find(({ usageKey }) => usageKey === 'videoInput');
+  assert.equal(video.unit, 'per_million_tokens');
+  assert.equal(video.amount, 1);
+  assert.equal(video.cnyAmount, 7);
+  const qvq = getUpstream(getView(catalogs.en, 'alibaba-cn', 'qvq-max'));
+  assert.equal(qvq.reason, 'missing-original-CNY');
+  assert.deepEqual(
+    qvq.displayRows.map(({ currency, cnyAmount }) => [currency, cnyAmount]),
+    [
+      ['USD', null],
+      ['USD', null],
+    ],
+  );
+  const coverage = read('coverage.json');
+  const displayCoverage = read('display-coverage.json');
+  for (const catalog of Object.values(catalogs)) {
+    const qvq = getUpstream(getView(catalog, 'alibaba-cn', 'qvq-max'));
+    qvq.displayRows[0].cnyAmount = 8.029;
+    qvq.displayRows[0].cnyCurrency = 'CNY';
+    const model = getView(catalog, 'minimax', 'image-01');
+    model.status = 'ready';
+    model.providerId = 'other-provider';
+    const sol = getView(catalog, 'openai', 'gpt-6.1-sol');
+    sol.groups.find(({ priceList }) => priceList === 'Flex').kind = 'status';
+  }
+  const solRow = displayCoverage.models.find(
+    ({ providerId, modelId }) => providerId === 'openai' && modelId === 'gpt-6.1-sol',
+  );
+  solRow.categories = solRow.categories.filter((category) => category !== 'multi-service-tier');
+  const negative = reconcileDisplayCoverage({
+    ...rawReconciliationInputs(),
+    coverage,
+    displayCoverage,
+    catalogs,
+  });
+  for (const [modelId, field] of [
+    ['qvq-max', 'displayRows'],
+    ['image-01', 'status'],
+    ['image-01', 'providerId'],
+    ['gpt-6.1-sol', 'groupKind'],
+  ]) {
+    assert.ok(
+      negative.failures.some((row) => row.modelId === modelId && row.field === field),
+      modelId + ' ' + field,
+    );
+  }
+  assert.ok(
+    negative.failures.some(
+      ({ code, modelId }) => code === 'model-category-mismatch' && modelId === 'gpt-6.1-sol',
+    ),
+  );
+});
+
 test('summaries use only selected prices and never choose an arbitrary unit', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');

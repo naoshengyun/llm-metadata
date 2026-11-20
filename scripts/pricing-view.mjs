@@ -10,7 +10,7 @@ import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
 import {
   expectedDisplayRows,
   expectedPricingSummary,
-  expectedUsageCategories,
+  expectedPricingCategories,
 } from './pricing-view-check.mjs';
 
 const identity = (providerId, modelId) => JSON.stringify([providerId, modelId]);
@@ -46,11 +46,12 @@ const isTokenUnit = (unit) =>
   /^(?:[A-Z]{3}[ /])?(?:per[ _])?(?:million|thousand|[0-9,]+)[ _]tokens?$/i.test(unit);
 
 function toCnyAmount(amount, currency) {
-  if (typeof amount !== 'number' || !CNY_POLICY[currency]) return null;
+  if (typeof amount !== 'number' || !['CNY', 'USD'].includes(currency)) return null;
   return convertPrice(amount, CNY_POLICY[currency], 'input');
 }
 
 function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
+  const cnyAmount = toCnyAmount(amount, currency);
   return {
     rowId,
     usageKey,
@@ -58,8 +59,8 @@ function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
     ...(typeof amount === 'string' ? { sourceValue: amount } : {}),
     currency: currency ?? null,
     unit: unit ?? null,
-    cnyAmount: toCnyAmount(amount, currency),
-    cnyCurrency: typeof amount === 'number' && CNY_POLICY[currency] ? 'CNY' : null,
+    cnyAmount,
+    cnyCurrency: cnyAmount === null ? null : 'CNY',
     conditions: conditions ?? {},
     ...(tier ? { tier } : {}),
   };
@@ -85,7 +86,7 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
             key,
             value,
             currency,
-            METER_UNITS[key] ?? unit,
+            METER_UNITS[key] ?? (unit === 'mixed' ? conditions.textUnit : unit),
             key.startsWith('per_second_')
               ? { ...localConditions, resolution: key.slice('per_second_'.length) }
               : localConditions,
@@ -101,8 +102,29 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
             child.tier,
           ),
         );
-      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-        visit(value, path + ':' + key, localConditions, tier);
+      } else if (value && typeof value === 'object' && !Array.isArray(value) && key !== 'tier') {
+        const { amount, unit: meterUnit, currency: meterCurrency, ...qualifiers } = value;
+        const meterPath = path + ':' + key;
+        if (typeof meterUnit === 'string' && typeof amount === 'number') {
+          rows.push(
+            displayRow(
+              meterPath + ':amount',
+              key,
+              amount,
+              meterCurrency ?? currency,
+              meterUnit,
+              { ...localConditions, ...qualifiers },
+              tier,
+            ),
+          );
+        } else {
+          visit(
+            value,
+            meterPath,
+            key === 'audio' ? { ...localConditions, modality: key } : localConditions,
+            tier,
+          );
+        }
       } else if (Array.isArray(value) && value.some((item) => item && typeof item === 'object')) {
         value.forEach((child, index) => {
           if (child && typeof child === 'object')
@@ -287,6 +309,33 @@ function paidTierRows(sheet, prefix, currency, sourceUnit, units, conditions) {
   }));
 }
 
+function capabilityFeeRows(conditions, currency) {
+  const fees = [];
+  const applicability = {};
+  for (const [key, value] of Object.entries(conditions)) {
+    if (value?.unit && (typeof value.amount === 'number' || Array.isArray(value.rates))) {
+      fees.push([key, value]);
+    } else {
+      applicability[key] = value;
+    }
+  }
+  return fees.flatMap(([key, fee]) => {
+    const { amount, unit, currency: feeCurrency, rates, ...qualifiers } = fee;
+    const context = { ...applicability, ...qualifiers };
+    if (!rates)
+      return [
+        displayRow('condition-fee:' + key, key, amount, feeCurrency ?? currency, unit, context),
+      ];
+    return rates.map((rate, index) =>
+      displayRow('condition-fee:' + key + ':' + index, key, rate, feeCurrency ?? currency, unit, {
+        ...context,
+        ...(key === 'separateExplicitCacheStorage' ? { cacheMode: 'explicit' } : {}),
+        ...(conditions.inputBands?.[index] ? { inputBand: conditions.inputBands[index] } : {}),
+      }),
+    );
+  });
+}
+
 function displayRowsFor(quote) {
   const source = quote.originalQuote;
   const conditions = structuredConditions(source?.conditions ?? quote.conditions);
@@ -339,7 +388,13 @@ function displayRowsFor(quote) {
   if (source?.rawFees) return rawFeeObjectRows(value, currency, conditions);
   if (source?.candidateCost)
     return costDisplayRows(source.candidateCost, unit, currency, conditions, 'candidate-cost');
-  return costDisplayRows(value, unit, currency, conditions);
+  const genericRows = [
+    ...costDisplayRows(value, unit, currency, conditions),
+    ...(source ? [] : capabilityFeeRows(conditions, currency)),
+  ];
+  return quote.originalCurrencyEligible === false
+    ? genericRows.map((row) => ({ ...row, cnyAmount: null, cnyCurrency: null }))
+    : genericRows;
 }
 
 function summaryFor(selectedQuote, status, groups) {
@@ -447,10 +502,11 @@ function serviceTier(quote) {
 
 function isMultimediaCharge({ usageKey, unit }) {
   return (
-    /^per_(?:second|count|image|song|10k_chars)$/.test(unit ?? '') ||
+    /^per_(?:second|minute|count|image|song|10k_chars)$/.test(unit ?? '') ||
     /image_output_tokens|video_tokens|^[A-Z]{3}\/image$/.test(unit ?? '') ||
     /^(?:(?:input|output)_|cache_read_)(?:image|audio|video)$/.test(usageKey) ||
-    /^(?:input|cacheHit)Audio$/.test(usageKey)
+    /^(?:input|cacheHit)Audio$/.test(usageKey) ||
+    /^(?:videoInput|audioCacheRead)$/.test(usageKey)
   );
 }
 
@@ -868,6 +924,9 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
         priceList: 'fixed upstream primary or original CNY sheet',
         endpoint: provider.api ?? null,
         sourceCurrency,
+        originalCurrencyEligible: incapable
+          ? Boolean(exclusion.sourcePrice)
+          : Boolean(amount && price.sourceCurrency && !corrected && evidence !== 'source-currency'),
         sourcePrice:
           corrected || evidence === 'source-currency'
             ? null
@@ -1158,6 +1217,14 @@ export function reconcileDisplayCoverage({
       continue;
     }
     englishViews.set(key, view);
+    for (const field of ['providerId', 'modelId', 'status', 'reason']) {
+      if ((view[field] ?? null) !== (model[field] ?? null))
+        fail('pricing-view-mismatch', 'View metadata differs from catalog coverage for ' + key, {
+          providerId: model.providerId,
+          modelId: model.modelId,
+          field,
+        });
+    }
     if (view.summary?.kind === 'invalid-primary-unit')
       fail(
         'invalid-primary-unit',
@@ -1337,16 +1404,14 @@ export function reconcileDisplayCoverage({
     const selectedQuote = selectedByModel.get(key);
     const selectedQuoteId = selectedQuote?.quoteId ?? null;
     const detail = { providerId: model.providerId, modelId: model.modelId };
-    const modelUsage = expectedUsageCategories(reviewedByModel.get(key) ?? [], selectedQuote);
-    const actualCategories = displayModels.get(key)?.categories ?? [];
-    for (const [category, applicable] of Object.entries(modelUsage)) {
-      if (actualCategories.includes(category) !== applicable)
-        fail('model-category-mismatch', 'Category differs from reviewed billing units for ' + key, {
-          ...detail,
-          field: category,
-        });
-    }
-
+    const expectedCategories = expectedPricingCategories(
+      reviewedByModel.get(key) ?? [],
+      selectedQuote,
+      model.status,
+      upstream,
+    );
+    if (canonical(displayModels.get(key)?.categories ?? []) !== canonical(expectedCategories))
+      fail('model-category-mismatch', 'Categories differ from reviewed inputs for ' + key, detail);
     if (
       (model.selectedQuoteId ?? null) !== selectedQuoteId ||
       view.selectedQuoteId !== selectedQuoteId
@@ -1554,10 +1619,20 @@ export function reconcileDisplayCoverage({
         sourceCurrency: source.currency ?? null,
         sourceUnit: source.unit ?? source.rawFees?.unit ?? null,
       };
+      const expectedRows = expectedDisplayRows(sourceQuote);
+      const expectedGroupKind =
+        expectedRows.length === 0
+          ? 'status'
+          : normalized?.outputKind === 'task-model'
+            ? 'task-tiers'
+            : normalized
+              ? 'token-or-media'
+              : 'reviewed-reference';
+      fields.push(['groupKind', expectedGroupKind, group.kind]);
       const byRowId = (rows) => [...rows].sort((a, b) => a.rowId.localeCompare(b.rowId));
       fields.push([
         'displayRows',
-        byRowId(expectedDisplayRows(sourceQuote)),
+        byRowId(expectedRows),
         Array.isArray(actual.displayRows) ? byRowId(actual.displayRows) : null,
       ]);
       if (seedance)

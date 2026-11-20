@@ -50,7 +50,7 @@ const feeBands = [
 
 function cny(amount, currency) {
   const factor = CNY_POLICY[currency];
-  if (!Number.isFinite(amount) || !factor) return null;
+  if (!Number.isFinite(amount) || !['CNY', 'USD'].includes(currency)) return null;
   return factor === 1 ? amount : Number((factor * amount).toPrecision(15));
 }
 
@@ -109,6 +109,24 @@ function costRows(sheet, path, currency, unit, baseConditions) {
         ),
       ),
     );
+    const pieces = path.split(':');
+    if (pieces.length > 1 && Number.isFinite(node.amount) && typeof node.unit === 'string') {
+      const usageKey = pieces.at(-1);
+      const { amount, currency: meterCurrency, unit: meterUnit, ...meterConditions } = node;
+      const { amount: _amount, unit: _unit, ...inherited } = metadata;
+      return [
+        expectedRow(
+          path + ':amount',
+          usageKey,
+          amount,
+          meterCurrency ?? currency,
+          meterUnit,
+          { ...inherited, ...meterConditions },
+          metadata.tier,
+        ),
+      ];
+    }
+    if (pieces.includes('audio')) metadata.modality = 'audio';
     return costRates
       .filter((key) => Number.isFinite(node[key]))
       .map((key) => {
@@ -119,7 +137,7 @@ function costRows(sheet, path, currency, unit, baseConditions) {
           key,
           node[key],
           currency,
-          meteredRates[key] ?? unit,
+          meteredRates[key] ?? (unit === 'mixed' ? baseConditions.textUnit : unit),
           conditions,
           metadata.tier,
         );
@@ -233,6 +251,29 @@ function chargedFees(fees, prefix, baseConditions) {
   );
 }
 
+function explicitChargesInConditions(conditions, currency) {
+  const rates = Object.entries(conditions).filter(
+    ([, value]) =>
+      typeof value?.unit === 'string' &&
+      (Number.isFinite(value.amount) || Array.isArray(value.rates)),
+  );
+  const qualifiers = Object.fromEntries(
+    Object.entries(conditions).filter(([name]) => !rates.some(([meter]) => meter === name)),
+  );
+  return rates.flatMap(([name, rate]) => {
+    const entries = rate.rates ?? [rate.amount];
+    const { rates: _rates, amount: _amount, unit, currency: rateCurrency, ...metadata } = rate;
+    return entries.map((amount, index) => {
+      const conditionsForMeter = { ...qualifiers, ...metadata };
+      if (name === 'separateExplicitCacheStorage') conditionsForMeter.cacheMode = 'explicit';
+      if (rate.rates && conditions.inputBands?.[index])
+        conditionsForMeter.inputBand = conditions.inputBands[index];
+      const rowId = ['condition-fee', name, ...(rate.rates ? [index] : [])].join(':');
+      return expectedRow(rowId, name, amount, rateCurrency ?? currency, unit, conditionsForMeter);
+    });
+  });
+}
+
 export function expectedDisplayRows(quote) {
   const source = quote.originalQuote ?? {};
   const { sourcePrice, sourceUnit, sourceCurrency } = quote;
@@ -321,13 +362,18 @@ export function expectedDisplayRows(quote) {
   if (Array.isArray(sourcePrice))
     return rateRows(sourcePrice, sourceCurrency, sourceUnit, conditions);
   if (source.rawFees) return rawRows(sourcePrice, sourceCurrency, conditions);
-  return costRows(
+  const result = costRows(
     source.candidateCost ?? sourcePrice,
     source.candidateCost ? 'candidate-cost' : 'cost',
     sourceCurrency,
     sourceUnit,
     conditions,
   );
+  if (!quote.originalQuote) result.push(...explicitChargesInConditions(conditions, sourceCurrency));
+  if (quote.originalCurrencyEligible === false) {
+    for (const row of result) Object.assign(row, { cnyAmount: null, cnyCurrency: null });
+  }
+  return result;
 }
 
 export function expectedPricingSummary(quote, status, hasQuotes) {
@@ -405,10 +451,19 @@ export function expectedPricingSummary(quote, status, hasQuotes) {
   };
 }
 
-export function expectedUsageCategories(records, selected) {
-  let tokenTiers = false;
-  let multimedia = false;
-  for (const { source, normalized } of records) {
+export function expectedPricingCategories(records, selected, status, upstream) {
+  const categories = new Set();
+  if (['not-offered', 'deprecated', 'withdrawn', 'deferred'].includes(status))
+    categories.add(status);
+  if (status === 'excluded') categories.add('scope-excluded');
+  if (!selected) categories.add('no-current-price');
+  const lists = new Set();
+  const endpoints = new Set();
+  function keysIn(value) {
+    if (!value || typeof value !== 'object') return [];
+    return [...Object.keys(value), ...Object.values(value).flatMap(keysIn)];
+  }
+  for (const { source, normalized, sourceType, providerId, modelId } of records) {
     const quote = normalized ?? {
       originalQuote: source,
       sourcePrice:
@@ -421,17 +476,64 @@ export function expectedUsageCategories(records, selected) {
       sourceCurrency: source.currency,
       sourceUnit: source.unit ?? source.rawFees?.unit,
     };
-    const tierLists = [quote.sourcePrice, source.rawFees?.tokenFees];
-    tokenTiers ||= tierLists.some(function hasTierList(sheet) {
-      if (!sheet || typeof sheet !== 'object') return false;
-      return Object.hasOwn(sheet, 'tiers') || Object.values(sheet).some(hasTierList);
-    });
-    multimedia ||= quote.outputKind === 'task-model' || Boolean(source.task);
-    if (multimedia) continue;
+    if (!normalized?.selected) categories.add('reference-only');
+    const endpoint =
+      normalized?.endpoint ??
+      source.endpoint ??
+      (sourceType === 'reviewed-reference' && upstream[providerId]?.models?.[modelId]
+        ? upstream[providerId].api
+        : null);
+    if (endpoint) endpoints.add(endpoint);
+    const original = quote.originalQuote;
+    const listName =
+      normalized?.priceList ??
+      source.priceList ??
+      (modelId === 'doubao-seedance-2-5-260628' && providerId === 'volcengine'
+        ? 'Volcengine Ark / mainland / online'
+        : '');
+    const prefix = (original?.officialServiceTier ?? listName).match(/^[a-z]+/i)?.[0].toLowerCase();
+    if (['standard', 'batch', 'flex', 'fast', 'ultrafast', 'priority'].includes(prefix))
+      lists.add(prefix);
+    if (original?.otherPaidTiers && Object.keys(original.otherPaidTiers).length)
+      categories.add('multi-service-tier');
+    if (
+      original?.officialRegion ||
+      original?.region ||
+      ['inference_geo', '/ global', 'mainland', 'singapore', 'cn-beijing'].some((label) =>
+        listName.toLowerCase().includes(label),
+      )
+    )
+      categories.add('multi-region-endpoint');
+    const fields = keysIn(quote.sourcePrice);
+    if (fields.includes('tiers') || keysIn(original?.rawFees?.tokenFees).includes('tiers'))
+      categories.add('token-tiers');
+    if (
+      original?.cache ||
+      fields.some(
+        (key) =>
+          key.startsWith('cache') ||
+          key.includes('cache_') ||
+          key.includes('Ttl') ||
+          key.includes('TTL'),
+      )
+    )
+      categories.add('cache-and-ttl');
+    if (normalized?.outputKind === 'task-model' || original?.task) {
+      categories.add('task-conditions');
+      categories.add('multimedia-usage');
+    }
+    const quoteStatus =
+      normalized?.status ??
+      (modelId === 'doubao-seedance-2-5-260628' && providerId === 'volcengine'
+        ? 'validation-held'
+        : (source.status ?? 'reference-only'));
+    if (['pending-effective', 'withdrawn', 'deferred'].includes(quoteStatus))
+      categories.add(quoteStatus);
     for (const { usageKey, unit } of expectedDisplayRows(quote)) {
       const mediaUnit = [
         'per_second',
         'per_count',
+        'per_minute',
         'per_image',
         'per_song',
         'per_10k_chars',
@@ -443,16 +545,22 @@ export function expectedUsageCategories(records, selected) {
       const mediaToken =
         ['image', 'video', 'audio'].includes(modality) &&
         ['input', 'output', 'read'].includes(meter);
-      if (mediaUnit || mediaToken || usageKey === 'inputAudio' || usageKey === 'cacheHitAudio')
-        multimedia = true;
+      if (
+        mediaUnit ||
+        mediaToken ||
+        ['inputAudio', 'cacheHitAudio', 'videoInput', 'audioCacheRead'].includes(usageKey)
+      )
+        categories.add('multimedia-usage');
     }
   }
-  return {
-    'single-token':
-      selected?.outputKind === 'model' &&
-      selected.sourceUnit === 'per_million_tokens' &&
-      !tokenTiers &&
-      expectedDisplayRows(selected).some(({ unit }) => unit === 'per_million_tokens'),
-    'multimedia-usage': multimedia,
-  };
+  if (lists.size > 1) categories.add('multi-service-tier');
+  if (endpoints.size > 1) categories.add('multi-region-endpoint');
+  if (
+    selected?.outputKind === 'model' &&
+    selected.sourceUnit === 'per_million_tokens' &&
+    !categories.has('token-tiers') &&
+    expectedDisplayRows(selected).some(({ unit }) => unit === 'per_million_tokens')
+  )
+    categories.add('single-token');
+  return [...categories].sort();
 }
