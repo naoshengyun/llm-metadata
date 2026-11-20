@@ -1,0 +1,21 @@
+name: CNY scheduler canary
+run-name: CNY scheduler canary from ${{ github.sha }}
+on:
+  schedule:
+    # Temporary independent scheduler canary for 2026-11-20, 16:00–17:55 Beijing time.
+    - cron: '*/5 8-9 20 11 *'
+permissions:
+  contents: read
+jobs:
+  record:
+    if: >-
+      github.repository == 'naoshengyun/llm-metadata' &&
+      github.ref == 'refs/heads/naoshengyun' &&
+      github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Record independent schedule delivery
+        run: |
+          printf 'Independent scheduled dispatch on %s at %s UTC\n' "$GITHUB_SHA" "$(date -u +'%F %T')" |
+            tee "$GITHUB_STEP_SUMMARY"
