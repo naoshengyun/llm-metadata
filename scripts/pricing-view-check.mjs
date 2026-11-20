@@ -23,9 +23,10 @@ const meteredRates = {
   per_second_768p: 'per_second',
   per_second_2k: 'per_second',
   cache_storage: 'per_million_token_hours',
+  storage: 'per_million_token_hours',
 };
-const costRates = [...tokenRates, ...Object.keys(meteredRates)];
-const tierRates = [...costRates, 'cache_read_audio', 'storage'];
+const costRates = [...tokenRates, ...Object.keys(meteredRates), 'cache_read_audio'];
+const tierRates = costRates;
 const scalarFees = [
   ...tierRates,
   'amount',
@@ -140,7 +141,7 @@ function rateRows(records, currency, unit, baseConditions) {
               key,
               record[key],
               currency,
-              meteredRates[key] ?? unit,
+              meteredRates[key] ?? unit?.split(';')[0],
               conditions,
             ),
           ]
@@ -213,18 +214,18 @@ function rawRows(sheet, currency, conditions) {
   return [...table, ...tiers, ...tokens, ...fees, ...bands];
 }
 
-function chargedFees(fees, prefix) {
+function chargedFees(fees, prefix, baseConditions) {
   return (fees ?? []).map(
     ({ name, key, usageKey, amount, currency, unit, condition, freeQuantity }, index) => {
       const usage = name ?? key ?? usageKey;
-      const conditions = {};
+      const conditions = { ...baseConditions };
       if (condition !== undefined) conditions.condition = condition;
       if (freeQuantity !== undefined) conditions.freeQuantity = freeQuantity;
       return expectedRow(
         prefix + ':' + index + ':' + usage,
         usage,
         amount,
-        currency,
+        unit === 'additional_image_output_tokens_per_partial_image' ? undefined : currency,
         unit,
         conditions,
       );
@@ -235,7 +236,11 @@ function chargedFees(fees, prefix) {
 export function expectedDisplayRows(quote) {
   const source = quote.originalQuote ?? {};
   const { sourcePrice, sourceUnit, sourceCurrency } = quote;
-  const conditions = source.conditions ?? quote.conditions ?? {};
+  const originalConditions = source.conditions ?? quote.conditions;
+  const conditions =
+    typeof originalConditions === 'string'
+      ? { officialCondition: originalConditions }
+      : (originalConditions ?? {});
   if (source.task && source.kind === 'task') {
     const rows = [];
     for (const [
@@ -260,10 +265,57 @@ export function expectedDisplayRows(quote) {
     }
     return rows;
   }
+  const sections = [];
+  if (source.raw) {
+    const { expires, next, ...current } = source.raw;
+    sections.push([
+      'raw',
+      current,
+      expires ? { ...conditions, validThrough: expires } : conditions,
+    ]);
+    if (next) {
+      const when = { ...conditions, priceState: 'announced' };
+      if (expires) when.effectiveAfter = expires;
+      sections.push(['raw:next', next, when]);
+    }
+  }
+  for (const [name, tier] of Object.entries(source.otherPaidTiers ?? {})) {
+    const { validThrough, expires, next, ...current } = tier;
+    const cutoff = validThrough ?? expires;
+    const label = { ...conditions, serviceTier: name };
+    sections.push([
+      'service:' + name,
+      current,
+      cutoff ? { ...label, validThrough: cutoff } : label,
+    ]);
+    if (next) {
+      const when = { ...label, priceState: 'announced' };
+      if (cutoff) when.effectiveAfter = cutoff;
+      sections.push(['service:' + name + ':next', next, when]);
+    }
+  }
+  const supplementalRates = sections.flatMap(([id, sheet, when]) => {
+    const rows = costRows(sheet, id, sourceCurrency, sourceUnit, when).map((row) => ({
+      ...row,
+      unit: source.otherTierUnits?.[row.usageKey] ?? row.unit,
+    }));
+    if (id !== 'raw') return rows;
+    return rows.filter(
+      ({ usageKey, amount, unit }) =>
+        !(source.fees ?? []).some(
+          (fee) => fee.name === usageKey && fee.amount === amount && fee.unit === unit,
+        ),
+    );
+  });
   const reviewedPrices = [
     ...costRows(source.cost, 'cost', sourceCurrency, sourceUnit, conditions),
-    ...chargedFees(source.fees, 'fees'),
-    ...chargedFees(source.tools, 'tools'),
+    ...chargedFees(
+      source.fees,
+      'fees',
+      source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
+    ),
+    ...chargedFees(source.tools, 'tools', conditions),
+    ...supplementalRates,
   ];
   if (reviewedPrices.length) return reviewedPrices;
   if (Array.isArray(sourcePrice))
@@ -350,5 +402,57 @@ export function expectedPricingSummary(quote, status, hasQuotes) {
     output: cny(cost?.output, quote.sourceCurrency),
     hasTiers,
     hasMoreConditions: hasTiers || Object.keys(source?.conditions ?? {}).length > 0,
+  };
+}
+
+export function expectedUsageCategories(records, selected) {
+  let tokenTiers = false;
+  let multimedia = false;
+  for (const { source, normalized } of records) {
+    const quote = normalized ?? {
+      originalQuote: source,
+      sourcePrice:
+        source.cost ??
+        source.candidateCost ??
+        source.fees ??
+        source.rawFees ??
+        source.raw ??
+        source.tools,
+      sourceCurrency: source.currency,
+      sourceUnit: source.unit ?? source.rawFees?.unit,
+    };
+    const tierLists = [quote.sourcePrice, source.rawFees?.tokenFees];
+    tokenTiers ||= tierLists.some(function hasTierList(sheet) {
+      if (!sheet || typeof sheet !== 'object') return false;
+      return Object.hasOwn(sheet, 'tiers') || Object.values(sheet).some(hasTierList);
+    });
+    multimedia ||= quote.outputKind === 'task-model' || Boolean(source.task);
+    if (multimedia) continue;
+    for (const { usageKey, unit } of expectedDisplayRows(quote)) {
+      const mediaUnit = [
+        'per_second',
+        'per_count',
+        'per_image',
+        'per_song',
+        'per_10k_chars',
+        'additional_image_output_tokens_per_partial_image',
+        'CNY/million_billable_video_tokens',
+        'CNY/image',
+      ].includes(unit);
+      const [meter, modality] = usageKey.split('_').slice(-2);
+      const mediaToken =
+        ['image', 'video', 'audio'].includes(modality) &&
+        ['input', 'output', 'read'].includes(meter);
+      if (mediaUnit || mediaToken || usageKey === 'inputAudio' || usageKey === 'cacheHitAudio')
+        multimedia = true;
+    }
+  }
+  return {
+    'single-token':
+      selected?.outputKind === 'model' &&
+      selected.sourceUnit === 'per_million_tokens' &&
+      !tokenTiers &&
+      expectedDisplayRows(selected).some(({ unit }) => unit === 'per_million_tokens'),
+    'multimedia-usage': multimedia,
   };
 }

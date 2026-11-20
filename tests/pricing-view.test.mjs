@@ -476,6 +476,108 @@ test('token, task, media, and generic reference quotes expose structured display
   assert.equal(deepseek.conditions.timezone, 'Asia/Shanghai');
 });
 
+test('fixed reviewed references retain scheduled rates, explicit applicability and source identity', (t) => {
+  const read = buildCandidate(t);
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  const view = (catalog, provider, model) => catalog[provider].models[model].pricing_view;
+  const references = (catalog, provider, model) =>
+    view(catalog, provider, model)
+      .groups.flatMap(({ quotes }) => quotes)
+      .filter(({ outputKind }) => outputKind === 'model-reference');
+  const gemini = references(catalogs.en, 'google', 'gemini-3.8-flash')[0];
+  const byId = new Map(gemini.displayRows.map((row) => [row.rowId, row]));
+  assert.equal(byId.get('fees:0:input').conditions.validThrough, '2026-12-31');
+  assert.deepEqual(byId.get('raw:next:storage'), {
+    rowId: 'raw:next:storage',
+    usageKey: 'storage',
+    amount: 1,
+    currency: 'USD',
+    unit: 'per_million_token_hours',
+    cnyAmount: 7,
+    cnyCurrency: 'CNY',
+    conditions: { effectiveAfter: '2026-12-31', priceState: 'announced' },
+  });
+  assert.equal(byId.get('service:Batch:input').amount, 0.375);
+  assert.equal(byId.get('service:Flex:next:input').conditions.serviceTier, 'Flex');
+  assert.equal(byId.get('service:Priority:output').amount, 6.75);
+
+  const minimax = references(catalogs.en, 'minimax-cn', 'MiniMax-M3')[0];
+  assert.match(minimax.displayRows[0].conditions.officialCondition, /defaults standard/);
+  assert.ok(!Object.hasOwn(minimax.displayRows[0].conditions, '0'));
+  const volces = references(catalogs.en, 'volcengine', 'doubao-seed-2-0-lite-260428')[0];
+  const storage = volces.displayRows.find(({ usageKey }) => usageKey === 'explicitCacheStorage');
+  assert.equal(storage.amount, 0.017);
+  assert.equal(storage.unit, 'CNY/million_token_hours');
+  assert.equal(volces.displayRows[0].conditions.inputInterval, '[0,32000]');
+  const held = references(catalogs.en, 'volcengine', 'doubao-seedance-2-5-260628')[0];
+  assert.equal(held.status, 'validation-held');
+  assert.equal(held.verification.actual4kBillingVerified, false);
+
+  const coverage = read('coverage.json');
+  const displayCoverage = read('display-coverage.json');
+  const imageId = 'image-01-live';
+  const imageIn = (models) =>
+    models.find(({ providerId, modelId }) => providerId === 'minimax-cn' && modelId === imageId);
+  const imageCoverage = imageIn(displayCoverage.models);
+  imageCoverage.selectedQuoteId = null;
+  imageCoverage.categories = ['single-token'];
+  imageCoverage.groups[0].groupId = 'bogus';
+  imageIn(coverage.models).selectedQuoteId = null;
+  const deepseek = displayCoverage.models.find(
+    ({ providerId, modelId }) => providerId === 'deepseek' && modelId === 'deepseek-v4-pro',
+  );
+  assert.ok(!deepseek.categories.includes('multimedia-usage'));
+  for (const catalog of Object.values(catalogs)) {
+    const openai = view(catalog, 'openai', 'gpt-6.1-sol');
+    const group = openai.groups.find(({ priceList }) => priceList === 'Flex');
+    group.priceList = group.quotes[0].priceList = 'Batch';
+    group.endpoint = group.quotes[0].endpoint = 'unreviewed endpoint';
+
+    const google = references(catalog, 'google', 'gemini-3.8-flash')[0];
+    google.displayRows = google.displayRows.filter(
+      ({ conditions }) => conditions.priceState === undefined,
+    );
+    const seedance = references(catalog, 'volcengine', 'doubao-seedance-2-5-260628')[0];
+    delete seedance.verification;
+
+    const image = view(catalog, 'minimax-cn', imageId);
+    image.selectedQuoteId = null;
+    image.summary = { kind: 'reference-only', status: image.status };
+  }
+  const negative = reconcileDisplayCoverage({
+    ...rawReconciliationInputs(),
+    coverage,
+    displayCoverage,
+    catalogs,
+  });
+  assert.equal(negative.status, 'failed');
+  for (const [modelId, field] of [
+    ['gpt-6.1-sol', 'quoteIdentity'],
+    ['gpt-6.1-sol', 'groupIdentity'],
+    ['gemini-3.8-flash', 'displayRows'],
+    ['doubao-seedance-2-5-260628', 'verification'],
+  ]) {
+    assert.ok(
+      negative.failures.some((row) => row.modelId === modelId && row.field === field),
+      modelId + ' ' + field,
+    );
+  }
+  for (const code of [
+    'model-selection-mismatch',
+    'model-category-mismatch',
+    'coverage-view-group-mismatch',
+    'summary-mismatch',
+  ])
+    assert.ok(
+      negative.failures.some((row) => row.modelId === imageId && row.code === code),
+      code,
+    );
+});
+
 test('summaries use only selected prices and never choose an arbitrary unit', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');

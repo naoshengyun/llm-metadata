@@ -7,7 +7,11 @@ import {
   PRICE_KEYS,
 } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
-import { expectedDisplayRows, expectedPricingSummary } from './pricing-view-check.mjs';
+import {
+  expectedDisplayRows,
+  expectedPricingSummary,
+  expectedUsageCategories,
+} from './pricing-view-check.mjs';
 
 const identity = (providerId, modelId) => JSON.stringify([providerId, modelId]);
 const officialSourceId = (record) => 'official-record:' + record.id;
@@ -20,14 +24,30 @@ const METER_UNITS = {
   per_second_768p: 'per_second',
   per_second_2k: 'per_second',
   cache_storage: 'per_million_token_hours',
+  storage: 'per_million_token_hours',
 };
-const COST_CHARGE_KEYS = new Set([...PRICE_KEYS, ...Object.keys(METER_UNITS)]);
+const COST_CHARGE_KEYS = new Set([...PRICE_KEYS, ...Object.keys(METER_UNITS), 'cache_read_audio']);
+// Exact reviewed vendor sources. Aliyun's general price page alone does not identify
+// the same regional endpoint and direct/router price list as the current model record.
+const REFERENCE_PROVIDERS = new Map([
+  ['https://docs.volcengine.com/docs/ark/model-pricing?lang=zh', 'volcengine'],
+  ['https://docs.volcengine.com/docs/ark/bytedance-seed-1-8?lang=zh', 'volcengine'],
+  ['https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya', 'qianfan'],
+]);
 const reviewedProvider = (record) =>
-  record.provider ?? (record.officialModel === 'doubao-seedance-2-5-260628' ? 'volcengine' : null);
+  record.provider ?? REFERENCE_PROVIDERS.get(record.source?.url) ?? null;
+const isSeedanceTable = (record) =>
+  record.officialModel === 'doubao-seedance-2-5-260628' &&
+  reviewedProvider(record) === 'volcengine';
+const structuredConditions = (conditions) =>
+  typeof conditions === 'string' ? { officialCondition: conditions } : (conditions ?? {});
+const isTokenUnit = (unit) =>
+  typeof unit === 'string' &&
+  /^(?:[A-Z]{3}[ /])?(?:per[ _])?(?:million|thousand|[0-9,]+)[ _]tokens?$/i.test(unit);
 
 function toCnyAmount(amount, currency) {
   if (typeof amount !== 'number' || !CNY_POLICY[currency]) return null;
-  return convertPrice({ input: amount }, CNY_POLICY[currency]).input;
+  return convertPrice(amount, CNY_POLICY[currency], 'input');
 }
 
 function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
@@ -95,15 +115,16 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
   return rows;
 }
 
-function feeDisplayRows(fees, prefix) {
+function feeDisplayRows(fees, prefix, conditions) {
   return (fees ?? []).map((fee, index) =>
     displayRow(
       prefix + ':' + index + ':' + (fee.name ?? fee.key ?? fee.usageKey),
       fee.name ?? fee.key ?? fee.usageKey,
       fee.amount,
-      fee.currency,
+      fee.unit === 'additional_image_output_tokens_per_partial_image' ? null : fee.currency,
       fee.unit,
       {
+        ...conditions,
         ...(fee.condition !== undefined ? { condition: fee.condition } : {}),
         ...(fee.freeQuantity !== undefined ? { freeQuantity: fee.freeQuantity } : {}),
       },
@@ -132,7 +153,7 @@ function taskDisplayRows(tiers, conditions) {
   );
 }
 
-const RAW_ROW_CHARGE_KEYS = new Set([...COST_CHARGE_KEYS, 'cache_read_audio', 'storage']);
+const RAW_ROW_CHARGE_KEYS = COST_CHARGE_KEYS;
 const RAW_ARRAY_CHARGE_KEYS = new Set([
   'input',
   'cacheHit',
@@ -167,7 +188,7 @@ function rawFeeArrayRows(values, unit, currency, conditions) {
               key,
               amount,
               currency,
-              METER_UNITS[key] ?? unit,
+              METER_UNITS[key] ?? unit?.split(';')[0],
               rowConditions,
             ),
           ]
@@ -243,17 +264,75 @@ function rawFeeObjectRows(raw, currency, conditions) {
   return rows;
 }
 
+function paidTierRows(sheet, prefix, currency, sourceUnit, units, conditions) {
+  const { next, expires, validThrough = expires, ...prices } = sheet;
+  const activeConditions = validThrough ? { ...conditions, validThrough } : conditions;
+  const current = costDisplayRows(prices, sourceUnit, currency, activeConditions, prefix);
+  const scheduled = next
+    ? costDisplayRows(
+        next,
+        sourceUnit,
+        currency,
+        {
+          ...conditions,
+          ...(validThrough ? { effectiveAfter: validThrough } : {}),
+          priceState: 'announced',
+        },
+        prefix + ':next',
+      )
+    : [];
+  return [...current, ...scheduled].map((row) => ({
+    ...row,
+    unit: units?.[row.usageKey] ?? row.unit,
+  }));
+}
+
 function displayRowsFor(quote) {
   const source = quote.originalQuote;
-  const conditions = source?.conditions ?? quote.conditions ?? {};
+  const conditions = structuredConditions(source?.conditions ?? quote.conditions);
   const currency = quote.sourceCurrency ?? source?.currency;
   const unit = quote.sourceUnit ?? source?.unit;
   if (source?.kind === 'task' || quote.outputKind === 'task-model')
     return taskDisplayRows(quote.sourcePrice, conditions);
   const rows = [];
   if (source?.cost) rows.push(...costDisplayRows(source.cost, unit, currency, conditions));
-  if (source?.fees) rows.push(...feeDisplayRows(source.fees, 'fees'));
-  if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools'));
+  if (source?.fees)
+    rows.push(
+      ...feeDisplayRows(
+        source.fees,
+        'fees',
+        source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
+      ),
+    );
+  if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools', conditions));
+
+  if (source?.raw) {
+    for (const row of paidTierRows(
+      source.raw,
+      'raw',
+      currency,
+      unit,
+      source.otherTierUnits,
+      conditions,
+    )) {
+      const represented = rows.some(
+        (fee) =>
+          fee.rowId.startsWith('fees:') &&
+          fee.usageKey === row.usageKey &&
+          fee.amount === row.amount &&
+          fee.unit === row.unit &&
+          !row.conditions.priceState,
+      );
+      if (!represented) rows.push(row);
+    }
+  }
+  for (const [serviceTier, sheet] of Object.entries(source?.otherPaidTiers ?? {}))
+    rows.push(
+      ...paidTierRows(sheet, 'service:' + serviceTier, currency, unit, source.otherTierUnits, {
+        ...conditions,
+        serviceTier,
+      }),
+    );
   if (rows.length) return rows;
   const value = quote.sourcePrice;
   if (Array.isArray(value)) return rawFeeArrayRows(value, unit, currency, conditions);
@@ -366,6 +445,15 @@ function serviceTier(quote) {
   return /^(Standard|Batch|Flex|Fast|Ultrafast|Priority)\b/i.exec(value)?.[1].toLowerCase() ?? null;
 }
 
+function isMultimediaCharge({ usageKey, unit }) {
+  return (
+    /^per_(?:second|count|image|song|10k_chars)$/.test(unit ?? '') ||
+    /image_output_tokens|video_tokens|^[A-Z]{3}\/image$/.test(unit ?? '') ||
+    /^(?:(?:input|output)_|cache_read_)(?:image|audio|video)$/.test(usageKey) ||
+    /^(?:input|cacheHit)Audio$/.test(usageKey)
+  );
+}
+
 function categoriesFor(status, quotes, selectedQuote) {
   const categories = new Set();
   if (['not-offered', 'deprecated', 'withdrawn', 'deferred', 'excluded'].includes(status))
@@ -373,7 +461,11 @@ function categoriesFor(status, quotes, selectedQuote) {
   if (!selectedQuote) categories.add('no-current-price');
   if (quotes.some((quote) => !quote.selected)) categories.add('reference-only');
   const tiers = new Set(quotes.map(serviceTier).filter(Boolean));
-  if (tiers.size > 1) categories.add('multi-service-tier');
+  if (
+    tiers.size > 1 ||
+    quotes.some((quote) => Object.keys(quote.originalQuote?.otherPaidTiers ?? {}).length)
+  )
+    categories.add('multi-service-tier');
   const endpoints = new Set(quotes.map((quote) => quote.endpoint).filter(Boolean));
   if (
     endpoints.size > 1 ||
@@ -397,12 +489,7 @@ function categoriesFor(status, quotes, selectedQuote) {
     if (quote.outputKind === 'task-model' || source?.task)
       categories.add('task-conditions').add('multimedia-usage');
     const displayRows = quote.displayRows ?? displayRowsFor(quote);
-    if (
-      displayRows.some(
-        (row) => row.unit && !['per_million_tokens', 'per-charge'].includes(row.unit),
-      )
-    )
-      categories.add('multimedia-usage');
+    if (displayRows.some(isMultimediaCharge)) categories.add('multimedia-usage');
     for (const quoteStatus of ['pending-effective', 'withdrawn', 'deferred'])
       if (quote.status === quoteStatus) categories.add(quoteStatus);
   }
@@ -410,8 +497,8 @@ function categoriesFor(status, quotes, selectedQuote) {
     selectedQuote &&
     !categories.has('token-tiers') &&
     selectedQuote.outputKind === 'model' &&
-    selectedQuote.sourceUnit === 'per_million_tokens' &&
-    displayRowsFor(selectedQuote).some(({ unit }) => unit === 'per_million_tokens')
+    isTokenUnit(selectedQuote.sourceUnit) &&
+    displayRowsFor(selectedQuote).some(({ unit }) => isTokenUnit(unit))
   )
     categories.add('single-token');
   return [...categories].sort();
@@ -436,7 +523,7 @@ function referenceSourcePrice(record, selected) {
     record.raw ??
     record.tools ??
     null;
-  if (selected && record.officialModel === 'doubao-seedance-2-5-260628' && value?.rows)
+  if (selected && isSeedanceTable(record) && value?.rows)
     value = { ...value, rows: value.rows.filter(([resolution]) => resolution === '4K') };
   return structuredClone(value);
 }
@@ -456,17 +543,31 @@ function referenceQuote(record, current, policy, selectedQuote) {
     sourceProviderId,
     modelId,
     nativeKey: modelId,
-    priceList: record.priceList ?? 'Reviewed official reference',
+    priceList:
+      record.priceList ??
+      (isSeedanceTable(record)
+        ? 'Volcengine Ark / mainland / online'
+        : 'Reviewed official reference'),
     endpoint: record.endpoint ?? current.upstreamPrice?.endpoint ?? null,
     sourceCurrency: record.currency ?? null,
     sourcePrice,
     sourceUnit: record.unit ?? record.rawFees?.unit ?? null,
     source: { ...record.source, recordSha256: hash(record) },
     originalQuote: structuredClone(record),
-    status:
-      record.status ??
-      (current.status === 'validation-held' ? 'validation-held' : 'reference-only'),
-    reason: record.reason ?? 'reviewed-reference-only',
+    status: isSeedanceTable(record) ? 'validation-held' : (record.status ?? 'reference-only'),
+    reason: isSeedanceTable(record)
+      ? 'seedance-4k-two-target-billing-cases-unverified'
+      : (record.reason ?? 'reviewed-reference-only'),
+    ...(isSeedanceTable(record)
+      ? {
+          verification: {
+            decision: policy.sources.seedance,
+            officialPrice: true,
+            modelExpressionImportEvidence: policy.sources.seedance,
+            actual4kBillingVerified: false,
+          },
+        }
+      : {}),
     conditions: structuredClone(record.conditions ?? null),
     selected: false,
     syncable: false,
@@ -722,7 +823,6 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
   for (const provider of Object.values(upstream))
     if (provider.subscription) excludedProviderIds.add(provider.id);
   const rows = [];
-  const byIdentity = new Map();
   for (const [providerId, provider] of Object.entries(upstream)) {
     if (excludedProviderIds.has(providerId)) continue;
     for (const [modelId, model] of Object.entries(provider.models)) {
@@ -808,7 +908,6 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
         domestic,
       };
       rows.push(row);
-      byIdentity.set(identity(providerId, modelId), row);
     }
   }
   const groups = new Map();
@@ -845,13 +944,11 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
   }
   return {
     rows,
-    byIdentity,
-    byQuoteId: new Map(rows.map((row) => [row.quoteId, row])),
     excludedProviderIds,
   };
 }
 
-function officialExpectations(official, policy, selection) {
+function officialExpectations(official, policy, selection, upstream) {
   const records = official.records.map(({ upstreamKey: _upstreamKey, ...quote }) => quote);
   const compiled = generateCny({ upstream: { providers: {} }, records, selection: {} });
   const expectations = new Map();
@@ -882,7 +979,10 @@ function officialExpectations(official, policy, selection) {
       modelId: source.model,
       nativeKey: tool ? null : source.model,
       priceList: source.priceList,
-      endpoint: source.endpoint ?? null,
+      endpoint:
+        source.endpoint ??
+        upstream[policy.providerAliases[source.provider] ?? source.provider]?.api ??
+        null,
       sourceCurrency: source.currency ?? null,
       sourcePrice: task ? source.task?.tiers : tool ? source.tools : source.cost,
       sourceUnit:
@@ -924,7 +1024,7 @@ function officialExpectations(official, policy, selection) {
   return expectations;
 }
 
-function referenceExclusionReason(source, current, selectedQuote, policy) {
+function referenceExclusionReason(source, current, policy) {
   const modelId = source.officialModel ?? source.model;
   if (!reviewedProvider(source) || !modelId) return 'source-record-identity-incomplete';
   if (!current) return 'model-not-in-current-catalog';
@@ -933,8 +1033,14 @@ function referenceExclusionReason(source, current, selectedQuote, policy) {
   if (event?.state === 'withdrawn' && event.reason === 'model-deprecated')
     return 'model-deprecated';
   if (source.routedRawStandard) return 'routed-model-has-no-independent-price';
-  if (!hasNumericPrice(referenceSourcePrice(source, selectedQuote)))
-    return 'source-price-not-provided';
+  const sourcePrice =
+    source.cost ??
+    source.candidateCost ??
+    source.fees ??
+    source.rawFees ??
+    source.raw ??
+    source.tools;
+  if (!hasNumericPrice(sourcePrice)) return 'source-price-not-provided';
   return null;
 }
 
@@ -954,7 +1060,7 @@ export function reconcileDisplayCoverage({
 }) {
   const failures = [];
   const fail = (code, message, detail = {}) => failures.push({ code, message, ...detail });
-  const officialPrices = officialExpectations(official, policy, selection);
+  const officialPrices = officialExpectations(official, policy, selection, upstream);
   const upstreamPrices = upstreamExpectations(
     upstream,
     policy,
@@ -1052,20 +1158,6 @@ export function reconcileDisplayCoverage({
       continue;
     }
     englishViews.set(key, view);
-    const selectedQuote = model.selectedQuoteId
-      ? (officialPrices.get(model.selectedQuoteId) ??
-        upstreamPrices.byQuoteId.get(model.selectedQuoteId))
-      : null;
-    const expectedSummary = expectedPricingSummary(
-      selectedQuote,
-      model.status,
-      (view.groups ?? []).length > 0,
-    );
-    if (canonical(view.summary) !== canonical(expectedSummary))
-      fail('summary-mismatch', 'Pricing summary differs from selected quote for ' + key, {
-        providerId: model.providerId,
-        modelId: model.modelId,
-      });
     if (view.summary?.kind === 'invalid-primary-unit')
       fail(
         'invalid-primary-unit',
@@ -1101,11 +1193,25 @@ export function reconcileDisplayCoverage({
         else {
           if (!actualBySource.has(quote.sourceRecordId))
             actualBySource.set(quote.sourceRecordId, []);
-          actualBySource.get(quote.sourceRecordId).push({ location, quote });
+          actualBySource.get(quote.sourceRecordId).push({ location, quote, group });
         }
       }
     }
     const coverageRow = displayModels.get(key);
+    if (
+      coverageRow &&
+      canonical(coverageRow.groups) !==
+        canonical(
+          (view.groups ?? []).map(({ groupId, quotes }) => ({
+            groupId,
+            quoteIds: quotes.map(({ quoteId }) => quoteId),
+          })),
+        )
+    )
+      fail('coverage-view-group-mismatch', 'Coverage groups differ from view for ' + key, {
+        providerId: model.providerId,
+        modelId: model.modelId,
+      });
     if (
       coverageRow &&
       JSON.stringify([...(coverageRow.quoteIds ?? [])].sort()) !== JSON.stringify(quoteIds.sort())
@@ -1114,6 +1220,18 @@ export function reconcileDisplayCoverage({
         providerId: model.providerId,
         modelId: model.modelId,
       });
+  }
+  for (const [locale, catalog] of Object.entries(catalogs)) {
+    for (const [providerId, provider] of Object.entries(catalog)) {
+      for (const modelId of Object.keys(provider.models)) {
+        if (!models.has(identity(providerId, modelId)))
+          fail('unexpected-catalog-model', 'Catalog has an unreviewed model for ' + locale, {
+            providerId,
+            modelId,
+            locale,
+          });
+      }
+    }
   }
   for (const locale of ['zh', 'ja']) {
     for (const [key, view] of englishViews) {
@@ -1127,6 +1245,11 @@ export function reconcileDisplayCoverage({
     }
   }
 
+  const selectedByModel = new Map(
+    [...officialPrices.values(), ...upstreamPrices.rows]
+      .filter((quote) => quote.syncable && quote.outputKind !== 'tool-reference')
+      .map((quote) => [identity(quote.providerId, quote.modelId), quote]),
+  );
   const expectedSources = [];
   for (const source of official.records ?? []) {
     const providerId = policy.providerAliases[source.provider] ?? source.provider;
@@ -1162,11 +1285,7 @@ export function reconcileDisplayCoverage({
       : null;
     const modelId = source.officialModel ?? source.model ?? null;
     const current = providerId && modelId ? models.get(identity(providerId, modelId)) : null;
-    const selectedQuote = current?.selectedQuoteId
-      ? (officialPrices.get(current.selectedQuoteId) ??
-        upstreamPrices.byQuoteId.get(current.selectedQuoteId) ??
-        null)
-      : null;
+    const selectedQuote = selectedByModel.get(identity(providerId, modelId));
     expectedSources.push({
       source,
       sourceType: 'reviewed-reference',
@@ -1175,7 +1294,7 @@ export function reconcileDisplayCoverage({
       modelId,
       current,
       selectedQuote,
-      reason: referenceExclusionReason(source, current, selectedQuote, policy),
+      reason: referenceExclusionReason(source, current, policy),
     });
   }
   for (const source of official.optionalToolFees ?? [])
@@ -1204,6 +1323,44 @@ export function reconcileDisplayCoverage({
             ? 'model-deprecated'
             : null,
     });
+  }
+
+  const reviewedByModel = new Map();
+  for (const item of expectedSources) {
+    if (item.reason) continue;
+    const key = identity(item.providerId, item.modelId);
+    if (!reviewedByModel.has(key)) reviewedByModel.set(key, []);
+    reviewedByModel.get(key).push(item);
+  }
+  for (const [key, view] of englishViews) {
+    const model = models.get(key);
+    const selectedQuote = selectedByModel.get(key);
+    const selectedQuoteId = selectedQuote?.quoteId ?? null;
+    const detail = { providerId: model.providerId, modelId: model.modelId };
+    const modelUsage = expectedUsageCategories(reviewedByModel.get(key) ?? [], selectedQuote);
+    const actualCategories = displayModels.get(key)?.categories ?? [];
+    for (const [category, applicable] of Object.entries(modelUsage)) {
+      if (actualCategories.includes(category) !== applicable)
+        fail('model-category-mismatch', 'Category differs from reviewed billing units for ' + key, {
+          ...detail,
+          field: category,
+        });
+    }
+
+    if (
+      (model.selectedQuoteId ?? null) !== selectedQuoteId ||
+      view.selectedQuoteId !== selectedQuoteId
+    )
+      fail(
+        'model-selection-mismatch',
+        'Model selection differs from reviewed input for ' + key,
+        detail,
+      );
+    if (
+      canonical(view.summary) !==
+      canonical(expectedPricingSummary(selectedQuote, model.status, reviewedByModel.has(key)))
+    )
+      fail('summary-mismatch', 'Pricing summary differs from selected quote for ' + key, detail);
   }
 
   const inputLedger = new Map();
@@ -1284,19 +1441,37 @@ export function reconcileDisplayCoverage({
 
     const comparisons = [];
     if (shouldDisplay && actualEntries.length === 1) {
-      const actual = actualEntries[0].quote;
+      const { quote: actual, group } = actualEntries[0];
+      const rawPrice =
+        source.cost ??
+        source.candidateCost ??
+        source.fees ??
+        source.rawFees ??
+        source.raw ??
+        source.tools ??
+        null;
+      const seedance =
+        source.officialModel === 'doubao-seedance-2-5-260628' && providerId === 'volcengine';
       const expectedPrice = normalized
         ? normalized.sourcePrice
-        : referenceSourcePrice(source, selectedQuote);
-      const expectedConditions = normalized
-        ? (normalized.originalQuote?.conditions ?? normalized.conditions ?? null)
-        : (source.conditions ?? null);
-      const expectedStatus = normalized
-        ? normalized.status
-        : (source.status ??
-          (modelId === 'doubao-seedance-2-5-260628' && !selection[modelId]
-            ? 'validation-held'
-            : 'reference-only'));
+        : seedance && selectedQuote
+          ? { ...rawPrice, rows: rawPrice.rows.filter((cells) => cells[0] === '4K') }
+          : rawPrice;
+      const expectedConditions =
+        normalized?.originalQuote?.conditions ??
+        normalized?.conditions ??
+        source.conditions ??
+        null;
+      const expectedStatus =
+        normalized?.status ?? (seedance ? 'validation-held' : (source.status ?? 'reference-only'));
+      const priceList =
+        normalized?.priceList ??
+        source.priceList ??
+        (seedance ? 'Volcengine Ark / mainland / online' : 'Reviewed official reference');
+      const endpoint = normalized
+        ? normalized.endpoint
+        : (source.endpoint ??
+          (upstream[providerId]?.models?.[modelId] ? (upstream[providerId].api ?? null) : null));
       const expectedCny = normalized
         ? (normalized.cnyTaskTiers ?? normalized.cnyCost ?? null)
         : source.cost || source.candidateCost
@@ -1323,6 +1498,29 @@ export function reconcileDisplayCoverage({
           actual.originalQuote?.conditions ?? actual.conditions ?? null,
         ],
         ['status', expectedStatus, actual.status],
+        [
+          'quoteIdentity',
+          { providerId, modelId, priceList, endpoint },
+          {
+            providerId: actual.providerId,
+            modelId: actual.modelId,
+            priceList: actual.priceList,
+            endpoint: actual.endpoint,
+          },
+        ],
+        [
+          'groupIdentity',
+          {
+            priceList,
+            endpoint,
+            sourceUnit: normalized?.sourceUnit ?? source.unit ?? source.rawFees?.unit ?? null,
+          },
+          {
+            priceList: group.priceList,
+            endpoint: group.endpoint,
+            sourceUnit: group.sourceUnit,
+          },
+        ],
         [
           'selection',
           normalized
@@ -1362,6 +1560,17 @@ export function reconcileDisplayCoverage({
         byRowId(expectedDisplayRows(sourceQuote)),
         Array.isArray(actual.displayRows) ? byRowId(actual.displayRows) : null,
       ]);
+      if (seedance)
+        fields.push([
+          'verification',
+          {
+            decision: policy.sources.seedance,
+            officialPrice: true,
+            modelExpressionImportEvidence: policy.sources.seedance,
+            actual4kBillingVerified: false,
+          },
+          actual.verification,
+        ]);
       const expectedQuoteId = normalized?.quoteId ?? referenceQuoteId(source);
       fields.push([
         'location',
