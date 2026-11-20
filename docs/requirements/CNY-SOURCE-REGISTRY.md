@@ -83,6 +83,10 @@
 
 旧混元平台已下线，`hunyuan` 和其 `hunyuan-a13b` 模型退出当前目录。腾讯 TokenHub 使用 `tencent-tokenhub`，旧 A13B 的报价留作历史证据。[腾讯下线公告](https://cloud.tencent.com/announce/detail/2287) · [TokenHub 迁移指南](https://cloud.tencent.com/document/product/1823/131382)
 
+### 2026-11-20 Seedance 2.5 同步范围
+
+用户确认 `doubao-seedance-2-5-260628` 仅同步 480p、720p 和 1080p。4K 官价继续展示，等待官方 New API 和 Doubao 插件适配该型号。真实计费纳入后续统一验收，原始 4K 验收条件见 [#32](https://github.com/naoshengyun/llm-metadata/issues/32)。
+
 ### 2026-11-19 已废弃模型复核
 
 用户确认，官方标记已废弃的模型退出 New API 价格 JSON。当前三语目录保留模型身份，显示「已废弃」并隐藏现行价格。覆盖记录保留原价和生命周期证据，固定历史版本按原身份保留。已明确通过旧 ID 路由至另一模型的记录，按原模型身份处理，替代型号使用各自价目。

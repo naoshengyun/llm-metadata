@@ -165,7 +165,8 @@ try {
   const names = Object.keys(data.billing_expr).sort();
   assert.equal(names.length, stats.apiModels);
   assert.deepEqual(Object.keys(data.billing_mode).sort(), names);
-  assert.ok(!names.includes('doubao-seedance-2-5-260628'));
+  const seedance = 'doubao-seedance-2-5-260628';
+  assert.ok(names.includes(seedance));
   const coverage = JSON.parse(await get(current.fixedBase + 'coverage.json'));
   const removedProviders = [...coverage.excludedProviderIds, 'dashscope-anthropic'];
   const notOffered = coverage.models.find(({ status }) => status === 'not-offered');
@@ -359,7 +360,7 @@ try {
       await expectVisible(h3.getByText(/input_images.*First 5 images free/).first());
     }
 
-    await goto(select('volcengine', 'doubao-seedance-2-5-260628'));
+    await goto(select('volcengine', seedance));
     for (const name of [
       'seedance-4k-two-target-billing-cases-unverified',
       'Official price documented',
@@ -373,9 +374,27 @@ try {
       await rows.evaluateAll((entries) =>
         entries.map((row) => [...row.cells].map((cell) => cell.textContent)),
       ),
-      english.volcengine.models['doubao-seedance-2-5-260628'].cnyPrice.quotes
+      english.volcengine.models[seedance].cnyPrice.quotes
         .find(({ sourcePrice }) => sourcePrice?.rows)
         .sourcePrice.rows.map((row) => row.map(String)),
+    );
+    assert.equal(await rows.count(), 1);
+    await expectVisible(rows.getByRole('rowheader', { name: '4K', exact: true }));
+    const syncQuote = english.volcengine.models[seedance].cnyPrice.quotes.find(
+      ({ syncable }) => syncable,
+    );
+    const syncCard = page.locator('article').filter({
+      has: page.getByText(syncQuote.quoteId, { exact: true }),
+    });
+    await expectVisible(syncCard.getByText('Selected for sync', { exact: true }));
+    assert.deepEqual(syncQuote.originalQuote.conditions.syncableResolutions, [
+      '480p',
+      '720p',
+      '1080p',
+    ]);
+    assert.deepEqual(
+      syncQuote.sourcePrice.map((tier) => tier.charges[0].amount),
+      [70, 42, 70, 42, 77, 46],
     );
     await expectVisible(
       page.getByText('actual charged token usage is API usage.completion_tokens', { exact: false }),

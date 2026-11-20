@@ -153,8 +153,7 @@ test('Ark keeps implicit token tiers and image task charges distinct', async () 
   assert.equal(image.observed.sourcePrice[0].charges[0].amount, 0.12);
   assert.equal(image.observed.sourcePrice[0].charges[2].amount, 0);
   assert.equal(
-    report.results.find(({ identity }) => identity.modelId === 'doubao-seedance-2-5-260628')
-      .coverageStatus,
+    resultFor(report, 'volcengine:doubao-seedance-2-5-260628:official-reference').coverageStatus,
     'validation-held',
   );
 });
@@ -211,7 +210,7 @@ test('Step 5 captures official grandfathering and Tencent distinguishes the migr
   assert.equal(tencent.observed.effectiveAt, '2026-08-31T00:00:00+08:00');
 });
 
-test('Ark reviews real video Token tariffs and keeps the #32 4K gate', async () => {
+test('Ark checks Seedance 2.5 online tariffs through 1080p', async () => {
   const report = await check('volcengine');
   const id = 'volcengine--doubao-seedance-2-0-260128--cn-beijing-task-online-original';
   const result = resultFor(report, id);
@@ -222,8 +221,16 @@ test('Ark reviews real video Token tariffs and keeps the #32 4K gate', async () 
   );
   assert.equal(result.observed.conditions.videoInputTokenMinimum, true);
   assert.equal(result.observed.conditions.billingUsage, 'usage.completion_tokens');
-  const { data } = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json')));
-  assert.equal(data.billing_expr['doubao-seedance-2-5-260628'], undefined);
+  const seedance25 = resultFor(
+    report,
+    'volcengine--doubao-seedance-2-5-260628--cn-beijing-task-online-original',
+  );
+  assert.equal(seedance25.status, 'unchanged', seedance25.reason);
+  assert.deepEqual(seedance25.observed.conditions.syncableResolutions, ['480p', '720p', '1080p']);
+  assert.deepEqual(
+    seedance25.observed.sourcePrice.map((tier) => tier.charges[0].amount),
+    [70, 42, 70, 42, 77, 46],
+  );
 });
 
 test('Bailian Beijing tiers use compatible-mode original CNY and distinguish cache modes', async () => {
@@ -424,7 +431,11 @@ test('a malformed Xiaomi field rejects the tariff, while an exact change builds 
   ]);
   const { data } = JSON.parse(readFileSync(join(out, 'api/newapi/ratio_config.json')));
   assert.equal(data.billing_expr['mimo-v2.6-pro'], 'tier("standard", p * 3 + cr * 0.026 + c * 6)');
-  assert.equal(data.billing_expr['doubao-seedance-2-5-260628'], undefined);
+  const before = JSON.parse(readFileSync(join(baseline, 'api/newapi/ratio_config.json'))).data;
+  assert.equal(
+    data.billing_expr['doubao-seedance-2-5-260628'],
+    before.billing_expr['doubao-seedance-2-5-260628'],
+  );
 });
 
 test('a native capability exclusion keeps DeepSeek official evidence and prevents fallback pricing', async () => {

@@ -7035,6 +7035,145 @@
       "unit": "per-charge"
     },
     {
+      "id": "volcengine--doubao-seedance-2-5-260628--cn-beijing-task-online-original",
+      "provider": "volcengine",
+      "model": "doubao-seedance-2-5-260628",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "source": {
+        "url": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md",
+        "sha256": "db47b1f929c7a0e73a0d7282b2a9aaa616dfe17623619dad3df952de61020af4",
+        "checkedAt": "2026-11-20",
+        "supplemental": [
+          {
+            "url": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+            "sha256": "9913fa140475d32ecabc651401c90d4a31cc86106a056b43dbdfa4a3290b2b24",
+            "checkedAt": "2026-11-20"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Official Ark online rates for 480p, 720p and 1080p. Billing uses the API completion token count. With input video, the count includes the minimum token charge.",
+      "kind": "task",
+      "task": {
+        "plugin": "doubao",
+        "model": "doubao-seedance-2-5-260628",
+        "rejectUnmatched": true,
+        "tiers": [
+          {
+            "name": "480p-none",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 70,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "480p",
+              "video_input": "none"
+            }
+          },
+          {
+            "name": "480p-video",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 42,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "480p",
+              "video_input": "video"
+            }
+          },
+          {
+            "name": "720p-none",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 70,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "720p",
+              "video_input": "none"
+            }
+          },
+          {
+            "name": "720p-video",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 42,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "720p",
+              "video_input": "video"
+            }
+          },
+          {
+            "name": "1080p-none",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 77,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "1080p",
+              "video_input": "none"
+            }
+          },
+          {
+            "name": "1080p-video",
+            "charges": [
+              {
+                "usageKey": "tokens",
+                "amount": 46,
+                "unit": "per_million_tokens",
+                "currency": "CNY"
+              }
+            ],
+            "when": {
+              "resolution": "1080p",
+              "video_input": "video"
+            }
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.tokens",
+          "status": "charged",
+          "unit": "per_million_tokens",
+          "sourceUrl": "https://docs.volcengine.com/docs/zh/ark/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "billingUsage": "usage.completion_tokens",
+        "videoInputTokenMinimum": true,
+        "syncableResolutions": [
+          "480p",
+          "720p",
+          "1080p"
+        ]
+      },
+      "unit": "per-charge"
+    },
+    {
       "id": "volcengine--doubao-seedance-2-0-fast-260128--cn-beijing-task-online-original",
       "provider": "volcengine",
       "model": "doubao-seedance-2-0-fast-260128",
@@ -11857,7 +11996,7 @@
       "platform": "seedance-video",
       "model": "seedance-2.5",
       "status": "unsupported-shape",
-      "reason": "Coverage shorthand has no fixed rc50 task binding or explicit first-party API alias proof; official exact ID is doubao-seedance-2-5-260628. Additionally full 2.5 pricing includes 4K missing from fixed 2.5 profile.",
+      "reason": "Coverage shorthand has no exact New API task binding or official alias evidence. The exact model ID doubao-seedance-2-5-260628 has its own quote for 480p, 720p and 1080p.",
       "quoteIds": [],
       "sourceUrls": [
         "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
