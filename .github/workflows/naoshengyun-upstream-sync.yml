@@ -3,8 +3,6 @@ run-name: CNY upstream sync from ${{ github.sha }}
 on:
   schedule:
     - cron: '17 1 * * *'
-    # Temporary GitHub scheduler probe for 2026-11-20, 16:00–16:55 Beijing time.
-    - cron: '*/5 8 20 11 *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,21 +13,6 @@ env:
   UPSTREAM_REPOSITORY: https://github.com/basellm/llm-metadata.git
 
 jobs:
-  schedule-probe:
-    if: >-
-      github.repository == 'naoshengyun/llm-metadata' &&
-      github.ref == 'refs/heads/naoshengyun' &&
-      github.event_name == 'schedule' &&
-      github.event.schedule == '*/5 8 20 11 *'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 2
-    steps:
-      - name: Record GitHub schedule delivery
-        run: |
-          if [ "$(date -u +%F)" != 2026-11-20 ]; then exit 0; fi
-          printf 'Real scheduled dispatch on %s at %s UTC\n' "$GITHUB_SHA" "$(date -u +'%F %T')" |
-            tee "$GITHUB_STEP_SUMMARY"
-
   check:
     if: >-
       github.repository == 'naoshengyun/llm-metadata' &&
