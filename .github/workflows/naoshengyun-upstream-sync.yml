@@ -3,8 +3,8 @@ run-name: CNY upstream sync from ${{ github.sha }}
 on:
   schedule:
     - cron: '17 1 * * *'
-    # Temporary GitHub scheduler probe for 2026-11-20, 10:00–10:55 Beijing time.
-    - cron: '*/5 2 20 11 *'
+    # Temporary GitHub scheduler probe for 2026-11-20, 16:00–16:55 Beijing time.
+    - cron: '*/5 8 20 11 *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
       github.repository == 'naoshengyun/llm-metadata' &&
       github.ref == 'refs/heads/naoshengyun' &&
       github.event_name == 'schedule' &&
-      github.event.schedule == '*/5 2 20 11 *'
+      github.event.schedule == '*/5 8 20 11 *'
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
