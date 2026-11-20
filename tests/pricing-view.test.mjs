@@ -358,6 +358,64 @@ test('reconciliation derives upstream expectations from the fixed raw snapshot u
   );
 });
 
+test('reconciliation detects omitted nested rows and consistently miscalculated summaries', (t) => {
+  const read = buildCandidate(t);
+  const input = {
+    ...rawReconciliationInputs(),
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs: {
+      en: read('api/all.json'),
+      zh: read('api/i18n/zh/all.json'),
+      ja: read('api/i18n/ja/all.json'),
+    },
+  };
+  const billingHash = createHash('sha256')
+    .update(read.bytes('api/newapi/ratio_config.json'))
+    .digest('hex');
+  const glmQuoteId = 'cn-zhipu-glm-4.7-standard';
+  const seedanceModelId = 'doubao-seedance-2-5-260628';
+  for (const catalog of Object.values(input.catalogs)) {
+    const glm = catalog.zhipuai.models['glm-4.7'].pricing_view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ quoteId }) => quoteId === glmQuoteId);
+    glm.displayRows = glm.displayRows.filter(
+      ({ rowId }) => !rowId.startsWith('cost:short_output:'),
+    );
+
+    const seedance = catalog.volcengine.models[seedanceModelId].pricing_view;
+    const selected = seedance.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ selected }) => selected);
+    for (const row of selected.displayRows) {
+      row.amount += 100;
+      row.cnyAmount += 100;
+    }
+    seedance.summary.minimum += 100;
+    seedance.summary.maximum += 100;
+  }
+  const result = reconcileDisplayCoverage(input);
+  assert.equal(result.status, 'failed');
+  assert.ok(
+    result.failures.some(({ field, quoteId }) => field === 'displayRows' && quoteId === glmQuoteId),
+  );
+  assert.ok(
+    result.failures.some(
+      ({ code, modelId }) => code === 'summary-mismatch' && modelId === seedanceModelId,
+    ),
+  );
+  assert.ok(
+    result.failures.some(
+      ({ field, modelId }) => field === 'displayRows' && modelId === seedanceModelId,
+    ),
+  );
+  assert.ok(!result.failures.some(({ code }) => code === 'locale-view-mismatch'));
+  assert.equal(
+    createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
+    billingHash,
+  );
+});
+
 test('token, task, media, and generic reference quotes expose structured display rows', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');
@@ -483,6 +541,110 @@ test('task summaries mark quote-wide charging conditions even with one unit and 
     assert.ok(Object.keys(view.groups[0].quotes[0].originalQuote.conditions).length > 0);
     assert.equal(view.summary.hasMoreConditions, true, modelId);
   }
+});
+
+test('all nested and generic charge shapes are rows, while numeric metadata stays conditional', (t) => {
+  const read = buildCandidate(t);
+  const glm = read('api/all.json')
+    .zhipuai.models['glm-4.7'].pricing_view.groups.flatMap(({ quotes }) => quotes)
+    .find(({ quoteId }) => quoteId === 'cn-zhipu-glm-4.7-standard');
+  const glmRows = new Map(glm.displayRows.map((row) => [row.rowId, row]));
+  assert.equal(glmRows.get('cost:short_output:input').amount, 2);
+  assert.equal(glmRows.get('cost:short_output:output').amount, 8);
+  assert.equal(glmRows.get('cost:short_output:cache_read').amount, 0.4);
+  assert.deepEqual(glmRows.get('cost:short_output:input').conditions.maxInput, 31999);
+  assert.deepEqual(glmRows.get('cost:short_output:input').conditions.maxOutput, 199);
+  assert.ok(!glm.displayRows.some(({ usageKey }) => ['maxInput', 'maxOutput'].includes(usageKey)));
+
+  const fixtureRead = buildCandidate(t, (official) => {
+    for (const [model, provider] of [
+      ['doubao-seedream-5-0-pro-260628', 'volcengine'],
+      ['ernie-5.1', 'qianfan'],
+    ]) {
+      const reference = official.excludedQuotes.find(
+        ({ officialModel }) => officialModel === model,
+      );
+      reference.provider = provider;
+      official.records.push({
+        id: 'fixture-catalog-identity:' + model,
+        provider,
+        model,
+        priceList: 'Fixture catalog identity',
+        origin: 'domestic',
+        currency: 'CNY',
+        required: [],
+        cost: {},
+        source: reference.source,
+      });
+    }
+  });
+  const catalog = fixtureRead('api/all.json');
+  const seedream = catalog.volcengine.models['doubao-seedream-5-0-pro-260628'].pricing_view.groups
+    .flatMap(({ quotes }) => quotes)
+    .find(({ outputKind }) => outputKind === 'model-reference');
+  const seedreamRows = new Map(seedream.displayRows.map((row) => [row.rowId, row]));
+  assert.equal(seedreamRows.get('raw-fees:singleImageOutput:0').amount, 0.3);
+  assert.equal(seedreamRows.get('raw-fees:singleImageOutput:1').amount, 0.6);
+  assert.equal(seedreamRows.get('raw-fees:layerDecompositionOutput:0').amount, 0.15);
+  assert.equal(seedreamRows.get('raw-fees:layerDecompositionOutput:1').amount, 0.3);
+  assert.equal(
+    seedreamRows.get('raw-fees:input').sourceValue,
+    'first image free, second onward0.02',
+  );
+  assert.equal(
+    seedreamRows.get('raw-fees:singleImageOutput:0').conditions.outputPixelCutoff,
+    2610000,
+  );
+  assert.ok(!seedream.displayRows.some(({ usageKey }) => usageKey === 'outputPixelCutoff'));
+
+  const ernie = catalog.qianfan.models['ernie-5.1'].pricing_view.groups
+    .flatMap(({ quotes }) => quotes)
+    .find(({ outputKind }) => outputKind === 'model-reference');
+  assert.deepEqual(
+    ernie.displayRows.map(({ usageKey, amount, conditions }) => [
+      usageKey,
+      amount,
+      conditions.officialCondition,
+    ]),
+    [
+      ['input', 0.004, 'input<=32k'],
+      ['output', 0.018, 'input<=32k'],
+      ['input', 0.006, '32k<input<=128k'],
+      ['output', 0.022, '32k<input<=128k'],
+    ],
+  );
+  assert.ok(!ernie.displayRows.some(({ usageKey }) => usageKey === 'thresholdTokens'));
+});
+
+test('generic display amounts use candidate precision normalization', (t) => {
+  const read = buildCandidate(t);
+  const wan = read('api/all.json')
+    .alibaba.models['wan3.0-video'].pricing_view.groups.flatMap(({ quotes }) => quotes)
+    .find(({ sourceCurrency }) => sourceCurrency === 'USD');
+  const row = wan.displayRows.find(({ amount }) => amount === 0.1);
+  assert.equal(row.cnyAmount, 0.7);
+});
+
+test('selected per-image models are not categorized as single-token', (t) => {
+  const read = buildCandidate(t);
+  const row = read('display-coverage.json').models.find(
+    ({ providerId, modelId }) => providerId === 'minimax-cn' && modelId === 'image-01-live',
+  );
+  assert.ok(row.selectedQuoteId);
+  assert.deepEqual(
+    row.categories.filter((category) => ['single-token', 'multimedia-usage'].includes(category)),
+    ['multimedia-usage'],
+  );
+  const image = read('api/all.json')['minimax-cn'].models['image-01-live'].pricing_view;
+  assert.deepEqual(image.summary, {
+    kind: 'fixed',
+    quoteId: row.selectedQuoteId,
+    currency: 'CNY',
+    unit: 'per_image',
+    amount: 0.025,
+    hasMoreConditions: false,
+  });
+  assert.ok(row.categories.includes('multimedia-usage'));
 });
 
 test('coverage categories compose across the full catalog and retain lifecycle states', (t) => {

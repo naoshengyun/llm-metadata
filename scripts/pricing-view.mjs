@@ -4,30 +4,42 @@ import {
   convertPrice,
   generateCny,
   hash,
+  PRICE_KEYS,
 } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
+import { expectedDisplayRows, expectedPricingSummary } from './pricing-view-check.mjs';
 
 const identity = (providerId, modelId) => JSON.stringify([providerId, modelId]);
 const officialSourceId = (record) => 'official-record:' + record.id;
 const referenceSourceId = (record) => 'reviewed-reference:' + (record.id ?? hash(record));
 const referenceQuoteId = (record) => referenceSourceId(record);
+const METER_UNITS = {
+  per_image: 'per_image',
+  per_10k_chars: 'per_10k_chars',
+  per_second_480p: 'per_second',
+  per_second_768p: 'per_second',
+  per_second_2k: 'per_second',
+  cache_storage: 'per_million_token_hours',
+};
+const COST_CHARGE_KEYS = new Set([...PRICE_KEYS, ...Object.keys(METER_UNITS)]);
 const reviewedProvider = (record) =>
   record.provider ?? (record.officialModel === 'doubao-seedance-2-5-260628' ? 'volcengine' : null);
 
 function toCnyAmount(amount, currency) {
   if (typeof amount !== 'number' || !CNY_POLICY[currency]) return null;
-  return amount * CNY_POLICY[currency];
+  return convertPrice({ input: amount }, CNY_POLICY[currency]).input;
 }
 
 function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
   return {
     rowId,
     usageKey,
-    amount,
+    amount: typeof amount === 'number' ? amount : null,
+    ...(typeof amount === 'string' ? { sourceValue: amount } : {}),
     currency: currency ?? null,
     unit: unit ?? null,
     cnyAmount: toCnyAmount(amount, currency),
-    cnyCurrency: CNY_POLICY[currency] ? 'CNY' : null,
+    cnyCurrency: typeof amount === 'number' && CNY_POLICY[currency] ? 'CNY' : null,
     conditions: conditions ?? {},
     ...(tier ? { tier } : {}),
   };
@@ -35,23 +47,51 @@ function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
 
 function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
   const rows = [];
-  for (const [key, amount] of Object.entries(cost ?? {}))
-    if (typeof amount === 'number')
-      rows.push(displayRow(prefix + ':' + key, key, amount, currency, unit, conditions));
-  for (const [index, tier] of (cost?.tiers ?? []).entries())
-    for (const [key, amount] of Object.entries(tier))
-      if (typeof amount === 'number')
+  const visit = (sheet, path, inheritedConditions, tier) => {
+    const localConditions = { ...inheritedConditions };
+    for (const [key, value] of Object.entries(sheet ?? {})) {
+      const primitiveMetadata =
+        value === null ||
+        typeof value !== 'object' ||
+        (Array.isArray(value) && value.every((item) => item === null || typeof item !== 'object'));
+      if (primitiveMetadata && !COST_CHARGE_KEYS.has(key) && key !== 'currency')
+        localConditions[key] = value;
+    }
+    for (const [key, value] of Object.entries(sheet ?? {})) {
+      if (COST_CHARGE_KEYS.has(key) && typeof value === 'number') {
         rows.push(
           displayRow(
-            prefix + ':tier-' + index + ':' + key,
+            path + ':' + key,
             key,
-            amount,
+            value,
             currency,
-            unit,
-            { ...conditions, tier: tier.tier },
-            tier.tier,
+            METER_UNITS[key] ?? unit,
+            key.startsWith('per_second_')
+              ? { ...localConditions, resolution: key.slice('per_second_'.length) }
+              : localConditions,
+            tier,
           ),
         );
+      } else if (key === 'tiers' && Array.isArray(value)) {
+        value.forEach((child, index) =>
+          visit(
+            child,
+            path + ':tier-' + index,
+            { ...localConditions, tier: child.tier },
+            child.tier,
+          ),
+        );
+      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        visit(value, path + ':' + key, localConditions, tier);
+      } else if (Array.isArray(value) && value.some((item) => item && typeof item === 'object')) {
+        value.forEach((child, index) => {
+          if (child && typeof child === 'object')
+            visit(child, path + ':' + key + ':' + index, localConditions, tier);
+        });
+      }
+    }
+  };
+  visit(cost, prefix, conditions, undefined);
   return rows;
 }
 
@@ -92,63 +132,113 @@ function taskDisplayRows(tiers, conditions) {
   );
 }
 
+const RAW_ROW_CHARGE_KEYS = new Set([...COST_CHARGE_KEYS, 'cache_read_audio', 'storage']);
+const RAW_ARRAY_CHARGE_KEYS = new Set([
+  'input',
+  'cacheHit',
+  'output',
+  'batchInput',
+  'batchCacheHit',
+  'batchOutput',
+  'singleImageOutput',
+  'layerDecompositionOutput',
+]);
+const RAW_SCALAR_CHARGE_KEYS = new Set([
+  ...RAW_ROW_CHARGE_KEYS,
+  'amount',
+  'cacheStorage',
+  'directOriginalInput',
+  'directOriginalOutput',
+  'explicitCacheStorage',
+  'implicitCacheStorage',
+  'routerCachedInput',
+]);
+
 function rawFeeArrayRows(values, unit, currency, conditions) {
-  return values.flatMap((value, rowIndex) =>
-    Object.entries(value).flatMap(([key, amount]) =>
-      typeof amount === 'number'
+  return values.flatMap((value, rowIndex) => {
+    const rowConditions = { ...conditions };
+    for (const [key, item] of Object.entries(value))
+      if (!RAW_ROW_CHARGE_KEYS.has(key)) rowConditions[key] = item;
+    return Object.entries(value).flatMap(([key, amount]) =>
+      RAW_ROW_CHARGE_KEYS.has(key) && ['number', 'string'].includes(typeof amount)
         ? [
-            displayRow('raw-fees:' + rowIndex + ':' + key, key, amount, currency, unit, {
-              ...conditions,
-              ...(value.condition ? { condition: value.condition } : {}),
-            }),
+            displayRow(
+              'raw-fees:' + rowIndex + ':' + key,
+              key,
+              amount,
+              currency,
+              METER_UNITS[key] ?? unit,
+              rowConditions,
+            ),
           ]
         : [],
-    ),
-  );
+    );
+  });
 }
 
 function rawFeeObjectRows(raw, currency, conditions) {
-  if (Array.isArray(raw.columns) && Array.isArray(raw.rows)) {
-    return raw.rows.flatMap((values, rowIndex) => {
-      const rowConditions = { ...conditions };
-      for (const [index, column] of raw.columns.entries())
-        if (typeof values[index] !== 'number') rowConditions[column] = values[index];
-      for (const key of ['minimumUsage', 'draft', 'inputIntervals'])
-        if (raw[key] !== undefined) rowConditions[key] = raw[key];
-      return raw.columns.flatMap((column, columnIndex) =>
-        typeof values[columnIndex] === 'number'
-          ? [
-              displayRow(
-                'raw-fees:row-' + rowIndex + ':' + column,
-                column,
-                values[columnIndex],
-                currency,
-                raw.unit,
-                rowConditions,
-              ),
-            ]
-          : [],
-      );
-    });
-  }
   const rows = [];
+  for (const [rowIndex, cells] of (raw.rows ?? []).entries()) {
+    const rowConditions = { ...conditions };
+    for (const [columnIndex, column] of raw.columns.entries())
+      if (column === 'resolution') rowConditions[column] = cells[columnIndex];
+    for (const key of ['minimumUsage', 'draft'])
+      if (raw[key] !== undefined) rowConditions[key] = raw[key];
+    if (raw.inputIntervals?.[rowIndex]) rowConditions.inputInterval = raw.inputIntervals[rowIndex];
+    for (const [columnIndex, column] of raw.columns.entries()) {
+      const amount = cells[columnIndex];
+      if (column !== 'resolution' && typeof amount === 'number')
+        rows.push(
+          displayRow(
+            'raw-fees:row-' + rowIndex + ':' + column,
+            column,
+            amount,
+            currency,
+            raw.unit,
+            rowConditions,
+          ),
+        );
+    }
+  }
   if (raw.tokenFees)
     rows.push(
       ...costDisplayRows(raw.tokenFees, raw.tokenUnit, currency, conditions, 'raw-fees:token'),
     );
-  for (const [key, amount] of Object.entries(raw)) {
-    if (typeof amount !== 'number') continue;
-    const storage = /storage/i.test(key);
+  if (Array.isArray(raw.tiers))
     rows.push(
-      displayRow(
-        'raw-fees:' + key,
-        key,
-        amount,
-        currency,
-        storage ? (raw.storageUnit ?? raw.unit) : raw.unit,
-        { ...conditions, ...(raw.rounding ? { rounding: raw.rounding } : {}) },
-      ),
+      ...rawFeeArrayRows(raw.tiers, raw.unit, currency, {
+        ...conditions,
+        ...(Object.hasOwn(raw, 'thresholdTokens') ? { thresholdTokens: raw.thresholdTokens } : {}),
+      }),
     );
+  for (const [key, value] of Object.entries(raw)) {
+    const unit = /storage/i.test(key) ? (raw.storageUnit ?? raw.unit) : raw.unit;
+    if (RAW_SCALAR_CHARGE_KEYS.has(key) && ['number', 'string'].includes(typeof value)) {
+      rows.push(
+        displayRow('raw-fees:' + key, key, value, currency, unit, {
+          ...conditions,
+          ...(raw.rounding ? { rounding: raw.rounding } : {}),
+          ...(raw.inputRange ? { inputRange: raw.inputRange } : {}),
+          ...(key === 'routerCachedInput' && raw.routerPriceSource
+            ? { routerPriceSource: raw.routerPriceSource }
+            : {}),
+        }),
+      );
+    } else if (RAW_ARRAY_CHARGE_KEYS.has(key) && Array.isArray(value)) {
+      value.forEach((amount, index) => {
+        const rowConditions = {
+          ...conditions,
+          ...(raw.conditions?.[index] ? { officialCondition: raw.conditions[index] } : {}),
+          ...(raw.outputPixelCutoff !== undefined
+            ? { outputPixelCutoff: raw.outputPixelCutoff, outputBand: index }
+            : {}),
+          ...(typeof raw.input === 'string' ? { inputCondition: raw.input } : {}),
+        };
+        rows.push(
+          displayRow('raw-fees:' + key + ':' + index, key, amount, currency, unit, rowConditions),
+        );
+      });
+    }
   }
   return rows;
 }
@@ -316,7 +406,13 @@ function categoriesFor(status, quotes, selectedQuote) {
     for (const quoteStatus of ['pending-effective', 'withdrawn', 'deferred'])
       if (quote.status === quoteStatus) categories.add(quoteStatus);
   }
-  if (selectedQuote && !categories.has('token-tiers') && selectedQuote.outputKind === 'model')
+  if (
+    selectedQuote &&
+    !categories.has('token-tiers') &&
+    selectedQuote.outputKind === 'model' &&
+    selectedQuote.sourceUnit === 'per_million_tokens' &&
+    displayRowsFor(selectedQuote).some(({ unit }) => unit === 'per_million_tokens')
+  )
     categories.add('single-token');
   return [...categories].sort();
 }
@@ -818,7 +914,7 @@ function officialExpectations(official, policy, selection) {
               ...tier,
               charges: tier.charges.map((charge) => ({
                 ...charge,
-                amount: toCnyAmount(charge.amount, charge.currency),
+                amount: charge.amount * CNY_POLICY[charge.currency],
                 currency: 'CNY',
               })),
             }))
@@ -958,11 +1054,14 @@ export function reconcileDisplayCoverage({
     englishViews.set(key, view);
     const selectedQuote = model.selectedQuoteId
       ? (officialPrices.get(model.selectedQuoteId) ??
-        upstreamPrices.byQuoteId.get(model.selectedQuoteId) ??
-        model.upstreamPrice)
+        upstreamPrices.byQuoteId.get(model.selectedQuoteId))
       : null;
-    const expectedSummary = summaryFor(selectedQuote, model.status, view.groups ?? []);
-    if (JSON.stringify(view.summary) !== JSON.stringify(expectedSummary))
+    const expectedSummary = expectedPricingSummary(
+      selectedQuote,
+      model.status,
+      (view.groups ?? []).length > 0,
+    );
+    if (canonical(view.summary) !== canonical(expectedSummary))
       fail('summary-mismatch', 'Pricing summary differs from selected quote for ' + key, {
         providerId: model.providerId,
         modelId: model.modelId,
@@ -1251,18 +1350,23 @@ export function reconcileDisplayCoverage({
       ];
       if (sourceType === 'official-record' || sourceType === 'reviewed-reference')
         fields.push(['sourceRecord', source, actual.originalQuote]);
-      const expectedDisplayQuote = normalized ?? {
-        ...actual,
+      const sourceQuote = normalized ?? {
         originalQuote: source,
         sourcePrice: expectedPrice,
         sourceCurrency: source.currency ?? null,
         sourceUnit: source.unit ?? source.rawFees?.unit ?? null,
-        cnyCost: expectedCny ?? undefined,
       };
+      const byRowId = (rows) => [...rows].sort((a, b) => a.rowId.localeCompare(b.rowId));
       fields.push([
         'displayRows',
-        displayRowsFor(expectedDisplayQuote),
-        actual.displayRows ?? null,
+        byRowId(expectedDisplayRows(sourceQuote)),
+        Array.isArray(actual.displayRows) ? byRowId(actual.displayRows) : null,
+      ]);
+      const expectedQuoteId = normalized?.quoteId ?? referenceQuoteId(source);
+      fields.push([
+        'location',
+        { providerId, modelId, quoteId: expectedQuoteId, groupId: 'quote:' + expectedQuoteId },
+        actualLocations[0],
       ]);
       for (const [field, expectedValue, actualValue] of fields) {
         const comparison = compareField(field, expectedValue, actualValue);
