@@ -131,7 +131,16 @@
     "qwen3.8-flash": "dashscope--qwen3.8-flash--cn-beijing-online-original-implicit",
     "qwen3.8-max": "dashscope--qwen3.8-max--cn-beijing-online-original-implicit",
     "qwen3.8-omni-flash": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit",
-    "qwen-plus-character": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit"
+    "qwen-plus-character": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit",
+    "wan2.7-i2v": "dashscope--wan2.7-i2v--cn-beijing-task-online-original",
+    "wan2.7-i2v-2026-04-25": "dashscope--wan2.7-i2v-2026-04-25--cn-beijing-task-online-original",
+    "wan2.7-image": "dashscope--wan2.7-image--cn-beijing-task-online-original",
+    "wan2.7-image-pro": "dashscope--wan2.7-image-pro--cn-beijing-task-online-original",
+    "wan2.7-t2v": "dashscope--wan2.7-t2v--cn-beijing-task-online-original",
+    "wan2.7-t2v-2026-04-25": "dashscope--wan2.7-t2v-2026-04-25--cn-beijing-task-online-original",
+    "wan2.7-t2v-2026-06-12": "dashscope--wan2.7-t2v-2026-06-12--cn-beijing-task-online-original",
+    "wan3.0-video": "dashscope--wan3.0-video--cn-beijing-task-online-original",
+    "wan3.0-video-prime": "dashscope--wan3.0-video-prime--cn-beijing-task-online-original"
   },
   "notProposed": [
     {

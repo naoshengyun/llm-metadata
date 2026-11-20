@@ -20,6 +20,8 @@
 
 在本轮提交运行 `npm run test:cny`，再运行 `node --test tests/evidence/cny-acceptance-2026-11-19.test.mjs` 回放完整验收快照。锁定的覆盖 JSON 和同步 JSON 内容摘要见响应清单。三语浏览器验证与隔离版 New API rc.50 的预览、保存、配置读回使用同一候选，供应商推理调用数为 0。平台审核与公网发布在合并后完成，生产实例应用属于独立流程。
 
+当前历史回放使用 [#74 合并提交](https://github.com/naoshengyun/llm-metadata/commit/a5df64501e8709ed536c051d66a2ff33a778aae6) 的固定价目输入，逐键验证 196 个同步键。回放只使用两份 11 月 19 日响应清单所列的适配器及原始响应。万相报价由 11 月 20 日的固定响应单独验证。
+
 ## #66 公网读回与收尾复核
 
 [#66](https://github.com/naoshengyun/llm-metadata/pull/66) 的合并提交 `ac76b63e8e8f80b5d12434286ffa0b52a656ca13` 已对应公网固定版 `eb48b5c85ca0bad81bd1b8946e8401a70c63c0a2d9cafbc18e51c27681656a0e`。公开固定版本和 New API 稳定入口价格 JSON 字节相同，SHA-256 为 `ad5a63794d79b302cee1d676c3e8352365dde57725bde619ae99e54a83d86a89`。三语目录均标记三个废弃型号，这些型号已退出同步 JSON。本次发布没有新增同步键。11 条表达式按审查更新。百炼新加坡 19 条报价和北京 27 条价格读回一致。[发版与公网验证](https://github.com/naoshengyun/llm-metadata/actions/runs/44520777595) · [公网指针](https://naoshengyun.github.io/llm-metadata/current.json)

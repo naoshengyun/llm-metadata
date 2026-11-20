@@ -10320,6 +10320,1916 @@
         "cacheTtl": "no fixed TTL",
         "cacheWriteIncludedInInput": true
       }
+    },
+    {
+      "id": "dashscope--wan3.0-video--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan3.0-video",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan3.0-video",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1.2,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "480P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.3,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "480P",
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan3.0-video-prime--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan3.0-video-prime",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan3.0-video-prime",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1.8,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.9,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "480P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.45,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "480P",
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-t2v",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v-2026-04-25--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-t2v-2026-04-25",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v-2026-04-25",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v-2026-06-12--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-t2v-2026-06-12",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v-2026-06-12",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-i2v--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-i2v",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-i2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-i2v-2026-04-25--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-i2v-2026-04-25",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-i2v-2026-04-25",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-r2v--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-r2v",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Input video billing is capped at five seconds. Alibaba New API plugin has no route for this reference-to-video model.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-r2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio",
+        "inputLimitSeconds": 5
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-r2v-2026-06-12--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-r2v-2026-06-12",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Input video billing is capped at five seconds. Alibaba New API plugin has no route for this reference-to-video model.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-r2v-2026-06-12",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio",
+        "inputLimitSeconds": 5
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-videoedit--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-videoedit",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Alibaba New API plugin has no route for this video editing model.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-videoedit",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 1,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.6,
+                "unit": "per_second",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-image--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-image",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "The original price is per successfully generated image. Any introductory quota is account-specific.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-image",
+        "tiers": [
+          {
+            "name": "per-image",
+            "charges": [
+              {
+                "usageKey": "image_count",
+                "amount": 0.2,
+                "unit": "per_count",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.image_count",
+          "status": "charged",
+          "unit": "per_count",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-images"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-image-pro--cn-beijing-task-online-original",
+      "provider": "alibaba-cn",
+      "model": "wan2.7-image-pro",
+      "priceList": "cn-beijing-task-online-original",
+      "origin": "domestic",
+      "currency": "CNY",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://help.aliyun.com/zh/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "c93278ffd2680438ac9dec13911b0b9dc5919d3a5b5f5497cbbcc604b7e98444",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "The original price is per successfully generated image. Any introductory quota is account-specific.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-image-pro",
+        "tiers": [
+          {
+            "name": "per-image",
+            "charges": [
+              {
+                "usageKey": "image_count",
+                "amount": 0.5,
+                "unit": "per_count",
+                "currency": "CNY"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.image_count",
+          "status": "charged",
+          "unit": "per_count",
+          "sourceUrl": "https://help.aliyun.com/zh/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "华北2（北京）",
+        "basis": "output-images"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan3.0-video--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan3.0-video",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan3.0-video",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.2,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.05,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "480P",
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan3.0-video-prime--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan3.0-video-prime",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan3.0-video-prime",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.28,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.14,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "480P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.068,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "480P",
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-t2v",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v-2026-04-25--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-t2v-2026-04-25",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v-2026-04-25",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-t2v-2026-06-12--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-t2v-2026-06-12",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-t2v-2026-06-12",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-i2v--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-i2v",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-i2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-i2v-2026-04-25--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-i2v-2026-04-25",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Only successfully generated video seconds are billed at the output resolution rate. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-i2v-2026-04-25",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-r2v--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-r2v",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Input video billing is capped at five seconds. Alibaba New API plugin has no route for this reference-to-video model. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-r2v",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio",
+        "inputLimitSeconds": 5
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-r2v-2026-06-12--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-r2v-2026-06-12",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Input video billing is capped at five seconds. Alibaba New API plugin has no route for this reference-to-video model. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-r2v-2026-06-12",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true,
+        "outputVideoType": "audio",
+        "inputLimitSeconds": 5
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-videoedit--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-videoedit",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "Both input and generated video seconds are billed at the output resolution rate. Failed tasks are free. Alibaba New API plugin has no route for this video editing model. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-videoedit",
+        "tiers": [
+          {
+            "name": "1080P",
+            "when": {
+              "resolution": "1080P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.15,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          },
+          {
+            "name": "720P",
+            "when": {
+              "resolution": "720P"
+            },
+            "charges": [
+              {
+                "usageKey": "seconds",
+                "amount": 0.1,
+                "unit": "per_second",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.seconds",
+          "status": "charged",
+          "unit": "per_second",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "input-and-output-seconds",
+        "resolutions": [
+          "720P",
+          "1080P"
+        ],
+        "failedTasksFree": true
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-image--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-image",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "The original price is per successfully generated image. Any introductory quota is account-specific. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-image",
+        "tiers": [
+          {
+            "name": "per-image",
+            "charges": [
+              {
+                "usageKey": "image_count",
+                "amount": 0.03,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.image_count",
+          "status": "charged",
+          "unit": "per_count",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-images"
+      },
+      "unit": "per-charge"
+    },
+    {
+      "id": "dashscope--wan2.7-image-pro--sg-international-task-online-original",
+      "provider": "alibaba",
+      "model": "wan2.7-image-pro",
+      "priceList": "sg-international-task-online-original",
+      "origin": "foreign",
+      "currency": "USD",
+      "endpoint": "https://dashscope-intl.aliyuncs.com/api/v1",
+      "source": {
+        "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md",
+        "checkedAt": "2026-11-20",
+        "sha256": "1ec15baab950bcc13ac034088b68c6f6e1949e48d98936ceeca66b9b6b56c63a",
+        "supplemental": [
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan-model-activation-usage-and-refund.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "b33a926fa6caaebeb8205b63ec4516366ee87edbb820e8df15c8c2804224481c"
+          },
+          {
+            "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference.md",
+            "checkedAt": "2026-11-20",
+            "sha256": "03c037a60a6b4cf6cd6add68ee1144dcf9aa55226a0499b60422e8d0df68dd00"
+          }
+        ]
+      },
+      "required": [],
+      "cost": {},
+      "description": "The original price is per successfully generated image. Any introductory quota is account-specific. Singapore International source tariff in USD.",
+      "kind": "task",
+      "task": {
+        "plugin": "alibaba",
+        "model": "wan2.7-image-pro",
+        "tiers": [
+          {
+            "name": "per-image",
+            "charges": [
+              {
+                "usageKey": "image_count",
+                "amount": 0.075,
+                "unit": "per_count",
+                "currency": "USD"
+              }
+            ]
+          }
+        ]
+      },
+      "feeDeclarations": [
+        {
+          "field": "task.image_count",
+          "status": "charged",
+          "unit": "per_count",
+          "sourceUrl": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing.md"
+        }
+      ],
+      "conditions": {
+        "region": "Singapore",
+        "basis": "output-images"
+      },
+      "unit": "per-charge"
     }
   ],
   "coverage": [
