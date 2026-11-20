@@ -1,4 +1,5 @@
 import { TaskPriceSummary } from '@/components/official-quotes';
+import { PricingViewCell, PricingViewQuotes, PricingViewSummary } from '@/components/pricing-view';
 import { PricingNotice } from '@/components/pricing-notice';
 import { Fragment, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
@@ -301,8 +302,10 @@ export function PricingTable({
           </TableHeader>
           <TableBody>
             {rows.map(({ model, pricing, expr, isNew }) => {
-              const expandable =
-                pricing.sections.length > 0 || pricing.alternates.length > 0 || !!expr;
+              const pricingView = model.pricing_view;
+              const expandable = pricingView
+                ? pricingView.groups.length > 0 || !!expr
+                : pricing.sections.length > 0 || pricing.alternates.length > 0 || !!expr;
               const open = expandable && expanded.has(model.id);
               const deprecated = model.status === 'deprecated';
               return (
@@ -367,7 +370,11 @@ export function PricingTable({
                             {model.id}
                           </div>
                           <PricingNotice model={model} />
-                          <TaskPriceSummary model={model} />
+                          {pricingView ? (
+                            <PricingViewSummary view={pricingView} table />
+                          ) : (
+                            <TaskPriceSummary model={model} />
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -380,38 +387,66 @@ export function PricingTable({
                       {formatContext(model.limit?.context)}
                     </TableCell>
                     <TableCell className={NUMERIC_CELL}>
-                      <PriceValue pricing={pricing} column="input" />
+                      {pricingView ? (
+                        <PricingViewCell view={pricingView} column="input" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="input" />
+                      )}
                     </TableCell>
                     <TableCell className={cn(NUMERIC_CELL, 'text-muted-foreground')}>
-                      <PriceValue pricing={pricing} column="cacheRead" />
+                      {pricingView ? (
+                        <PricingViewCell view={pricingView} column="cacheRead" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="cacheRead" />
+                      )}
                     </TableCell>
                     <TableCell className={cn(NUMERIC_CELL, 'text-muted-foreground')}>
-                      <PriceValue pricing={pricing} column="cacheWrite" />
+                      {pricingView ? (
+                        <PricingViewCell view={pricingView} column="cacheWrite" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="cacheWrite" />
+                      )}
                     </TableCell>
                     <TableCell className={NUMERIC_CELL}>
-                      <PriceValue pricing={pricing} column="output" />
+                      {pricingView ? (
+                        <PricingViewCell view={pricingView} column="output" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="output" />
+                      )}
                     </TableCell>
                   </TableRow>
 
                   {open && (
                     <>
-                      <DetailPricingRows
-                        pricing={pricing}
-                        withBaseRow={false}
-                        isLast={!expr && pricing.alternates.length === 0}
-                      />
-                      {pricing.alternates.map((alt, index) => (
-                        <Fragment key={alt.currency}>
-                          <DetailSectionHeader
-                            title={t('detail.priceList', { currency: alt.currency })}
-                          />
+                      {pricingView ? (
+                        <MotionTableRow {...DETAIL_ROW_MOTION} className={DETAIL_ROW}>
+                          <TableCell colSpan={7} className="whitespace-normal">
+                            <div className="w-[calc(100vw-3.5rem)] max-w-full py-2 sm:w-auto">
+                              <PricingViewQuotes view={pricingView} compact />
+                            </div>
+                          </TableCell>
+                        </MotionTableRow>
+                      ) : (
+                        <>
                           <DetailPricingRows
-                            pricing={alt}
-                            withBaseRow
-                            isLast={!expr && index === pricing.alternates.length - 1}
+                            pricing={pricing}
+                            withBaseRow={false}
+                            isLast={!expr && pricing.alternates.length === 0}
                           />
-                        </Fragment>
-                      ))}
+                          {pricing.alternates.map((alt, index) => (
+                            <Fragment key={alt.currency}>
+                              <DetailSectionHeader
+                                title={t('detail.priceList', { currency: alt.currency })}
+                              />
+                              <DetailPricingRows
+                                pricing={alt}
+                                withBaseRow
+                                isLast={!expr && index === pricing.alternates.length - 1}
+                              />
+                            </Fragment>
+                          ))}
+                        </>
+                      )}
                       {expr && <DetailExprRow expr={expr} primaryCurrency={pricing.currency} />}
                     </>
                   )}

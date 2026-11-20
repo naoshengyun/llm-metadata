@@ -1,4 +1,5 @@
 import { TaskPriceSummary } from '@/components/official-quotes';
+import { PricingViewSummary } from '@/components/pricing-view';
 import { PricingNotice } from '@/components/pricing-notice';
 import { useMemo, type ReactNode } from 'react';
 import { CalendarDays, SearchX } from 'lucide-react';
@@ -107,7 +108,11 @@ function ModelCard({
           </header>
 
           <PricingNotice model={model} />
-          <TaskPriceSummary model={model} />
+          {model.pricing_view ? (
+            <PricingViewSummary view={model.pricing_view} />
+          ) : (
+            <TaskPriceSummary model={model} />
+          )}
           {model.description && (
             <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
               {model.description}
@@ -125,14 +130,18 @@ function ModelCard({
               label={t('card.outputTypes')}
               value={<ModalityIcons supported={new Set(model.modalities?.output)} />}
             />
-            <Stat
-              label={t('table.input')}
-              value={<PriceValue pricing={pricing} column="input" />}
-            />
-            <Stat
-              label={t('table.output')}
-              value={<PriceValue pricing={pricing} column="output" />}
-            />
+            {!model.pricing_view && (
+              <>
+                <Stat
+                  label={t('table.input')}
+                  value={<PriceValue pricing={pricing} column="input" />}
+                />
+                <Stat
+                  label={t('table.output')}
+                  value={<PriceValue pricing={pricing} column="output" />}
+                />
+              </>
+            )}
             <Stat label={t('table.context')} value={formatContext(model.limit?.context)} />
             <Stat label={t('detail.maxOutputShort')} value={formatContext(model.limit?.output)} />
           </dl>
