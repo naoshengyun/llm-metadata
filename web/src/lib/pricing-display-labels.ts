@@ -51,6 +51,11 @@ export const priceLabels = {
     '目标部署的两种 4K 实际计费均待验证',
     '4K の両ケースで対象環境の実課金は確認待ち',
   ],
+  legacyTier: [
+    'Legacy quoted fields · structured tiers take precedence',
+    '遗留报价字段 · 以结构化阶梯为准',
+    '旧形式の料金項目・構造化された段階料金を優先',
+  ],
   wholeRequest: ['Rates apply to the entire request', '整次请求按该档计费', 'リクエスト全体に適用'],
   input: ['Input', '输入', '入力'],
   output: ['Output', '输出', '出力'],
@@ -203,6 +208,12 @@ export const priceUsage = (key: string, locale: Locale) => {
 };
 
 const condition: LabelMap = {
+  announcedPrice: ['Announced rate', '已公布费率', '発表済み料金'],
+  starts: ['Effective from', '生效时间', '適用開始'],
+  through: ['Valid through', '有效期截至', '有効期限'],
+  param: ['Parameter', '参数', 'パラメーター'],
+  value: ['Value', '值', '値'],
+  default: ['Default', '默认值', '既定値'],
   announcedPrices: ['Announced rates', '已公布费率', '発表済み料金'],
   audioCacheRead: ['Audio cache read', '音频缓存读取', '音声キャッシュ読み取り'],
   audioInputFree: ['Free audio input', '免费音频输入', '無料音声入力'],
@@ -333,4 +344,4 @@ const condition: LabelMap = {
   when: priceLabels.when,
 };
 export const priceCondition = (key: string, locale: Locale) =>
-  condition[key] ? localizePrice(condition[key], locale) : key;
+  condition[key] ? localizePrice(condition[key], locale) : priceUsage(key, locale);

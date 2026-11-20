@@ -61,7 +61,7 @@ export interface DisplayPriceRow {
   cnyAmount: number | null;
   cnyCurrency: string | null;
   conditions: Record<string, unknown>;
-  tier?: { size: number; type?: string };
+  tier?: { size: number; type?: string; comparison?: 'gte' };
 }
 
 type SelectedSummary = {
@@ -94,6 +94,7 @@ export interface DisplayPriceQuote extends PriceQuote {
   outputKind: string;
   sourceRecordId: string;
   displayRows: DisplayPriceRow[];
+  displayFeeTerms?: { usageKey: string; retentionMinutes?: number; condition?: string }[];
   displayExamples?: {
     resolution: string;
     inputSeconds: number;
@@ -107,7 +108,6 @@ export interface DisplayPriceQuote extends PriceQuote {
     officialRegion?: string;
     effectiveAt?: string;
     region?: string;
-    feeDeclarations?: { field?: string; condition?: string; retention?: string }[];
   };
 }
 

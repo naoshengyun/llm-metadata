@@ -466,9 +466,54 @@ function summaryFor(selectedQuote, status, groups) {
   };
 }
 
+// Acceptance conditions in #86 DSP-AC-05/06 apply to these exact reviewed reference
+// records. Bind them by digest so a changed source is reviewed before reusing the terms.
+const OPENAI_RESPONSES_CACHE_REFERENCES = new Set([
+  'ac78ac97fcf28c9e45ce2d4b7cd1d76445f74aa3e01b0324c7e04336cc63738d', // Batch
+  '3d7d8d0512145734625d8cfae11db5b95d208f83892f7ea611bd35d7e499b9fc', // Flex
+  '3272c723a3e7628e52bc38698f6065b933f307854aff0a1690dc245e1ffc11a1', // Fast
+  'a344f33c2b7111c2b5f28a275fc7e6c4ca5b70f98b78db5cbafe2f66653be440', // Ultrafast
+]);
+const ANTHROPIC_BATCH_CACHE_REFERENCE =
+  'f5386f9c833521c4ec9f2f471992f3d3e85065100f5d2a568972467937c7107c';
+
+function documentedFeeTerms(quote) {
+  const source = quote.originalQuote;
+  if (!source) return [];
+  const terms = (source.feeDeclarations ?? []).flatMap(({ field, retention, condition }) => {
+    const minutes = /^(\d+)m$/.exec(retention ?? '')?.[1];
+    return field && (minutes || condition)
+      ? [
+          {
+            usageKey: field,
+            ...(minutes ? { retentionMinutes: Number(minutes) } : {}),
+            ...(condition ? { condition } : {}),
+          },
+        ]
+      : [];
+  });
+  if (!terms.some(({ usageKey }) => usageKey === 'cache_write')) {
+    const minutes =
+      /cache_write\s*(?:=|is)\s*(\d+)(?:\s*[- ]?minutes?\b|m\b)/i.exec(
+        source.description ?? '',
+      )?.[1] ?? /\b(\d+)m\/\d+h writes\b/i.exec(source.reason ?? '')?.[1];
+    if (minutes) terms.push({ usageKey: 'cache_write', retentionMinutes: Number(minutes) });
+  }
+  if (OPENAI_RESPONSES_CACHE_REFERENCES.has(quote.source.recordSha256)) {
+    if (!terms.some(({ usageKey }) => usageKey === 'cache_write'))
+      terms.push({ usageKey: 'cache_write', retentionMinutes: 30 });
+    terms.push({ usageKey: 'cache_write_12h', condition: 'Responses API' });
+  }
+  if (quote.source.recordSha256 === ANTHROPIC_BATCH_CACHE_REFERENCE)
+    terms.push({ usageKey: 'cache_write', retentionMinutes: 5 });
+  return terms;
+}
+
 function quoteGroup(quote) {
   const displayQuote = structuredClone(quote);
   displayQuote.displayRows = displayRowsFor(quote);
+  const feeTerms = documentedFeeTerms(quote);
+  if (feeTerms.length) displayQuote.displayFeeTerms = feeTerms;
   // Use the same reviewed seconds rate shown beside the illustrative input and output durations.
   const rate = displayQuote.displayRows.find(
     ({ unit, cnyAmount, conditions }) =>

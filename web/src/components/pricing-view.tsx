@@ -220,22 +220,31 @@ function Conditions({
 
 const rateSection = (row: DisplayPriceRow) =>
   typeof row.conditions.serviceTier === 'string' ? row.conditions.serviceTier : '';
+const legacyTier = (row: DisplayPriceRow) => row.rowId.split(':').includes('context_over_200k');
 const rateScope = (row: DisplayPriceRow) =>
   row.rowId
     .split(':')
     .slice(0, -1)
-    .filter((part) => !/^tier-\d+$/.test(part))
+    .filter((part) => !/^tier-\d+$/.test(part) && part !== 'context_over_200k')
     .join(':');
-const tierNumber = (row: DisplayPriceRow) =>
-  row.tier?.size ?? (typeof row.conditions.above === 'number' ? row.conditions.above : null);
+
+function lastLowerBandToken(row: DisplayPriceRow, structuredTiers: boolean) {
+  if (row.tier?.size) return row.tier.comparison === 'gte' ? row.tier.size - 1 : row.tier.size;
+  if (typeof row.conditions.above === 'number') return row.conditions.above;
+  return !structuredTiers && legacyTier(row) ? 200_000 : null;
+}
 
 function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], locale: Locale) {
   const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
-  const thresholds = [...new Set(related.map(tierNumber).filter((n) => n !== null))].sort(
-    (a, b) => a - b,
-  );
+  const structuredTiers = related.some(({ tier }) => tier?.size);
+  if (structuredTiers && legacyTier(row)) return msg(locale, 'legacyTier');
+  const thresholds = [
+    ...new Set(
+      related.map((entry) => lastLowerBandToken(entry, structuredTiers)).filter((n) => n !== null),
+    ),
+  ].sort((a, b) => a - b);
   if (!thresholds.length || !row.rowId.match(/^(?:cost|raw|service|fees):/)) return null;
-  const threshold = tierNumber(row);
+  const threshold = lastLowerBandToken(row, structuredTiers);
   const low = threshold === null;
   // Explicit conditional fee descriptions provide their own direction.
   if (low && typeof row.conditions.condition === 'string' && row.rowId.startsWith('fees:'))
@@ -246,51 +255,22 @@ function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], loc
     : upper
       ? msg(locale, 'between', { from: threshold + 1, to: upper })
       : msg(locale, 'over', { size: threshold + 1 });
-  const type = row.tier?.type ?? related.find(({ tier }) => tier)?.tier?.type;
+  const type =
+    row.tier?.type ??
+    related.find(({ tier }) => tier)?.tier?.type ??
+    (related.some(legacyTier) ? 'context' : undefined);
   return `${msg(locale, type === 'context' ? 'tokContext' : 'tokInput')} · ${numbers} · ${msg(locale, 'wholeRequest')}`;
-}
-
-function defaultCacheTtl(quote: DisplayPriceQuote): string | undefined {
-  const declared = quote.originalQuote?.feeDeclarations?.find(
-    ({ field }) => field === 'cache_write',
-  )?.retention;
-  if (declared) return declared;
-  const description = quote.originalQuote?.description ?? '';
-  return (
-    /cache_write\s*(?:=|is)\s*(\d+)(?:\s*[- ]?minutes?\b|m\b)/i.exec(description)?.[1] ??
-    /\b(\d+)m\/\d+h writes\b/i.exec(quote.reason ?? '')?.[1]
-  );
-}
-
-function relatedCacheQuote(quote: DisplayPriceQuote, quotes: DisplayPriceQuote[]) {
-  return quotes.find(
-    (sibling) =>
-      sibling !== quote &&
-      sibling.originalQuote &&
-      !!quote.source.url &&
-      sibling.source.url === quote.source.url &&
-      !!defaultCacheTtl(sibling) &&
-      ['cache_write_1h', 'cache_write_12h'].some(
-        (meter) =>
-          quote.displayRows.some(({ usageKey }) => usageKey === meter) &&
-          sibling.displayRows.some(({ usageKey }) => usageKey === meter),
-      ),
-  );
 }
 
 function RateTable({
   rows,
   locale,
   quote,
-  ttl,
-  cacheDeclarations,
   common,
 }: {
   rows: DisplayPriceRow[];
   locale: Locale;
   quote: DisplayPriceQuote;
-  ttl?: string;
-  cacheDeclarations?: NonNullable<DisplayPriceQuote['originalQuote']>['feeDeclarations'];
   common: Record<string, unknown>;
 }) {
   const groupName = rateSection(rows[0]);
@@ -298,7 +278,10 @@ function RateTable({
   const hasConditions = rows.some(
     (row) =>
       row.tier ||
-      cacheDeclarations?.some(({ field, condition }) => field === row.usageKey && condition) ||
+      legacyTier(row) ||
+      quote.displayFeeTerms?.some(
+        ({ usageKey, condition }) => usageKey === row.usageKey && condition,
+      ) ||
       Object.keys(row.conditions).some((key) => !(key in common) && key !== 'serviceTier'),
   );
   return (
@@ -344,14 +327,11 @@ function RateTable({
               );
               const label = priceUsage(row.usageKey, locale);
               const tier = tierCondition(row, rows, locale);
-              const cacheCondition = cacheDeclarations?.find(
-                ({ field, condition }) => field === row.usageKey && condition,
-              )?.condition;
-              const cacheTtl = row.usageKey === 'cache_write' ? ttl?.replace(/m$/, '') : undefined;
+              const term = quote.displayFeeTerms?.find(({ usageKey }) => usageKey === row.usageKey);
               const ttlLabel =
-                cacheTtl && /^\d+$/.test(cacheTtl)
-                  ? ` · ${cacheTtl} ${localizePrice(['min', '分钟', '分'], locale)}`
-                  : '';
+                term?.retentionMinutes === undefined
+                  ? ''
+                  : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
               const source =
                 row.amount === null
                   ? (row.sourceValue ?? '—')
@@ -383,7 +363,7 @@ function RateTable({
                   {hasConditions && (
                     <td className="px-2.5 py-2 space-y-1">
                       {tier && <p>{tier}</p>}
-                      {cacheCondition && <p>{cacheCondition}</p>}
+                      {term?.condition && <p>{term.condition}</p>}
                       <Conditions values={conditions} locale={locale} usage={row.usageKey} />
                     </td>
                   )}
@@ -400,12 +380,10 @@ function RateTable({
 function QuoteArticle({
   quote,
   groupId,
-  cacheQuote,
   children,
 }: {
   quote: DisplayPriceQuote;
   groupId: string;
-  cacheQuote?: DisplayPriceQuote;
   children?: ReactNode;
 }) {
   const { locale } = useI18n();
@@ -471,10 +449,6 @@ function QuoteArticle({
               locale={locale}
               quote={quote}
               common={quoteConditions}
-              cacheDeclarations={
-                quote.originalQuote?.feeDeclarations ?? cacheQuote?.originalQuote?.feeDeclarations
-              }
-              ttl={defaultCacheTtl(quote) ?? (cacheQuote ? defaultCacheTtl(cacheQuote) : undefined)}
             />
           ))}
           <div className="text-muted-foreground space-y-0.5">
@@ -596,14 +570,8 @@ export function PricingViewQuotes({
     <div className="grid min-w-0 gap-3">
       {check && <OfficialCheckNotice view={check} />}
       {quotes.map(({ quote, groupId }) => {
-        const cacheQuote = quote.originalQuote
-          ? relatedCacheQuote(
-              quote,
-              quotes.map((entry) => entry.quote),
-            )
-          : undefined;
         return (
-          <QuoteArticle key={quote.quoteId} quote={quote} groupId={groupId} cacheQuote={cacheQuote}>
+          <QuoteArticle key={quote.quoteId} quote={quote} groupId={groupId}>
             {check?.results && (
               <QuoteOfficialCheck
                 result={check.results.get(

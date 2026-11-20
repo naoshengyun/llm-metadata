@@ -42,6 +42,7 @@ const sampleModels = [
   ['minimax-cn', 'image-01-live'],
   ['mistral', 'voxtral-small-2507'],
   ['google', 'gemini-3.8-flash'],
+  ['xai', 'grok-4.20-0309-non-reasoning'],
 ];
 const keyFor = (providerId, modelId) => JSON.stringify([providerId, modelId]);
 const quoteAt = (page, id) => page.locator(`[data-quote-id="${id}"]`);
@@ -128,6 +129,10 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       const rows = card.locator('[data-pricing-row]');
       assert.equal(await rows.count(), 10, name);
       assert.match(await card.innerText(), /Responses API/);
+      assert.match(
+        await card.locator('[data-pricing-row="cost:cache_write"]').innerText(),
+        /30\s*(?:min|分钟|分)/,
+      );
       assert.match(await rows.first().innerText(), /272000/);
     }
     assert.match(
@@ -142,6 +147,12 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText(),
       /272001/,
     );
+  } else if (modelId === 'grok-4.20-0309-non-reasoning') {
+    const low = await selected.locator('[data-pricing-row="cost:input"]').innerText();
+    const high = await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText();
+    assert.match(low, /199999/);
+    assert.match(high, /200000/);
+    assert.doesNotMatch(high, /200001/);
   } else if (modelId === 'claude-haiku-5-5') {
     assert.match(await selected.locator('[data-pricing-row="cost:input"]').innerText(), /100000/);
     assert.match(
@@ -213,6 +224,16 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       assert.equal(await row.getAttribute('data-cny-amount'), '0.7');
     }
     await card.locator('[data-condition="failedTasksFree"]').waitFor();
+  } else if (modelId === 'gemini-3.8-flash') {
+    const labels = {
+      en: ['Effective from', 'Valid through', 'Announced rate', 'Cache read'],
+      zh: ['生效时间', '有效期截至', '已公布费率', '缓存读取'],
+      ja: ['適用開始', '有効期限', '発表済み料金', 'キャッシュ読み取り'],
+    };
+    for (const [index, key] of ['starts', 'through', 'announcedPrice', 'cache_read'].entries()) {
+      const node = selected.locator(`[data-condition="${key}"]`).first();
+      assert.equal(await node.locator('span').first().innerText(), labels[locale][index]);
+    }
   } else if (modelId === 'MiniMax-H3') {
     assert.match(await viewSummary.innerText(), new RegExp(messages[locale].multi));
     await selected.locator('[data-condition="freeQuantity"]').first().waitFor();
