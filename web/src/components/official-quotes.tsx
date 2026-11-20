@@ -1,6 +1,10 @@
+import type { ReactNode } from 'react';
+
 import { DetailSection } from '@/components/detail-section';
+import { OfficialCheckNotice, QuoteOfficialCheck } from '@/components/official-check';
 import type { Model, PriceQuote, TaskTier } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { officialCheckKey, type OfficialCheckView } from '@/lib/official-check';
 
 const messages = {
   en: {
@@ -168,7 +172,7 @@ export function TaskPriceSummary({ model }: { model: Model }) {
   );
 }
 
-function Quote({ quote }: { quote: PriceQuote }) {
+function Quote({ quote, children }: { quote: PriceQuote; children?: ReactNode }) {
   const { locale } = useI18n();
   const msg = messages[locale];
   const labelled = quote.source.checkedAt
@@ -201,6 +205,7 @@ function Quote({ quote }: { quote: PriceQuote }) {
           </>
         )}
       </div>
+      {children}
       {quote.originalQuote?.description && <p>{quote.originalQuote.description}</p>}
       {quote.usagePlugin && <p>Plugin · {quote.usagePlugin}</p>}
       {(quote.sourcePrice != null || quote.syncable || quote.verification) && (
@@ -246,7 +251,15 @@ function Quote({ quote }: { quote: PriceQuote }) {
   );
 }
 
-export function OfficialQuotes({ model }: { model: Model }) {
+export function OfficialQuotes({
+  model,
+  providerId,
+  check,
+}: {
+  model: Model;
+  providerId: string;
+  check?: OfficialCheckView;
+}) {
   const { locale } = useI18n();
   const price = model.cnyPrice;
   if (!price?.quotes?.length) return null;
@@ -254,12 +267,19 @@ export function OfficialQuotes({ model }: { model: Model }) {
   return (
     <DetailSection title={messages[locale].title}>
       <div className="space-y-3">
+        {check && <OfficialCheckNotice view={check} />}
         {[...quotes]
           .sort(
             (a, b) => Number(b.quoteId === selectedQuoteId) - Number(a.quoteId === selectedQuoteId),
           )
           .map((quote) => (
-            <Quote key={quote.quoteId} quote={quote} />
+            <Quote key={quote.quoteId} quote={quote}>
+              {check?.results && (
+                <QuoteOfficialCheck
+                  result={check.results.get(officialCheckKey(providerId, model.id, quote.quoteId))}
+                />
+              )}
+            </Quote>
           ))}
       </div>
     </DetailSection>

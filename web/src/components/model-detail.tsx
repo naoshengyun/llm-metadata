@@ -54,6 +54,7 @@ import {
 import { useI18n, type MessageKey } from '@/lib/i18n';
 import { CORE_MODALITIES, MODALITY_META, modalityLabel } from '@/lib/modalities';
 import { modelExpr, useNewApi } from '@/lib/newapi';
+import type { OfficialCheckView } from '@/lib/official-check';
 import {
   longCacheWritePrice,
   longCacheWrites,
@@ -312,6 +313,7 @@ export function ModelDetail({
   provider,
   providers,
   catalogBase,
+  officialCheck,
   onBack,
   onOpenModelIn,
 }: {
@@ -319,6 +321,7 @@ export function ModelDetail({
   provider: ProviderIndexItem;
   providers: ProviderIndexItem[];
   catalogBase?: string;
+  officialCheck?: OfficialCheckView;
   onBack: () => void;
   onOpenModelIn: (providerId: string, modelId: string) => void;
 }) {
@@ -589,7 +592,7 @@ export function ModelDetail({
         </DetailSection>
       )}
 
-      <OfficialQuotes model={model} />
+      <OfficialQuotes model={model} providerId={provider.id} check={officialCheck} />
 
       {/* 其他端点（同一模型的国内 / 国际版本价格对照） */}
       <SiblingEndpoints

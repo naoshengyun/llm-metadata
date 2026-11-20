@@ -195,6 +195,7 @@ export function fetchModelIndex(locale: Locale, base?: string): Promise<ModelInd
 
 export interface Manifest {
   candidateId?: string;
+  sourceSha?: string;
   generatedAt?: string;
   stats?: { providers?: number; models?: number };
   /** 静态 NewAPI 预设的生成假设：非美元价目换算所用汇率（每 1 USD 的货币数量） */
