@@ -420,13 +420,14 @@ test('a malformed Xiaomi field rejects the tariff, while an exact change builds 
   const catalogPath = join(directory, 'updated-catalog.json');
   writeFileSync(catalogPath, JSON.stringify(rawCatalog));
   const out = join(directory, 'updated-candidate');
+  const { upstreamDirectory } = JSON.parse(readFileSync(join(baseline, 'policy.json')));
   execFileSync(process.execPath, [
     'scripts/build-unified-cny.mjs',
     out,
     'data/cny/unified-policy.json',
     catalogPath,
     'data/cny/proposed-selection.json',
-    'data/upstream/24d3f35c',
+    upstreamDirectory,
     baseline,
   ]);
   const { data } = JSON.parse(readFileSync(join(out, 'api/newapi/ratio_config.json')));

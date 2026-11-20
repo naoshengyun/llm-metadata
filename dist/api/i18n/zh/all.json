@@ -1262,7 +1262,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "video"
           ],
           "output": [
             "text"
@@ -3600,7 +3601,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "video"
           ],
           "output": [
             "text"
@@ -9702,6 +9704,55 @@
           }
         ],
         "release_date": "2026-11-12",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "gemini-4-neon": {
+        "attachment": true,
+        "canonical_model_id": "google/gemini-4-neon",
+        "cost": {
+          "cache_read": 0.15,
+          "input": 3,
+          "input_audio": 3,
+          "output": 15
+        },
+        "description": "Google 的 Gemini 4 模型，适用于快速开展前沿级编码、知识工作和科学工作流，提供四种思考级别和 1M-token 上下文窗口",
+        "family": "gemini",
+        "id": "gemini-4-neon",
+        "knowledge": "2026-03",
+        "last_updated": "2026-11-18",
+        "limit": {
+          "context": 1048576,
+          "output": 65536
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "audio",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Gemini 4 Neon",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh"
+            ]
+          }
+        ],
+        "release_date": "2026-11-18",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
@@ -17569,6 +17620,206 @@
         "temperature": true,
         "tool_call": true
       },
+      "gpt-6.2-astra": {
+        "attachment": true,
+        "canonical_model_id": "openai/gpt-6.2-astra",
+        "cost": {
+          "cache_read": 0.4,
+          "cache_write": 10,
+          "context_over_200k": {
+            "cache_read": 0.8,
+            "cache_write": 20,
+            "input": 16,
+            "output": 60
+          },
+          "input": 8,
+          "output": 40,
+          "tiers": [
+            {
+              "cache_read": 0.8,
+              "cache_write": 20,
+              "input": 16,
+              "output": 60,
+              "tier": {
+                "size": 272000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "用于编码、计算机操作以及幻灯片、电子表格和文档等专业工作的前沿推理模型。",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.8,
+                "cache_write": 20,
+                "input": 16,
+                "output": 80
+              },
+              "provider": {
+                "body": {
+                  "service_tier": "priority"
+                }
+              }
+            },
+            "pro": {
+              "provider": {
+                "body": {
+                  "reasoning": {
+                    "mode": "pro"
+                  }
+                }
+              }
+            },
+            "ultrafast": {
+              "provider": {
+                "body": {
+                  "service_tier": "ultrafast"
+                }
+              }
+            }
+          }
+        },
+        "family": "gpt-astra",
+        "id": "gpt-6.2-astra",
+        "knowledge": "2026-05-18",
+        "last_updated": "2026-11-17",
+        "limit": {
+          "context": 1050000,
+          "input": 922000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT-6.2 Astra",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-11-17",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "gpt-6.2-sol": {
+        "attachment": true,
+        "canonical_model_id": "openai/gpt-6.2-sol",
+        "cost": {
+          "cache_read": 0.1,
+          "cache_write": 2.5,
+          "context_over_200k": {
+            "cache_read": 0.2,
+            "cache_write": 5,
+            "input": 4,
+            "output": 15
+          },
+          "input": 2,
+          "output": 10,
+          "tiers": [
+            {
+              "cache_read": 0.2,
+              "cache_write": 5,
+              "input": 4,
+              "output": 15,
+              "tier": {
+                "size": 272000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "用于日常工作、多步骤智能体工作流和编码的高效推理模型。",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.2,
+                "cache_write": 5,
+                "input": 4,
+                "output": 20
+              },
+              "provider": {
+                "body": {
+                  "service_tier": "priority"
+                }
+              }
+            },
+            "pro": {
+              "provider": {
+                "body": {
+                  "reasoning": {
+                    "mode": "pro"
+                  }
+                }
+              }
+            },
+            "ultrafast": {
+              "provider": {
+                "body": {
+                  "service_tier": "ultrafast"
+                }
+              }
+            }
+          }
+        },
+        "family": "gpt-sol",
+        "id": "gpt-6.2-sol",
+        "knowledge": "2026-06-01",
+        "last_updated": "2026-11-17",
+        "limit": {
+          "context": 1050000,
+          "input": 922000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GPT-6.2 Sol",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-11-17",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "gpt-daybreak-blue-latest": {
         "attachment": true,
         "canonical_model_id": "openai/gpt-5.6-sol",
@@ -24188,56 +24439,6 @@
         "family": "grok",
         "id": "grok-4.7-build-fast",
         "name": "Grok 4.7 Build Fast"
-      },
-      "grok-build-0.1": {
-        "attachment": true,
-        "cost": {
-          "cache_read": 0.2,
-          "context_over_200k": {
-            "cache_read": 0.4,
-            "input": 2,
-            "output": 4
-          },
-          "input": 1,
-          "output": 2,
-          "tiers": [
-            {
-              "cache_read": 0.4,
-              "input": 2,
-              "output": 4,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
-        },
-        "description": "快速型 Grok 编程模型，针对智能体工程与迭代式编辑调优",
-        "family": "grok-build",
-        "id": "grok-build-0.1",
-        "last_updated": "2026-04-16",
-        "limit": {
-          "context": 256000,
-          "output": 256000
-        },
-        "modalities": {
-          "input": [
-            "text",
-            "image",
-            "pdf"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Grok Build 0.1",
-        "open_weights": false,
-        "reasoning": true,
-        "reasoning_options": [],
-        "release_date": "2026-04-16",
-        "structured_output": true,
-        "temperature": true,
-        "tool_call": true
       },
       "grok-imagine-image": {
         "attachment": true,

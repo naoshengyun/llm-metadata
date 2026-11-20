@@ -1166,7 +1166,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "video"
         ],
         "output": [
           "text"
@@ -3167,7 +3168,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "video"
         ],
         "output": [
           "text"
@@ -8096,6 +8098,46 @@
         "output": 7.5
       },
       "releaseDate": "2026-11-12",
+      "tags": []
+    },
+    {
+      "description": "Google's Gemini 4 model for fast, frontier-level coding, knowledge work and science workflows, with four thinking levels and a 1M-token context window",
+      "firm": "google",
+      "flags": {
+        "attachment": true,
+        "audio": true,
+        "image": true,
+        "open_weights": false,
+        "reasoning": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "icon": "lb:gemini-color",
+      "id": "gemini-4-neon",
+      "knowledge": "2026-03",
+      "lastUpdated": "2026-11-18",
+      "maxCtxTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "Gemini 4 Neon",
+      "price": {
+        "cacheRead": 0.15,
+        "cacheWrite": null,
+        "input": 3,
+        "output": 15
+      },
+      "releaseDate": "2026-11-18",
       "tags": []
     },
     {
@@ -14655,6 +14697,82 @@
       "tags": []
     },
     {
+      "description": "A frontier reasoning model for coding, computer use, and professional work such as slides, spreadsheets, and documents.",
+      "firm": "openai",
+      "flags": {
+        "attachment": true,
+        "audio": false,
+        "image": true,
+        "open_weights": false,
+        "reasoning": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "icon": "lb:openai",
+      "id": "gpt-6.2-astra",
+      "knowledge": "2026-05-18",
+      "lastUpdated": "2026-11-17",
+      "maxCtxTokens": 1050000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "GPT-6.2 Astra",
+      "price": {
+        "cacheRead": 0.4,
+        "cacheWrite": 10,
+        "input": 8,
+        "output": 40
+      },
+      "releaseDate": "2026-11-17",
+      "tags": []
+    },
+    {
+      "description": "An efficient reasoning model for everyday work, multistep agentic workflows, and coding.",
+      "firm": "openai",
+      "flags": {
+        "attachment": true,
+        "audio": false,
+        "image": true,
+        "open_weights": false,
+        "reasoning": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "icon": "lb:openai",
+      "id": "gpt-6.2-sol",
+      "knowledge": "2026-06-01",
+      "lastUpdated": "2026-11-17",
+      "maxCtxTokens": 1050000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "name": "GPT-6.2 Sol",
+      "price": {
+        "cacheRead": 0.1,
+        "cacheWrite": 2.5,
+        "input": 2,
+        "output": 10
+      },
+      "releaseDate": "2026-11-17",
+      "tags": []
+    },
+    {
       "description": "Alias for flagship general-purpose models with safeguards for defensive cybersecurity work",
       "firm": "openai",
       "flags": {
@@ -19999,44 +20117,6 @@
         "output": 12
       },
       "releaseDate": null,
-      "tags": []
-    },
-    {
-      "description": "Fast Grok coding model tuned for agentic engineering and iterative edits",
-      "firm": "xai",
-      "flags": {
-        "attachment": true,
-        "audio": false,
-        "image": true,
-        "open_weights": false,
-        "reasoning": true,
-        "temperature": true,
-        "tool_call": true
-      },
-      "icon": "lb:xai",
-      "id": "grok-build-0.1",
-      "knowledge": null,
-      "lastUpdated": "2026-04-16",
-      "maxCtxTokens": 256000,
-      "maxOutputTokens": 256000,
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "name": "Grok Build 0.1",
-      "price": {
-        "cacheRead": 0.2,
-        "cacheWrite": null,
-        "input": 1,
-        "output": 2
-      },
-      "releaseDate": "2026-04-16",
       "tags": []
     },
     {

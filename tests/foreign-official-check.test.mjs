@@ -652,7 +652,7 @@ test('a changed selected USD price passes candidate rebuild with precisely one c
     adapterPolicy,
     path,
     'data/cny/proposed-selection.json',
-    'data/upstream/24d3f35c',
+    policy.upstreamDirectory,
     baseline,
   ]);
   const actual = JSON.parse(readFileSync(join(out, 'api/newapi/ratio_config.json')));
