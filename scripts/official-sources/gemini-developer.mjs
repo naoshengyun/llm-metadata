@@ -31,6 +31,7 @@ const models = [
   'gemini-4-argon',
   'gemini-4-carbon',
   'gemini-4-hydrogen',
+  'gemini-4-neon',
   'gemini-embedding-001',
   'gemini-embedding-2',
   'gemini-flash-latest',
@@ -47,6 +48,7 @@ const uniformAudio = new Set([
   'gemini-4-argon',
   'gemini-4-carbon',
   'gemini-4-hydrogen',
+  'gemini-4-neon',
 ]);
 const splitAudioCache = new Set([
   'gemini-2.5-flash',
@@ -81,6 +83,7 @@ const reviewedStandardModels = new Set([
   'gemini-4-argon',
   'gemini-4-carbon',
   'gemini-4-hydrogen',
+  'gemini-4-neon',
 ]);
 
 export const adapter = {
@@ -460,6 +463,11 @@ export function standardTariffs(text, checkedAt) {
     } else {
       tariff = plainPrices(paidRows(matches[0], '1M tokens'), priceModelId, checkedAt);
     }
+    if (
+      priceModelId === 'gemini-4-neon' &&
+      (tariff.conditions.cacheMode !== 'implicit-only' || tariff.conditions.explicitCacheStorage)
+    )
+      throw Error('Unconfirmed Gemini 4 Neon implicit-only cache billing');
     if (routed) tariff.conditions.routedModelId = priceModelId;
     return {
       identity: { providerId, endpoint, modelId, priceList, currency },

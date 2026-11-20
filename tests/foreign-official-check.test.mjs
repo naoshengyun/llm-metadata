@@ -303,8 +303,9 @@ test('Z.AI explicit Free rows are distinct from limited-time free storage and mi
 test('Google Developer API preserves Standard modality prices, context tiers and announced future prices separately', async () => {
   const report = await run();
   const rows = report.results.filter(({ sourceId }) => sourceId === 'gemini-developer');
-  assert.equal(rows.length, 35);
+  assert.equal(rows.length, 36);
   const get = (id) => rows.find(({ nativeKey }) => nativeKey === id);
+  assert.match(get('gemini-4-neon').reason, /Exact model ID absent/);
   const carbon = get('gemini-4-carbon');
   assert.equal(carbon.observed.sourcePrice.input, 2);
   assert.equal(carbon.observed.cnyCost.output, 70);
@@ -320,6 +321,48 @@ test('Google Developer API preserves Standard modality prices, context tiers and
     report.results.find(({ nativeKey }) => nativeKey === 'gemini-omni-flash-preview').status,
     'deferred',
   );
+});
+
+test('Gemini 4 Neon verifies the Standard rates and keeps the last success if cache terms disappear', async () => {
+  const fixture = { 'gemini-developer': 'gemini-neon-pricing-2026-11-20' };
+  const id = 'us-google-gemini-4-neon-developer-standard';
+  const get = (report) => report.results.find((result) => result.id === id);
+  const capturedAt = '2026-11-20T06:31:00Z';
+  const original = await run(undefined, { attemptedAt: capturedAt, fixtures: fixture });
+  const quote = get(original);
+  assert.equal(quote.status, 'unchanged', quote.reason);
+  assert.equal(quote.selected, true);
+  assert.deepEqual(quote.observed.sourcePrice, {
+    input: 3,
+    input_audio: 3,
+    output: 15,
+    cache_read: 0.15,
+  });
+  assert.deepEqual(quote.observed.conditions, { cacheMode: 'implicit-only' });
+  assert.equal(quote.observed.cnyCost.output, 105);
+
+  const changed = await run(
+    (body, source) => {
+      if (source !== 'gemini-developer') return body;
+      const text = body.toString('utf8');
+      const [neon] = text.split(/^## /m).filter((block) => block.startsWith('Gemini 4 Neon '));
+      assert.ok(neon);
+      return replaceEvidence(
+        body,
+        neon,
+        replaceEvidence(
+          Buffer.from(neon),
+          'Implicit caching only (explicit caching is not supported).',
+          'Consult the product page for cache policy.',
+        ).toString('utf8'),
+      );
+    },
+    { attemptedAt: '2026-11-20T06:32:00Z', fixtures: fixture, previous: original },
+  );
+  const failure = get(changed);
+  assert.equal(failure.status, 'failed');
+  assert.equal(failure.latestSuccessfulAt, capturedAt);
+  assert.ok(!changed.changes.some((row) => row.id === id));
 });
 
 const googleRoutingEvidence = {
