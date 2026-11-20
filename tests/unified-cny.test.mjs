@@ -44,8 +44,22 @@ test('unified candidate covers the researched catalog and exports every selected
   assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
   const selectedQuoteIds = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
   const english = read('api/all.json');
+  const { modelReleaseDates, notOfferedModels, nativeCapabilityExclusions } =
+    input('unified-policy.json');
   for (const locale of ['en', 'zh', 'ja']) {
     const catalog = locale === 'en' ? english : read('api/i18n/' + locale + '/all.json');
+    for (const { providers, dates } of modelReleaseDates) {
+      for (const provider of providers) {
+        for (const [id, date] of Object.entries(dates)) {
+          assert.equal(catalog[provider].models[id].release_date, date, provider + '/' + id);
+        }
+      }
+    }
+    assert.equal(catalog['alibaba-cn'].models['wan2.7-t2v-2026-06-12'].release_date, '2026-07-01');
+    assert.equal(
+      catalog.volcengine.models['doubao-seedance-2-5-260628'].release_date,
+      '2026-07-31',
+    );
     const wan = catalog['alibaba-cn'].models['wan3.0-video'].cnyPrice;
     const singapore = catalog.alibaba.models['wan3.0-video'].cnyPrice;
     assert.equal(wan.exported, true);
@@ -75,7 +89,6 @@ test('unified candidate covers the researched catalog and exports every selected
       }
     }
   }
-  const { notOfferedModels, nativeCapabilityExclusions } = input('unified-policy.json');
   const foreignExclusions = Object.entries(nativeCapabilityExclusions).filter(
     ([, price]) => price.currency === 'USD',
   );

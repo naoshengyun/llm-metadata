@@ -759,7 +759,7 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
   }
 }
 
-function catalogFiles(files, snapshots, records, quotes, selected) {
+function catalogFiles(files, snapshots, records, quotes, selected, releaseDates) {
   for (const locale of locales) {
     const providers = Object.assign(Object.create(null), structuredClone(snapshots[locale]));
     for (const row of records.values()) {
@@ -779,6 +779,8 @@ function catalogFiles(files, snapshots, records, quotes, selected) {
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
+      const releaseDate = releaseDates.get(providerModel(providerId, modelId));
+      if (releaseDate && !model.release_date) model.release_date = releaseDate;
       if (status === 'not-offered' || status === 'deprecated') {
         delete model.cost;
         delete model.sourceCost;
@@ -1036,7 +1038,14 @@ function buildCandidate({
       Object.fromEntries(entries(selected).map(([key, row]) => [key, row.quoteId])),
     ),
   };
-  catalogFiles(files, snapshots, records, quotes, selected);
+  const releaseDates = new Map(
+    (policy.modelReleaseDates ?? []).flatMap(({ providers, dates }) =>
+      providers.flatMap((provider) =>
+        Object.entries(dates).map(([model, date]) => [providerModel(provider, model), date]),
+      ),
+    ),
+  );
+  catalogFiles(files, snapshots, records, quotes, selected, releaseDates);
   const providerIds = new Set([
     ...Object.keys(snapshots.en),
     ...models.map(({ providerId }) => providerId),
