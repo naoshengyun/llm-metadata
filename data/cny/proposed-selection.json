@@ -14,6 +14,7 @@
     "gemini-4-argon": "us-google-gemini-4-argon-developer-standard",
     "gemini-4-carbon": "us-google-gemini-4-carbon-developer-standard",
     "gemini-4-hydrogen": "us-google-gemini-4-hydrogen-developer-standard",
+    "gemini-4-neon": "us-google-gemini-4-neon-developer-standard",
     "gpt-5.6": "us-openai-gpt-5.6-global-standard",
     "gpt-6.2-astra": "us-openai-gpt-6.2-astra-global-standard",
     "gpt-6.2-sol": "us-openai-gpt-6.2-sol-global-standard",

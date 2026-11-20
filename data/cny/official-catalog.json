@@ -503,6 +503,36 @@
       }
     },
     {
+      "id": "us-google-gemini-4-neon-developer-standard",
+      "provider": "google",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "model": "gemini-4-neon",
+      "priceList": "Gemini Developer API / Standard paid",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "input_audio",
+        "output",
+        "cache_read"
+      ],
+      "cost": {
+        "input": 3,
+        "input_audio": 3,
+        "output": 15,
+        "cache_read": 0.15
+      },
+      "conditions": {
+        "cacheMode": "implicit-only"
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://aistudio.google.com/docs/pricing.md",
+        "sha256": "d2ebf56c565f88f2d42d9dc543455039bbf80167fc8fba84d0d8b0c09c55432c",
+        "checkedAt": "2026-11-20"
+      }
+    },
+    {
       "id": "us-openai-gpt-5.6-global-standard",
       "provider": "openai",
       "endpoint": "https://api.openai.com/v1",
