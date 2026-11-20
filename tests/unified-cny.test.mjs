@@ -44,6 +44,37 @@ test('unified candidate covers the researched catalog and exports every selected
   assert.deepEqual(Object.keys(billing_expr).sort(), syncable.map(({ modelId }) => modelId).sort());
   const selectedQuoteIds = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
   const english = read('api/all.json');
+  for (const locale of ['en', 'zh', 'ja']) {
+    const catalog = locale === 'en' ? english : read('api/i18n/' + locale + '/all.json');
+    const wan = catalog['alibaba-cn'].models['wan3.0-video'].cnyPrice;
+    const singapore = catalog.alibaba.models['wan3.0-video'].cnyPrice;
+    assert.equal(wan.exported, true);
+    assert.equal(singapore.exported, false);
+    const rates = (price) =>
+      price.quotes[0].sourcePrice.map(({ name, charges: [{ amount, currency }] }) => [
+        name,
+        amount,
+        currency,
+      ]);
+    assert.deepEqual(rates(wan), [
+      ['1080P', 1.2, 'CNY'],
+      ['720P', 0.6, 'CNY'],
+      ['480P', 0.3, 'CNY'],
+    ]);
+    assert.deepEqual(rates(singapore), [
+      ['1080P', 0.2, 'USD'],
+      ['720P', 0.1, 'USD'],
+      ['480P', 0.05, 'USD'],
+    ]);
+    for (const id of ['wan2.7-r2v', 'wan2.7-r2v-2026-06-12', 'wan2.7-videoedit']) {
+      assert.ok(!Object.hasOwn(billing_expr, id), id);
+      for (const provider of ['alibaba-cn', 'alibaba']) {
+        const quote = catalog[provider].models[id].cnyPrice.quotes[0];
+        assert.equal(quote.status, 'unsupported-shape', id);
+        assert.equal(quote.sourcePrice.length, 2, id);
+      }
+    }
+  }
   const { notOfferedModels, nativeCapabilityExclusions } = input('unified-policy.json');
   const foreignExclusions = Object.entries(nativeCapabilityExclusions).filter(
     ([, price]) => price.currency === 'USD',
