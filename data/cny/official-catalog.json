@@ -16100,7 +16100,7 @@
       "currency": "CNY",
       "source": {
         "url": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
-        "checkedAt": "2026-11-16"
+        "checkedAt": "2026-11-20"
       },
       "reason": "Full official 4K branch missing from fixed rc50 2.5 schema; cannot present 480p/720p/1080p partial as ready.",
       "rawFees": {
@@ -16127,8 +16127,8 @@
             19
           ]
         ],
-        "minimumUsage": "Input video cases have a minimum; actual charged token usage is API usage.completion_tokens",
-        "draft": "Draft and final are two separately charged tasks; final reference-video status derives from draft original input."
+        "minimumUsage": "Only successful video tasks are billed. Inputs that include video have a minimum token charge based on output resolution, aspect ratio, and duration. The actual charged token usage is API usage.completion_tokens.",
+        "draft": "Draft and final are two separately charged tasks. Draft is billed at 480p. The final uses its output resolution and the original input video's presence and duration. The generated Draft video is excluded from the input duration."
       }
     },
     {
