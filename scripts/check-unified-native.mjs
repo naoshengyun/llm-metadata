@@ -31,7 +31,19 @@ assert.equal(names.length, manifest.stats.apiModels);
 const coverage = read(current.fixedBase + 'coverage.json');
 const tasks = coverage.quotes.filter((row) => row.outputKind === 'task-model' && row.syncable);
 assert.ok(tasks.length >= 9);
-assert.ok(!Object.hasOwn(billing_expr, 'doubao-seedance-2-5-260628'));
+const seedance = 'doubao-seedance-2-5-260628';
+const seedanceQuote = tasks.find(({ modelId }) => modelId === seedance);
+assert.deepEqual(seedanceQuote.originalQuote.conditions.syncableResolutions, [
+  '480p',
+  '720p',
+  '1080p',
+]);
+assert.deepEqual(
+  seedanceQuote.sourcePrice.map((tier) => tier.charges[0].amount),
+  [70, 42, 70, 42, 77, 46],
+);
+assert.doesNotMatch(billing_expr[seedance], /4k/i);
+assert.match(billing_expr[seedance], / : -1$/);
 for (const quote of coverage.quotes.filter((row) => row.outputKind === 'tool-reference'))
   assert.ok(!Object.hasOwn(billing_expr, quote.modelId));
 

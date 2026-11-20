@@ -27,6 +27,7 @@ const videoModels = {
   'doubao-seedance-2-0-260128': 'Seedance 2.0',
   'doubao-seedance-2-0-fast-260128': 'Seedance 2.0 fast',
   'doubao-seedance-2-0-mini-260615': 'Seedance 2.0 mini',
+  'doubao-seedance-2-5-260628': 'Seedance 2.5',
 };
 const imageModels = {
   'doubao-seedream-5-0-flash-260915': ['doubao-seedream-5-0-flash', true],
@@ -71,7 +72,11 @@ const imageTargets = targets(imageModels, taskList).map((target) => ({
 }));
 const videoTargets = targets(videoModels, taskList).map((target) => ({
   ...target,
-  group: target.modelId.startsWith('doubao-seedance-1') ? 'video-1' : 'video-2',
+  group: target.modelId.startsWith('doubao-seedance-2-5')
+    ? target.modelId
+    : target.modelId.startsWith('doubao-seedance-1')
+      ? 'video-1'
+      : 'video-2',
 }));
 
 function textTariff(table, target) {
@@ -221,12 +226,38 @@ function videoTariff({ current, legacy, text }, target) {
   let end = start + 1;
   while (current[end]?.[0]?.text === '') end++;
   const rows = current.slice(start, end);
-  const expected = family === 'Seedance 2.0' ? ['480p、720p', '1080p', '4K'] : ['480p、720p'];
+  const seedance25 = family === 'Seedance 2.5';
+  const expected =
+    family === 'Seedance 2.0' || seedance25 ? ['480p、720p', '1080p', '4K'] : ['480p、720p'];
   if (
     rows.length !== expected.length ||
     rows.some((row, index) => row.length !== 4 || row[1].text !== expected[index])
   ) {
     throw Error('Incomplete or changed video resolution bands: ' + family);
+  }
+  if (seedance25) {
+    // Write explicit tiers so a later plugin upgrade cannot charge 4K at a lower resolution's rate.
+    const sourcePrice = rows.slice(0, 2).flatMap((row) =>
+      row[1].text.split('、').flatMap((resolution) =>
+        [
+          ['none', 2],
+          ['video', 3],
+        ].map(([videoInput, column]) => ({
+          name: resolution + '-' + videoInput,
+          charges: [charge(row[column].text)],
+          when: { resolution, video_input: videoInput },
+        })),
+      ),
+    );
+    return {
+      ...result,
+      sourcePrice,
+      conditions: {
+        ...result.conditions,
+        videoInputTokenMinimum: true,
+        syncableResolutions: ['480p', '720p', '1080p'],
+      },
+    };
   }
   const sourcePrice = rows.reverse().flatMap((row) => {
     const resolution = row[1].text.toLowerCase();
@@ -351,6 +382,7 @@ export const adapter = {
           if (
             [
               'doubao-seed-character-260628',
+              'doubao-seedance-2-5-260628',
               'doubao-seed-evolving',
               'doubao-seed-2-0-lite-260428',
               'doubao-seed-2-0-mini-260428',

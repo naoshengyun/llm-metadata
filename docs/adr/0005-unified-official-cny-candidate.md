@@ -8,7 +8,7 @@ scope: unified-official-cny / issues-34-39
 
 [#34](https://github.com/naoshengyun/llm-metadata/issues/34) 批准上游完整目录、本仓库官方价目和明确增补汇合到同一固定候选。当前目录按[脑生云服务范围](../requirements/CNY-SOURCE-REGISTRY.md#naoshengyun-service-scope)排除订阅套餐和指定的退役供应商，并保留在范围内的地区及本地化资料。原生计费模型名只选一种完整官方价目。显式选择按精确身份校验。缺少显式选择时，国产优先使用国内价目，国内缺源时保留缺口。多个合格身份即使价格相同也需选价。报价的完整性由原始收费声明、当前编译诊断及既有选中收费条件一起检查。
 
-[当前固定上游](../../data/upstream/24d3f35c/source.json) 的成本字段采用其声明的币种规则。上游缺省 USD 属于其数据约定，已知国内估算和明确缺少原币依据的型号按当前政策排除。完整保留上游报告值供复核。Sarvam 历史 USD 键的纠错通过候选差异报告审核。延期记录沿用精确端点和型号，Thinking Machines 的延期证据是其完整收费表所需的缓存用量依据。Seedance 2.5 标准版保留包括两种 4K 费率在内的参考价目，[#32](https://github.com/naoshengyun/llm-metadata/issues/32) 指定的两种真实结算证据为后续放行条件。
+[当前固定上游](../../data/upstream/24d3f35c/source.json) 的成本字段采用其声明的币种规则。上游缺省 USD 属于其数据约定，已知国内估算和明确缺少原币依据的型号按当前政策排除。完整保留上游报告值供复核。Sarvam 历史 USD 键的纠错通过候选差异报告审核。延期记录沿用精确端点和型号，Thinking Machines 的延期证据是其完整收费表所需的缓存用量依据。2026-11-20，用户确认 Seedance 2.5 标准版同步 480p、720p 和 1080p 的官方价目。4K 官价作为参考保留，等官方软件与插件提供该型号的 4K 计量后再考虑同步。[#32](https://github.com/naoshengyun/llm-metadata/issues/32) 的两种真实结算条件用于后续 4K 验收。
 
 工具官方参考与 New API 中运营配置的零价分开。任务表达式由固定 rc.50 插件用量契约编译为模型级 `billing_expr`，因此任务与普通模型共用同步入口。既有插件专属配置可继续优先。
 
@@ -38,11 +38,11 @@ npm run cny:unified:build -- "$candidate_dir"
 node scripts/build-visual-site.mjs data/cny/publication/upstream-release.json "$site_dir" "$candidate_dir"
 ```
 
-在已安装 Chrome 和 Playwright 的机器运行浏览器验收。验收包含桌面、移动端、三语目录和价格、完整剪贴板与下载校验、地区导航、订阅及退役供应商的详情路径排除，以及 Seedance 2.5 的整模型计费排除。原生验收在本地 Docker 中用固定官方 rc.50 镜像新建临时无渠道实例，从同一站点产物通过 HTTP 拉取，逐键预览、按配置版本选择保存和读回，并对任务插件检查覆盖、移除与继承。两个验收程序分别向尚不存在的证据目录写入候选身份和执行结果。
+在已安装 Chrome 和 Playwright 的机器运行浏览器验收。验收包含桌面、移动端、三语目录和价格、完整剪贴板与下载校验、地区导航、订阅及退役供应商的详情路径排除，以及 Seedance 2.5 可同步档位和 4K 参考价的展示。原生验收在本地 Docker 中用固定官方 rc.50 镜像新建临时无渠道实例，从同一站点产物通过 HTTP 拉取，逐键预览、按配置版本选择保存和读回，并对任务插件检查覆盖、移除与继承。两个验收程序分别向尚不存在的证据目录写入候选身份和执行结果。
 
 ```sh
 node scripts/check-unified-site.mjs "$site_dir" "$playwright_module" "$browser_evidence_dir"
 node scripts/check-unified-native.mjs "$site_dir" "$native_evidence_dir"
 ```
 
-隔离实例保存通过仅确认配置能力。生产实例应用与实际供应商计费分别验收，工具参考价由运营按免费政策另行处理，Seedance 2.5 继续等待目标部署两种 4K 结算验证。
+隔离实例保存通过仅确认配置能力。生产实例应用与实际供应商计费分别验收，工具参考价由运营按免费政策另行处理，Seedance 2.5 的实际计费由后续统一验收。
