@@ -14,6 +14,51 @@
     "dashscope": "alibaba-cn",
     "dashscope-anthropic": "alibaba-cn"
   },
+  "modelReleaseDates": [
+    {
+      "providers": ["alibaba", "alibaba-cn"],
+      "source": "https://help.aliyun.com/zh/model-studio/newly-released-models",
+      "dates": {
+        "wan3.0-video": "2026-08-06",
+        "wan3.0-video-prime": "2026-08-20",
+        "wan2.7-t2v": "2026-04-03",
+        "wan2.7-t2v-2026-04-25": "2026-04-26",
+        "wan2.7-t2v-2026-06-12": "2026-07-01",
+        "wan2.7-i2v": "2026-04-03",
+        "wan2.7-i2v-2026-04-25": "2026-04-26",
+        "wan2.7-r2v": "2026-04-03",
+        "wan2.7-r2v-2026-06-12": "2026-07-01",
+        "wan2.7-videoedit": "2026-04-03",
+        "wan2.7-image": "2026-04-01",
+        "wan2.7-image-pro": "2026-04-01"
+      }
+    },
+    {
+      "providers": ["volcengine"],
+      "source": "https://seed.bytedance.com/zh/blog/tech-report-of-seedance-1-0-is-now-publicly-available",
+      "dates": { "doubao-seedance-1-0-pro-250528": "2025-06-11" }
+    },
+    {
+      "providers": ["volcengine"],
+      "source": "https://seed.bytedance.com/zh/blog/official-launch-of-seedance-2-0",
+      "dates": { "doubao-seedance-2-0-260128": "2026-02-12" }
+    },
+    {
+      "providers": ["volcengine"],
+      "source": "https://docs.volcengine.com/docs/ark/model-release-announcement?lang=zh",
+      "dates": { "doubao-seedance-2-0-fast-260128": "2026-04" }
+    },
+    {
+      "providers": ["volcengine"],
+      "source": "https://docs.volcengine.com/docs/drama-creation/new-feature-release-record?lang=zh",
+      "dates": { "doubao-seedance-2-0-mini-260615": "2026-06-16" }
+    },
+    {
+      "providers": ["volcengine"],
+      "source": "https://seed.bytedance.com/zh/blog/one-take-creation-flexible-referencing-introducing-seedance-2-5",
+      "dates": { "doubao-seedance-2-5-260628": "2026-07-31" }
+    }
+  ],
   "outOfScopeProviders": ["hunyuan"],
   "notOfferedModels": [
     "MiniMax-M2",
