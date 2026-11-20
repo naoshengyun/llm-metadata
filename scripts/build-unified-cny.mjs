@@ -8,6 +8,7 @@ import { canonical, generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cn
 import { adaptPrice, domesticProviders, sha } from './upstream-cny.mjs';
 import { makeSnapshot } from './upstream-snapshot.mjs';
 import { verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
+import { buildDisplayData, pricingViewIdentity, reconcileDisplayCoverage } from './pricing-view.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const locales = ['en', 'zh', 'ja'];
@@ -759,7 +760,15 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
   }
 }
 
-function catalogFiles(files, snapshots, records, quotes, selected, releaseDates) {
+function catalogFiles(
+  files,
+  snapshots,
+  records,
+  quotes,
+  selected,
+  releaseDates,
+  pricingViews,
+) {
   for (const locale of locales) {
     const providers = Object.assign(Object.create(null), structuredClone(snapshots[locale]));
     for (const row of records.values()) {
@@ -779,6 +788,9 @@ function catalogFiles(files, snapshots, records, quotes, selected, releaseDates)
       const winner = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
       const displayPrice = winner ?? upstreamPrice;
       const model = existing ?? { id: modelId, name: modelId };
+      model.pricing_view = structuredClone(
+        pricingViews.get(pricingViewIdentity(providerId, modelId)),
+      );
       const releaseDate = releaseDates.get(providerModel(providerId, modelId));
       if (releaseDate && !model.release_date) model.release_date = releaseDate;
       if (status === 'not-offered' || status === 'deprecated') {
@@ -997,6 +1009,7 @@ function buildCandidate({
   addSeedanceReference(official, policy, selection, records, quotes);
   const selected = selectPrices(records, quotes, selection, policy, lifecycle);
   checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle);
+  const display = buildDisplayData({ records, quotes, selected, official, policy });
   const billing_mode = Object.fromEntries(entries(selected).map(([key]) => [key, 'tiered_expr']));
   const billing_expr = Object.fromEntries(
     entries(selected).map(([key, row]) => [key, row.billing_expr]),
@@ -1027,6 +1040,7 @@ function buildCandidate({
       data: { billing_mode, billing_expr },
     }),
     'coverage.json': json(coverage),
+    'display-coverage.json': json(display.coverage),
     'api/cny-tools.json': json({
       official: coverage.quotes.filter((quote) => quote.outputKind === 'tool-reference'),
       optional: coverage.toolReferences,
@@ -1045,7 +1059,28 @@ function buildCandidate({
       ),
     ),
   );
-  catalogFiles(files, snapshots, records, quotes, selected, releaseDates);
+  catalogFiles(files, snapshots, records, quotes, selected, releaseDates, display.views);
+  const reconciledDisplay = reconcileDisplayCoverage({
+    official,
+    policy,
+    selection,
+    upstream: snapshots.en,
+    source,
+    coverage,
+    displayCoverage: display.coverage,
+    catalogs: Object.fromEntries(
+      locales.map((locale) => {
+        const prefix = 'api/' + (locale === 'en' ? '' : 'i18n/' + locale + '/');
+        return [locale, JSON.parse(files[prefix + 'all.json'])];
+      }),
+    ),
+  });
+  if (reconciledDisplay.status !== 'passed')
+    throw Error(
+      'Display coverage reconciliation failed: ' +
+        reconciledDisplay.failures.map(({ message }) => message).join('; '),
+    );
+  files['display-coverage.json'] = json(reconciledDisplay);
   const providerIds = new Set([
     ...Object.keys(snapshots.en),
     ...models.map(({ providerId }) => providerId),

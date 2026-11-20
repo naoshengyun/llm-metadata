@@ -70,12 +70,12 @@ export const PRICE_KEYS: ReadonlySet<string> = new Set([
   'cache_read_image',
   'per_image',
 ]);
-function convert(value: unknown, factor: number, key = ''): unknown {
+export function convertPrice(value: unknown, factor: number, key = ''): unknown {
   if (typeof value === 'number' && PRICE_KEYS.has(key))
     return factor === 1 ? value : Number((value * factor).toPrecision(15));
-  if (Array.isArray(value)) return value.map((v) => convert(v, factor));
+  if (Array.isArray(value)) return value.map((v) => convertPrice(v, factor));
   if (value !== null && typeof value === 'object')
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, convert(v, factor, k)]));
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, convertPrice(v, factor, k)]));
   return value;
 }
 function inspectCost(value: unknown, path = ''): string[] {
@@ -169,7 +169,7 @@ export function generateCny(input: CnyInput) {
     if (record.kind && !['model', 'task', 'tool'].includes(record.kind)) fields.push('kind');
     if (record.kind === 'task' && !record.task) fields.push('task');
     if (record.kind === 'tool' && !record.tools?.length) fields.push('tools');
-    if (inspectCost(convert(record.cost, CNY_POLICY[record.currency])).length)
+    if (inspectCost(convertPrice(record.cost, CNY_POLICY[record.currency])).length)
       fields.push('converted price overflow');
     if (
       !record.provider ||
@@ -210,7 +210,7 @@ export function generateCny(input: CnyInput) {
         ? {
             ...entry,
             cnyCost: {
-              ...(convert(record.cost, CNY_POLICY[record.currency]) as ModelCost),
+              ...(convertPrice(record.cost, CNY_POLICY[record.currency]) as ModelCost),
               currency: 'CNY',
             },
           }
