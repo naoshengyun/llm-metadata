@@ -1,4 +1,5 @@
 import { OfficialQuotes } from '@/components/official-quotes';
+import { PricingViewQuotes, PricingViewSummary } from '@/components/pricing-view';
 import { PricingNotice } from '@/components/pricing-notice';
 import { useEffect, type ReactNode } from 'react';
 import {
@@ -108,7 +109,7 @@ function StatCell({ label, value, sub }: { label: string; value: ReactNode; sub?
       <div className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
         {label}
       </div>
-      <div className="mt-1.5 flex h-6 items-center font-mono text-sm tabular-nums">{value}</div>
+      <div className="mt-1.5 flex min-h-6 items-center font-mono text-sm tabular-nums">{value}</div>
       {sub && <div className="text-muted-foreground mt-0.5 text-xs">{sub}</div>}
     </div>
   );
@@ -331,6 +332,7 @@ export function ModelDetail({
   const pricing = parseModelPricing(model.cost, t, locale, {
     providerCurrency: 'CNY',
   });
+  const pricingView = model.pricing_view;
   const expr = modelExpr(model.cost, provider.billing, deployment, exchangeRates);
   const longWrites = longCacheWrites(provider.billing);
 
@@ -416,11 +418,13 @@ export function ModelDetail({
       >
         <StatCell
           label={t('detail.price')}
-          value={priceValue}
+          value={pricingView ? <PricingViewSummary view={pricingView} /> : priceValue}
           sub={
-            tokenPriced
-              ? `${t('table.input')} · ${t('table.output')} · ${pricing.currency}`
-              : pricing.currency
+            pricingView
+              ? undefined
+              : tokenPriced
+                ? `${t('table.input')} · ${t('table.output')} · ${pricing.currency}`
+                : pricing.currency
           }
         />
         <StatCell
@@ -514,7 +518,7 @@ export function ModelDetail({
       </BlurFade>
 
       {/* 价格：主价目 + 同一端点的其他货币官方价目 + new-api 表达式 */}
-      {(hasPrices(pricing) || pricing.alternates.length > 0 || expr) && (
+      {!pricingView && (hasPrices(pricing) || pricing.alternates.length > 0 || expr) && (
         <DetailSection
           title={t('detail.pricing')}
           hint={
@@ -592,7 +596,22 @@ export function ModelDetail({
         </DetailSection>
       )}
 
-      <OfficialQuotes model={model} providerId={provider.id} check={officialCheck} />
+      {pricingView ? (
+        <>
+          <PricingViewQuotes view={pricingView} check={officialCheck} />
+          {expr && (
+            <DetailSection title={t('detail.pricing')}>
+              <ExprBlock
+                expr={expr}
+                primaryCurrency="CNY"
+                codeClassName="bg-card rounded-lg px-3 py-2.5"
+              />
+            </DetailSection>
+          )}
+        </>
+      ) : (
+        <OfficialQuotes model={model} providerId={provider.id} check={officialCheck} />
+      )}
 
       {/* 其他端点（同一模型的国内 / 国际版本价格对照） */}
       <SiblingEndpoints

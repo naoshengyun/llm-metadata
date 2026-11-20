@@ -46,6 +46,8 @@ export interface ModelRowsOptions {
 function sortValue(row: ModelRow, key: SortKey): string | number | null {
   if (key === 'name') return row.model.id;
   if (key === 'released') return row.model.release_date ?? null;
+  const summary = row.model.pricing_view?.summary;
+  if (summary) return 'input' in summary ? summary[key] : null;
   return row.pricing.base[key];
 }
 

@@ -469,6 +469,27 @@ function summaryFor(selectedQuote, status, groups) {
 function quoteGroup(quote) {
   const displayQuote = structuredClone(quote);
   displayQuote.displayRows = displayRowsFor(quote);
+  // Use the same reviewed seconds rate shown beside the illustrative input and output durations.
+  const rate = displayQuote.displayRows.find(
+    ({ unit, cnyAmount, conditions }) =>
+      unit === 'per_second' &&
+      cnyAmount !== null &&
+      conditions.basis === 'input-and-output-seconds' &&
+      /^720p$/i.test(conditions.when?.resolution ?? ''),
+  );
+  if (rate) {
+    const inputSeconds = 5;
+    const outputSeconds = 10;
+    displayQuote.displayExamples = [
+      {
+        resolution: rate.conditions.when.resolution,
+        inputSeconds,
+        outputSeconds,
+        amount: Number((rate.cnyAmount * (inputSeconds + outputSeconds)).toPrecision(15)),
+        currency: rate.cnyCurrency,
+      },
+    ];
+  }
   return {
     groupId: 'quote:' + quote.quoteId,
     kind:

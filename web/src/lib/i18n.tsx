@@ -39,9 +39,9 @@ const en = {
   'app.searchModels': 'Search models…',
   'app.retry': 'Retry',
   'app.tableFootnote':
-    '{count} models · Prices per 1M tokens as CNY base prices · Expand a row for tier details.',
+    '{count} models · Selected CNY base prices and billing units · Expand a row for tier details.',
   'app.cardsFootnote':
-    '{count} models · Prices per 1M tokens as CNY base prices · Open a card for tier details.',
+    '{count} models · Selected CNY base prices and billing units · Open a card for tier details.',
   'app.footerSource': 'Data from {link} and community overrides · Native providers only',
   'app.updated': 'Updated {date}',
   'app.apiDocs': 'API documentation',
@@ -213,10 +213,8 @@ const zh: Messages = {
   'app.docs': '文档',
   'app.searchModels': '搜索模型…',
   'app.retry': '重试',
-  'app.tableFootnote':
-    '{count} 个模型 · 价格按每 100 万 tokens 计（CNY 基础价） · 点击行可展开阶梯明细。',
-  'app.cardsFootnote':
-    '{count} 个模型 · 价格按每 100 万 tokens 计（CNY 基础价） · 点击卡片查看阶梯明细。',
+  'app.tableFootnote': '{count} 个模型 · 所选 CNY 基础价及计费单位 · 点击行可展开阶梯明细。',
+  'app.cardsFootnote': '{count} 个模型 · 所选 CNY 基础价及计费单位 · 点击卡片查看阶梯明细。',
   'app.footerSource': '数据来自 {link} 与社区覆写 · 仅收录原生供应商',
   'app.updated': '更新于 {date}',
   'app.apiDocs': 'API 文档',
@@ -380,9 +378,9 @@ const ja: Messages = {
   'app.searchModels': 'モデルを検索…',
   'app.retry': '再試行',
   'app.tableFootnote':
-    '{count} モデル · 価格は 100 万トークンあたり（CNY 基準価格） · 行を展開すると段階詳細を表示します。',
+    '{count} モデル · 選択された CNY 基準価格と課金単位 · 行を展開すると段階詳細を表示します。',
   'app.cardsFootnote':
-    '{count} モデル · 価格は 100 万トークンあたり（CNY 基準価格） · カードを開くと段階詳細を表示します。',
+    '{count} モデル · 選択された CNY 基準価格と課金単位 · カードを開くと段階詳細を表示します。',
   'app.footerSource': 'データは {link} とコミュニティの上書きに基づく · ネイティブプロバイダーのみ',
   'app.updated': '更新日 {date}',
   'app.apiDocs': 'API ドキュメント',
