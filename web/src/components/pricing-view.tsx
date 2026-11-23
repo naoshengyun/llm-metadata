@@ -286,7 +286,6 @@ function lastPublishedInputToken({ inputBands, inputOutputBands }: DisplayPriceR
 function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], locale: Locale) {
   const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
   const structuredTiers = related.some(({ tier }) => tier?.size);
-  if (structuredTiers && legacyTier(row)) return msg(locale, 'legacyTier');
   const meterRows = related.filter(({ usageKey }) => usageKey === row.usageKey);
   const thresholds = [
     ...new Set(
@@ -452,6 +451,18 @@ function QuoteArticle({
   const { locale } = useI18n();
   const sections = new Map<string, DisplayPriceRow[]>();
   for (const row of quote.displayRows) {
+    // Keep legacy fields in the raw audit record, not alongside their authoritative tiers.
+    if (
+      legacyTier(row) &&
+      quote.displayRows.some(
+        (candidate) =>
+          candidate.tier?.size &&
+          rateScope(candidate) === rateScope(row) &&
+          rateSection(candidate) === rateSection(row) &&
+          candidate.unit === row.unit,
+      )
+    )
+      continue;
     const key = JSON.stringify([rateSection(row), row.unit]);
     const section = sections.get(key);
     if (section) section.push(row);

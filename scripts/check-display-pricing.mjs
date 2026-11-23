@@ -95,8 +95,19 @@ async function compareVisibleQuotes(page, view, labels) {
         ]),
       ),
     );
-    assert.equal(Object.keys(rows).length, quote.displayRows.length, quote.quoteId);
-    for (const { rowId, amount, sourceValue, currency, unit, cnyAmount } of quote.displayRows) {
+    const visibleRows = quote.displayRows.filter((row) => {
+      if (!row.rowId.split(':').includes('context_over_200k')) return true;
+      const prefix = row.rowId.split(':context_over_200k:')[0];
+      return !quote.displayRows.some(
+        (other) =>
+          other.rowId.startsWith(prefix + ':tier-') &&
+          other.tier?.size &&
+          other.unit === row.unit &&
+          other.conditions.serviceTier === row.conditions.serviceTier,
+      );
+    });
+    assert.equal(Object.keys(rows).length, visibleRows.length, quote.quoteId);
+    for (const { rowId, amount, sourceValue, currency, unit, cnyAmount } of visibleRows) {
       const row = rows[rowId];
       assert.ok(row?.visible, quote.quoteId + ' ' + rowId);
       assert.equal(row.amount, String(amount ?? ''), rowId);
@@ -378,6 +389,18 @@ export async function checkPricingReviewFindings({
       findings.push(name + ' – ' + error.message);
     }
   };
+
+  await verify('OpenAI structured tiers replace legacy rows in the price table', async () => {
+    await visit('openai', 'gpt-6.2-astra');
+    const selected = page.locator('[data-syncable="true"]');
+    assert.equal(await selected.locator('[data-pricing-row*="context_over_200k"]').count(), 0);
+    assert.equal(await row(selected, 'cost:input').getAttribute('data-source-amount'), '8');
+    assert.equal(await row(selected, 'cost:tier-0:input').getAttribute('data-source-amount'), '16');
+    assert.equal(await row(selected, 'cost:tier-0:output').getAttribute('data-source-amount'), '60');
+    assert.match(await row(selected, 'cost:input').innerText(), /272000/);
+    assert.match(await row(selected, 'cost:tier-0:input').innerText(), /272001/);
+    assert.match(await selected.locator('pre').textContent(), /context_over_200k/);
+  });
 
   await verify('Zhipu short-output rate exclusivity', async () => {
     for (const model of ['glm-4.7', 'glm-4.5-air']) {
@@ -750,5 +773,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 17, passed: true };
+  return { findings: 18, passed: true };
 }
