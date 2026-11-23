@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { sha } from './upstream-cny.mjs';
+import { checkDisplayPricing, checkPricingReviewFindings } from './check-display-pricing.mjs';
 
 const [sitePath, playwrightPath, evidenceDir] = process.argv.slice(2);
 assert.ok(
@@ -40,8 +41,17 @@ const get = async (path) => {
   assert.ok(response.ok, path);
   return response.text();
 };
-const snapshot = (page, width, name) =>
-  page.screenshot({ path: `${evidenceDir}/${width}-${name}.png` });
+const snapshot = async (page, width, name) => {
+  await page.evaluate(() =>
+    Promise.allSettled(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
+  await page.screenshot({ path: `${evidenceDir}/${width}-${name}.png`, animations: 'disabled' });
+};
 const results = { browser: browser.version(), viewports: [] };
 const checkStatusUrl =
   'https://raw.githubusercontent.com/naoshengyun/llm-metadata/cny-official-check-state/official-check.json';
@@ -225,6 +235,9 @@ try {
   assert.ok((await get('legacy-publication.html')).includes('./' + firstSource));
   assert.notEqual(await get(firstSource), canonical);
   const english = JSON.parse(await get('api/all.json'));
+  const structuredCoverage = files['display-coverage.json']
+    ? JSON.parse(await get(current.fixedBase + 'display-coverage.json'))
+    : null;
   const display = english['moonshotai-cn'].models['kimi-k3.1-pro'];
   const expectedKimiPrices = [display.cost.input, display.cost.output]
     .filter(Number.isFinite)
@@ -234,7 +247,7 @@ try {
 
   for (const viewport of [
     { width: 1366, height: 900 },
-    { width: 390, height: 844 },
+    { width: 375, height: 844 },
   ]) {
     const mobile = viewport.width < 700;
     const context = await browser.newContext({
@@ -258,6 +271,15 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    page.on('response', (response) => {
+      const url = new URL(response.url());
+      if (
+        url.origin === origin &&
+        response.status() >= 400 &&
+        /(?:\.(?:html|js|css|json)|\/)$/.test(url.pathname)
+      )
+        errors.push(`${response.status()} ${url.pathname}`);
+    });
     const goto = (path) => page.goto(origin + path, { waitUntil: 'domcontentloaded' });
     const expectVisible = (locator) => locator.waitFor({ timeout: 7000 });
     const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
@@ -333,12 +355,17 @@ try {
     if (glmConditions) {
       await goto(select('zhipuai', 'glm-4.5-air'));
       await expectVisible(page.getByRole('heading', { name: 'Charging conditions' }).first());
-      await expectVisible(
-        page
-          .locator('pre')
-          .filter({ hasText: JSON.stringify(glmConditions, null, 2) })
-          .first(),
-      );
+      if (structuredCoverage) {
+        const key = Object.keys(glmConditions)[0];
+        await expectVisible(page.locator(`[data-condition="${key}"]`).first());
+      } else {
+        await expectVisible(
+          page
+            .locator('pre')
+            .filter({ hasText: JSON.stringify(glmConditions, null, 2) })
+            .first(),
+        );
+      }
     }
 
     if (deprecated) {
@@ -357,7 +384,11 @@ try {
       const h3 = page.locator('article').filter({
         has: page.getByRole('button', { name: 'View details for MiniMax-H3', exact: true }),
       });
-      await expectVisible(h3.getByText(/input_images.*First 5 images free/).first());
+      if (structuredCoverage) {
+        await expectVisible(h3.getByText('Multiple billing units', { exact: true }));
+      } else {
+        await expectVisible(h3.getByText(/input_images.*First 5 images free/).first());
+      }
     }
 
     await goto(select('volcengine', seedance));
@@ -368,18 +399,30 @@ try {
       'Target deployment billing still pending for both 4K cases',
     ])
       await expectVisible(page.getByText(name, { exact: false }).first());
-    const fullTariff = page.getByRole('table', { name: 'CNY per million billable video tokens' });
-    const rows = fullTariff.locator('tbody tr');
-    assert.deepEqual(
-      await rows.evaluateAll((entries) =>
-        entries.map((row) => [...row.cells].map((cell) => cell.textContent)),
-      ),
-      english.volcengine.models[seedance].cnyPrice.quotes
-        .find(({ sourcePrice }) => sourcePrice?.rows)
-        .sourcePrice.rows.map((row) => row.map(String)),
-    );
-    assert.equal(await rows.count(), 1);
-    await expectVisible(rows.getByRole('rowheader', { name: '4K', exact: true }));
+    let fullTariff;
+    if (structuredCoverage) {
+      fullTariff = page.locator('[data-quote-status="validation-held"]');
+      const rows = fullTariff.locator('[data-pricing-row]');
+      assert.deepEqual(
+        await rows.evaluateAll((entries) => entries.map((row) => Number(row.dataset.sourceAmount))),
+        [31, 19],
+      );
+      for (const name of ['Without input video', 'With input video'])
+        await expectVisible(rows.getByRole('rowheader', { name, exact: false }));
+    } else {
+      fullTariff = page.getByRole('table', { name: 'CNY per million billable video tokens' });
+      const rows = fullTariff.locator('tbody tr');
+      assert.deepEqual(
+        await rows.evaluateAll((entries) =>
+          entries.map((row) => [...row.cells].map((cell) => cell.textContent)),
+        ),
+        english.volcengine.models[seedance].cnyPrice.quotes
+          .find(({ sourcePrice }) => sourcePrice?.rows)
+          .sourcePrice.rows.map((row) => row.map(String)),
+      );
+      assert.equal(await rows.count(), 1);
+      await expectVisible(rows.getByRole('rowheader', { name: '4K', exact: true }));
+    }
     const syncQuote = english.volcengine.models[seedance].cnyPrice.quotes.find(
       ({ syncable }) => syncable,
     );
@@ -397,10 +440,12 @@ try {
       [70, 42, 70, 42, 77, 46],
     );
     await expectVisible(
-      page.getByText('actual charged token usage is API usage.completion_tokens', { exact: false }),
+      page
+        .getByText('actual charged token usage is API usage.completion_tokens', { exact: false })
+        .first(),
     );
     await expectVisible(
-      page.getByText('Draft and final are two separately charged tasks', { exact: false }),
+      page.getByText('Draft and final are two separately charged tasks', { exact: false }).first(),
     );
     await fullTariff.scrollIntoViewIfNeeded();
     await snapshot(page, viewport.width, 'seedance');
@@ -469,12 +514,46 @@ try {
     assert.equal(await get(current.fixedBase + 'manifest.json'), fixedManifest);
     await goto(select('moonshotai-cn'));
 
+    const structured = {};
+    const checkStructured = async (locale) => {
+      const catalog =
+        locale === 'en' ? english : JSON.parse(await get(`api/i18n/${locale}/all.json`));
+      structured[locale] = await checkDisplayPricing({
+        page,
+        goto,
+        select,
+        catalog,
+        locale,
+        coverage: structuredCoverage,
+        snapshot: (page, name) => snapshot(page, viewport.width, name),
+      });
+      structured[locale].reviewFindings = await checkPricingReviewFindings({
+        page,
+        goto,
+        select,
+        current,
+        locale,
+        checkStatusUrl,
+        respond: (response) => {
+          statusResponse = response;
+        },
+      });
+    };
+    if (structuredCoverage) {
+      await checkStructured('en');
+      await goto(select('moonshotai-cn'));
+    }
     await page.getByRole('button', { name: 'Change language' }).click();
     await page.getByRole('menuitemradio', { name: '中文' }).click();
     await expectVisible(page.getByRole('button', { name: '表格视图' }));
+    if (structuredCoverage) {
+      await checkStructured('zh');
+      await goto(select('moonshotai-cn'));
+    }
     await page.getByRole('button', { name: '切换语言' }).click();
     await page.getByRole('menuitemradio', { name: '日本語' }).click();
     await expectVisible(page.getByRole('button', { name: 'テーブル表示' }));
+    if (structuredCoverage) await checkStructured('ja');
     await goto(select('moonshotai-cn', 'kimi-k3.1-pro'));
     await expectVisible(page.getByRole('heading', { name: '公式料金表' }));
     assert.deepEqual(errors, []);
@@ -485,6 +564,7 @@ try {
       modelsCompared: names.length,
       languages: ['en', 'zh', 'ja'],
       officialChecks,
+      structured,
       errors,
     });
     await context.close();

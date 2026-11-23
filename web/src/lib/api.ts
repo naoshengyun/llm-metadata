@@ -51,7 +51,84 @@ export interface PriceQuote {
   };
 }
 
+export interface DisplayPriceRow {
+  rowId: string;
+  usageKey: string;
+  amount: number | null;
+  sourceValue?: string;
+  approximate?: boolean;
+  currency: string | null;
+  unit: string | null;
+  cnyAmount: number | null;
+  cnyCurrency: string | null;
+  conditions: Record<string, unknown>;
+  tier?: { size: number; type?: string; comparison?: 'gte' };
+}
+
+type SelectedSummary = {
+  quoteId: string;
+  currency: 'CNY';
+  unit: string;
+  hasMoreConditions: boolean;
+};
+export type PricingSummary =
+  | (SelectedSummary & {
+      kind: 'single-token' | 'token-tiers';
+      input: number | null;
+      output: number | null;
+    })
+  | (SelectedSummary & { kind: 'fixed'; amount: number })
+  | (SelectedSummary & {
+      kind: 'range';
+      minimum: number;
+      maximum: number;
+      resolutions?: string[];
+      hasAdditionalUnits: boolean;
+    })
+  | { kind: 'multiple-units' | 'invalid-primary-unit'; units: string[] }
+  | { kind: 'reference-only' | 'unavailable'; status: string };
+
+export interface DisplayPriceQuote extends PriceQuote {
+  providerId: string;
+  modelId: string;
+  selected: boolean;
+  outputKind: string;
+  sourceRecordId: string;
+  displayRows: DisplayPriceRow[];
+  displayFeeTerms?: { usageKey: string; retentionMinutes?: number; condition?: string }[];
+  displayExamples?: {
+    resolution: string;
+    inputSeconds: number;
+    outputSeconds: number;
+    amount: number;
+    currency: string;
+  }[];
+  source: PriceQuote['source'] & { sha256?: string; recordSha256?: string; upstreamSha?: string };
+  originalQuote?: NonNullable<PriceQuote['originalQuote']> & {
+    officialServiceTier?: string;
+    officialRegion?: string;
+    effectiveAt?: string;
+    region?: string;
+    toolCondition?: string;
+    resolutionNote?: string;
+    contextNote?: string;
+    cache?: { reason?: string };
+  };
+}
+
+export interface PricingView {
+  schemaVersion: 1;
+  providerId: string;
+  modelId: string;
+  status: string;
+  reason: string | null;
+  selectedQuoteId: string | null;
+  summary: PricingSummary;
+  groups: { groupId: string; kind: string; quotes: DisplayPriceQuote[] }[];
+}
+
 export interface Model {
+  pricing_view?: PricingView;
   cnyPrice?: {
     status: string;
     reason?: string | null;

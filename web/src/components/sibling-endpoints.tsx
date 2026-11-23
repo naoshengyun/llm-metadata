@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 
 import { DetailSection } from '@/components/detail-section';
 import { ModelBadges } from '@/components/model-badges';
+import { PricingViewCell, PricingViewSummary } from '@/components/pricing-view';
 import { PriceValue } from '@/components/price-value';
 import { ProviderIcon } from '@/components/provider-icon';
 import { Button } from '@/components/ui/button';
@@ -152,17 +153,32 @@ export function SiblingEndpoints({
                           <div className="text-muted-foreground truncate font-mono text-[11px]">
                             {provider.id}
                           </div>
+                          {model.pricing_view && (
+                            <PricingViewSummary view={model.pricing_view} table />
+                          )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className={NUMERIC_CELL}>
-                      <PriceValue pricing={pricing} column="input" />
+                      {model.pricing_view ? (
+                        <PricingViewCell view={model.pricing_view} column="input" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="input" />
+                      )}
                     </TableCell>
                     <TableCell className={cn(NUMERIC_CELL, 'text-muted-foreground')}>
-                      <PriceValue pricing={pricing} column="cacheRead" />
+                      {model.pricing_view ? (
+                        <PricingViewCell view={model.pricing_view} column="cacheRead" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="cacheRead" />
+                      )}
                     </TableCell>
                     <TableCell className={NUMERIC_CELL}>
-                      <PriceValue pricing={pricing} column="output" />
+                      {model.pricing_view ? (
+                        <PricingViewCell view={model.pricing_view} column="output" />
+                      ) : (
+                        <PriceValue pricing={pricing} column="output" />
+                      )}
                     </TableCell>
                     <TableCell className="w-0 pr-3 text-right">
                       <Button
