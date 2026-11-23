@@ -95,8 +95,19 @@ async function compareVisibleQuotes(page, view, labels) {
         ]),
       ),
     );
-    assert.equal(Object.keys(rows).length, quote.displayRows.length, quote.quoteId);
-    for (const { rowId, amount, sourceValue, currency, unit, cnyAmount } of quote.displayRows) {
+    const visibleRows = quote.displayRows.filter((row) => {
+      if (!row.rowId.split(':').includes('context_over_200k')) return true;
+      const prefix = row.rowId.split(':context_over_200k:')[0];
+      return !quote.displayRows.some(
+        (other) =>
+          other.rowId.startsWith(prefix + ':tier-') &&
+          other.tier?.size &&
+          other.unit === row.unit &&
+          other.conditions.serviceTier === row.conditions.serviceTier,
+      );
+    });
+    assert.equal(Object.keys(rows).length, visibleRows.length, quote.quoteId);
+    for (const { rowId, amount, sourceValue, currency, unit, cnyAmount } of visibleRows) {
       const row = rows[rowId];
       assert.ok(row?.visible, quote.quoteId + ' ' + rowId);
       assert.equal(row.amount, String(amount ?? ''), rowId);
@@ -160,7 +171,14 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText(),
       /100001/,
     );
-    assert.match(await selected.innerText(), /ordinary input plus cache reads and writes/);
+    assert.match(
+      await selected.locator('[data-price-description]').innerText(),
+      {
+        en: /100,000 prompt tokens, including cache reads and writes/,
+        zh: /100,000 Token（含缓存读写）/,
+        ja: /キャッシュ読書込を含むプロンプトが100,000トークン/,
+      }[locale],
+    );
     const all = view.groups.flatMap(({ quotes }) => quotes);
     const batch = quoteAt(page, all.find(({ priceList }) => priceList.startsWith('Batch')).quoteId);
     await batch.locator('[data-pricing-row="cost:cache_read"]').waitFor();
@@ -200,8 +218,12 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       ],
     );
     assert.match(
-      await held.innerText(),
-      /actual charged token usage is API usage.completion_tokens/,
+      await held.locator('[data-condition="minimumUsage"]').innerText(),
+      {
+        en: /output token count reported by the API/,
+        zh: /接口返回的输出 Token 数/,
+        ja: /APIが返す出力トークン数/,
+      }[locale],
     );
     assert.match(await held.innerText(), /Draft and final are two separately charged tasks/);
   } else if (modelId === 'wan3.0-video') {
@@ -378,6 +400,148 @@ export async function checkPricingReviewFindings({
       findings.push(name + ' – ' + error.message);
     }
   };
+
+  await verify('OpenAI structured tiers replace legacy rows in the price table', async () => {
+    await visit('openai', 'gpt-6.2-astra');
+    const selected = page.locator('[data-syncable="true"]');
+    assert.equal(await selected.locator('[data-pricing-row*="context_over_200k"]').count(), 0);
+    assert.equal(await row(selected, 'cost:input').getAttribute('data-source-amount'), '8');
+    assert.equal(await row(selected, 'cost:tier-0:input').getAttribute('data-source-amount'), '16');
+    assert.equal(
+      await row(selected, 'cost:tier-0:output').getAttribute('data-source-amount'),
+      '60',
+    );
+    assert.match(await row(selected, 'cost:input').innerText(), /272000/);
+    assert.match(await row(selected, 'cost:tier-0:input').innerText(), /272001/);
+    assert.match(await selected.locator('pre').textContent(), /context_over_200k/);
+  });
+
+  await verify(
+    'Price explanations are readable and technical originals stay in audit details',
+    async () => {
+      const cases = [
+        [
+          'alibaba-cn',
+          'qvq-max',
+          'missing-original-CNY',
+          {
+            en: 'Official CNY pricing is not yet verified.',
+            zh: '尚未核实官方人民币原价。',
+            ja: '公式の人民元料金は未確認です。',
+          },
+        ],
+        [
+          'inception',
+          'mercury-2',
+          'approved-deferred-evidence:complete-tariff-requires-source-currency',
+          {
+            en: 'Source currency will be verified before planned integration.',
+            zh: '源币种待确认，将在计划接入前核查。',
+            ja: '導入予定時に元の通貨を確認します。',
+          },
+        ],
+        [
+          'google',
+          'gemini-3.8-flash',
+          'Explicit cache storage charges',
+          {
+            en: 'Cache storage is charged by duration and cannot currently be fully synchronized. See the tariff below for the published conditions.',
+            zh: '缓存存储按时长另行收费，当前尚不能完整同步；已公布条件见价目明细。',
+            ja: 'キャッシュ保存は時間に応じて別途課金され、現在は完全な同期に未対応です。公表済みの条件は料金明細をご確認ください。',
+          },
+        ],
+      ];
+      for (const [provider, model, original, labels] of cases) {
+        await visit(provider, model);
+        const card = page
+          .locator('[data-quote-id]')
+          .filter({ has: page.locator('[data-audit-reason]').filter({ hasText: original }) })
+          .first();
+        const disclosure = card.locator('details').first();
+        if ((await disclosure.getAttribute('open')) === null)
+          await disclosure.locator('summary').first().click();
+        assert.equal(await card.locator('[data-price-explanation]').innerText(), labels[locale]);
+        assert.equal(await card.locator('[data-audit-reason]').isVisible(), false);
+        assert.ok(!(await card.innerText()).includes(original));
+        await card.locator('[data-price-audit] > summary').click();
+        assert.ok(await card.locator('[data-audit-reason]').isVisible());
+        assert.ok((await card.locator('[data-audit-reason]').innerText()).includes(original));
+      }
+    },
+  );
+
+  await verify(
+    'Technical descriptions stay in audit with readable billing conditions',
+    async () => {
+      for (const model of [
+        'doubao-seedance-2-0-260128',
+        'doubao-seedance-2-0-fast-260128',
+        'doubao-seedance-2-0-mini-260615',
+      ]) {
+        await visit('volcengine', model);
+        const card = page.locator(
+          `[data-quote-id="volcengine--${model}--cn-beijing-task-online-original"]`,
+        );
+        const disclosure = card.locator('details').first();
+        if ((await disclosure.getAttribute('open')) === null)
+          await disclosure.locator('summary').first().click();
+        assert.doesNotMatch(
+          await card.innerText(),
+          /usage[.]completion_tokens|fixed schema condition|Last unconditional fallback/,
+        );
+        const description = await card.locator('[data-price-description]').innerText();
+        assert.match(
+          description,
+          { en: /reported output tokens/, zh: /返回的输出 Token/, ja: /返された出力トークン/ }[
+            locale
+          ],
+        );
+        assert.match(description, { en: /minimum/, zh: /最低/, ja: /最低/ }[locale]);
+        assert.match(
+          description,
+          { en: /Failed generations are free/, zh: /生成失败不收费/, ja: /生成失敗は無料/ }[locale],
+        );
+        await card.locator('[data-price-audit] > summary').click();
+        assert.match(
+          await card.locator('[data-audit-description]').innerText(),
+          /Last unconditional fallback/,
+        );
+      }
+      await visit('volcengine', 'doubao-seedance-2-5-260628');
+      const minimum = page.locator('[data-condition="minimumUsage"]').first();
+      await minimum.evaluate((node) => {
+        for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+          if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+      });
+      assert.doesNotMatch(await minimum.innerText(), /usage[.]completion_tokens/);
+      assert.match(
+        await minimum.innerText(),
+        { en: /aspect ratio and duration/, zh: /宽高比和时长/, ja: /縦横比・時間/ }[locale],
+      );
+      await visit('openai', 'gpt-image-2.5-sunburst');
+      const image = page.locator(
+        '[data-quote-id="us-openai-gpt-image-2.5-sunburst-direct-images-standard"]',
+      );
+      const details = image.locator('details').first();
+      if ((await details.getAttribute('open')) === null)
+        await details.locator('summary').first().click();
+      assert.doesNotMatch(await image.innerText(), /usage[.]output_tokens|img_o|ordinary c meter/);
+      const summary = await image.locator('[data-price-description]').innerText();
+      assert.match(summary, /100/);
+      assert.match(
+        summary,
+        { en: /No cached rate applies/, zh: /不适用缓存价/, ja: /キャッシュ料金は適用されません/ }[
+          locale
+        ],
+      );
+      await image.locator('[data-price-audit] > summary').click();
+      assert.match(
+        await image.locator('[data-audit-description]').innerText(),
+        /usage[.]output_tokens/,
+      );
+    },
+  );
 
   await verify('Zhipu short-output rate exclusivity', async () => {
     for (const model of ['glm-4.7', 'glm-4.5-air']) {
@@ -750,5 +914,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 17, passed: true };
+  return { findings: 20, passed: true };
 }

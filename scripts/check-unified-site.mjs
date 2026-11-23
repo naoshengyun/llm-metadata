@@ -393,7 +393,9 @@ try {
 
     await goto(select('volcengine', seedance));
     for (const name of [
-      'seedance-4k-two-target-billing-cases-unverified',
+      structuredCoverage
+        ? '4K prices are reference only; actual billing verification is still pending.'
+        : 'seedance-4k-two-target-billing-cases-unverified',
       'Official price documented',
       'Model expression import evidence',
       'Target deployment billing still pending for both 4K cases',
@@ -441,7 +443,7 @@ try {
     );
     await expectVisible(
       page
-        .getByText('actual charged token usage is API usage.completion_tokens', { exact: false })
+        .getByText('output token count reported by the API', { exact: false })
         .first(),
     );
     await expectVisible(

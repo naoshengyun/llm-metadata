@@ -5,6 +5,8 @@ import { OfficialCheckNotice, QuoteOfficialCheck } from '@/components/official-c
 import { Badge } from '@/components/ui/badge';
 import type { DisplayPriceQuote, DisplayPriceRow, PricingView } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
+import { priceExplanation } from '@/lib/pricing-explanation';
+import { priceDescription } from '@/lib/pricing-description';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { officialCheckKey, type OfficialCheckView } from '@/lib/official-check';
 import {
@@ -149,6 +151,28 @@ function serviceOrder(quote: DisplayPriceQuote) {
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
   if (value === null || value === undefined) return '—';
+  if (
+    key === 'minimumUsage' &&
+    value ===
+      'Only successful video tasks are billed. Inputs that include video have a minimum token charge based on output resolution, aspect ratio, and duration. The actual charged token usage is API usage.completion_tokens.'
+  )
+    return localizePrice(
+      [
+        'Only successful video tasks are billed, using the output token count reported by the API. Video inputs have a minimum token charge based on output resolution, aspect ratio and duration.',
+        '仅成功的视频任务收费，按接口返回的输出 Token 数计费。输入视频的最低 Token 计费量取决于输出分辨率、宽高比和时长。',
+        '成功した動画タスクのみ、APIが返す出力トークン数で課金します。入力動画の最低トークン課金量は出力解像度・縦横比・時間によって決まります。',
+      ],
+      locale,
+    );
+  if (key === 'billingUsage' && value === 'usage.completion_tokens')
+    return localizePrice(
+      [
+        'Output tokens reported by the API',
+        '接口返回的输出 Token 数',
+        'API が返した出力トークン数',
+      ],
+      locale,
+    );
   if (key === 'fallback' && value === 'off_peak')
     return localizePrice(
       [
@@ -286,7 +310,6 @@ function lastPublishedInputToken({ inputBands, inputOutputBands }: DisplayPriceR
 function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], locale: Locale) {
   const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
   const structuredTiers = related.some(({ tier }) => tier?.size);
-  if (structuredTiers && legacyTier(row)) return msg(locale, 'legacyTier');
   const meterRows = related.filter(({ usageKey }) => usageKey === row.usageKey);
   const thresholds = [
     ...new Set(
@@ -452,6 +475,18 @@ function QuoteArticle({
   const { locale } = useI18n();
   const sections = new Map<string, DisplayPriceRow[]>();
   for (const row of quote.displayRows) {
+    // Keep legacy fields in the raw audit record, not alongside their authoritative tiers.
+    if (
+      legacyTier(row) &&
+      quote.displayRows.some(
+        (candidate) =>
+          candidate.tier?.size &&
+          rateScope(candidate) === rateScope(row) &&
+          rateSection(candidate) === rateSection(row) &&
+          candidate.unit === row.unit,
+      )
+    )
+      continue;
     const key = JSON.stringify([rateSection(row), row.unit]);
     const section = sections.get(key);
     if (section) section.push(row);
@@ -574,7 +609,7 @@ function QuoteArticle({
           </div>
           <div className="space-y-0.5">
             {hasRate && !['ready', 'reference-only'].includes(quote.status) && <p>{statusLabel}</p>}
-            {quote.reason && <p>{quote.reason}</p>}
+            {quote.reason && <p data-price-explanation>{priceExplanation(quote.reason, locale)}</p>}
             {quote.originalCurrencyEligible === false && <p>{msg(locale, 'missingBasis')}</p>}
             {(quote.syncable || quote.verification?.officialPrice) && (
               <p>{msg(locale, 'hasPrice')}</p>
@@ -604,17 +639,31 @@ function QuoteArticle({
             )}
           </div>
           {children}
-          {quote.originalQuote?.description && <p>{quote.originalQuote.description}</p>}
+          {quote.originalQuote?.description && (
+            <p data-price-description>
+              {priceDescription(quote.originalQuote.description, locale)}
+            </p>
+          )}
           {Object.keys(tariffConditions).length > 0 && (
             <div className="space-y-1">
               <h4 className="font-medium">{msg(locale, 'conditions')}</h4>
               <Conditions values={tariffConditions} locale={locale} />
             </div>
           )}
-          <details className="text-muted-foreground">
+          <details className="text-muted-foreground" data-price-audit>
             <summary className="cursor-pointer underline-offset-2 hover:underline">
               {msg(locale, 'audit')}
             </summary>
+            {quote.originalQuote?.description && (
+              <p className="mt-1" data-audit-description>
+                {quote.originalQuote.description}
+              </p>
+            )}
+            {quote.reason && (
+              <p className="mt-1" data-audit-reason>
+                {quote.reason}
+              </p>
+            )}
             {digest && (
               <p className="mt-1 break-all">
                 {msg(locale, 'digest')} · {digest}

@@ -56,11 +56,6 @@ export const priceLabels = {
     '目标部署的两种 4K 实际计费均待验证',
     '4K の両ケースで対象環境の実課金は確認待ち',
   ],
-  legacyTier: [
-    'Legacy quoted fields · structured tiers take precedence',
-    '遗留报价字段 · 以结构化阶梯为准',
-    '旧形式の料金項目・構造化された段階料金を優先',
-  ],
   wholeRequest: ['Rates apply to the entire request', '整次请求按该档计费', 'リクエスト全体に適用'],
   input: ['Input', '输入', '入力'],
   output: ['Output', '输出', '出力'],
