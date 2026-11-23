@@ -149,6 +149,21 @@ function serviceOrder(quote: DisplayPriceQuote) {
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
   if (value === null || value === undefined) return '—';
+  if (
+    key === 'outsideShortOutput' &&
+    typeof value === 'object' &&
+    'maxInput' in value &&
+    'maxOutput' in value
+  ) {
+    return localizePrice(
+      [
+        `Input tokens > ${value.maxInput} or output tokens > ${value.maxOutput}`,
+        `输入 Token > ${value.maxInput} 或输出 Token > ${value.maxOutput}`,
+        `入力トークン > ${value.maxInput} または出力トークン > ${value.maxOutput}`,
+      ],
+      locale,
+    );
+  }
   if (key === 'video_input' && ['none', 'video', 'present'].includes(String(value)))
     return priceUsage(value === 'none' ? 'videoInputNone' : 'videoInputPresent', locale);
   if (key === 'basis' && value === 'input-and-output-seconds')
@@ -246,7 +261,7 @@ function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], loc
         .filter((n) => n !== null),
     ),
   ].sort((a, b) => a - b);
-  if (!thresholds.length || !row.rowId.match(/^(?:cost|raw|service|fees):/)) return null;
+  if (!thresholds.length) return null;
   const threshold = lastLowerBandToken(row, structuredTiers);
   const low = threshold === null;
   // Explicit conditional fee descriptions provide their own direction.
@@ -277,7 +292,7 @@ function RateTable({
   common: Record<string, unknown>;
 }) {
   const groupName = rateSection(rows[0]);
-  const unitName = priceUnit(rows[0].unit, locale);
+  const unitName = rows[0].unit ? priceUnit(rows[0].unit, locale) : msg(locale, 'unknownUnit');
   const hasConditions = rows.some(
     (row) =>
       row.tier ||
@@ -335,10 +350,11 @@ function RateTable({
                 term?.retentionMinutes === undefined
                   ? ''
                   : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
+              const amountPrefix = row.approximate ? '≈' : '';
               const source =
                 row.amount === null
                   ? (row.sourceValue ?? '—')
-                  : exactMoney(row.amount, row.currency);
+                  : amountPrefix + exactMoney(row.amount, row.currency);
               return (
                 <tr
                   key={row.rowId}
@@ -361,7 +377,9 @@ function RateTable({
                     )}
                   </td>
                   <td className="px-2.5 py-2 tabular-nums">
-                    {row.cnyAmount === null ? '—' : exactMoney(row.cnyAmount, row.cnyCurrency)}
+                    {row.cnyAmount === null
+                      ? '—'
+                      : amountPrefix + exactMoney(row.cnyAmount, row.cnyCurrency)}
                   </td>
                   {hasConditions && (
                     <td className="px-2.5 py-2 space-y-1">
@@ -413,6 +431,15 @@ function QuoteArticle({
   }
   const date = quote.source.checkedAt ?? quote.source.snapshotAt;
   const digest = quote.source.recordSha256 ?? quote.source.sha256 ?? quote.source.upstreamSha;
+  const hasRate = quote.displayRows.some(
+    ({ amount, sourceValue }) => amount !== null || !!sourceValue,
+  );
+  const statusLabel = quoteStatus(quote.status, locale);
+  const badgeLabel = quote.syncable
+    ? msg(locale, 'selected')
+    : hasRate
+      ? msg(locale, 'reference')
+      : statusLabel;
   return (
     <article
       className="min-w-0 rounded-lg border bg-card px-3 py-2.5 sm:px-4"
@@ -425,7 +452,7 @@ function QuoteArticle({
         <summary className="cursor-pointer leading-relaxed break-words">
           <h3 className="inline text-sm font-semibold">{quote.priceList}</h3>
           <Badge className="ml-2 align-middle" variant={quote.syncable ? 'default' : 'secondary'}>
-            {msg(locale, quote.syncable ? 'selected' : 'reference')}
+            {badgeLabel}
           </Badge>
         </summary>
         <div className="mt-2 space-y-3 text-xs break-words whitespace-normal">
@@ -489,9 +516,7 @@ function QuoteArticle({
             )}
           </div>
           <div className="space-y-0.5">
-            {!['ready', 'reference-only'].includes(quote.status) && (
-              <p>{quoteStatus(quote.status, locale)}</p>
-            )}
+            {hasRate && !['ready', 'reference-only'].includes(quote.status) && <p>{statusLabel}</p>}
             {quote.reason && <p>{quote.reason}</p>}
             {quote.originalCurrencyEligible === false && <p>{msg(locale, 'missingBasis')}</p>}
             {(quote.syncable || quote.verification?.officialPrice) && (

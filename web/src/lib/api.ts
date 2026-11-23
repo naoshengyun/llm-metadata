@@ -56,6 +56,7 @@ export interface DisplayPriceRow {
   usageKey: string;
   amount: number | null;
   sourceValue?: string;
+  approximate?: boolean;
   currency: string | null;
   unit: string | null;
   cnyAmount: number | null;

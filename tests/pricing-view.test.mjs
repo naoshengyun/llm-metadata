@@ -825,6 +825,60 @@ test('selected per-image models are not categorized as single-token', (t) => {
   assert.ok(row.categories.includes('multimedia-usage'));
 });
 
+test('fixed reviewed rates declare mutually exclusive branches and reject lost applicability', (t) => {
+  const read = buildCandidate(t);
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  for (const catalog of Object.values(catalogs)) {
+    for (const id of ['glm-4.7', 'glm-4.5-air']) {
+      const { pricing_view: view } = catalog.zhipuai.models[id];
+      const quote = view.groups.flatMap(({ quotes }) => quotes).find(({ syncable }) => syncable);
+      const rows = new Map(quote.displayRows.map((row) => [row.rowId, row]));
+      for (const key of ['input', 'output', 'cache_read']) {
+        assert.equal(rows.get('cost:' + key).conditions.minOutput, 200);
+        const short = rows.get('cost:short_output:' + key).conditions;
+        assert.deepEqual([short.maxInput, short.maxOutput], [31999, 199]);
+        assert.equal(rows.get('cost:tier-0:' + key).tier.size, 31999);
+        assert.equal(rows.get('cost:tier-0:' + key).conditions.minOutput, undefined);
+      }
+      delete rows.get('cost:input').conditions.minOutput;
+    }
+  }
+  const result = reconcileDisplayCoverage({
+    ...rawReconciliationInputs(),
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  });
+  for (const modelId of ['glm-4.7', 'glm-4.5-air'])
+    assert.ok(
+      result.failures.some(
+        (failure) => failure.modelId === modelId && failure.field === 'displayRows',
+      ),
+    );
+});
+
+test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
+  const read = buildCandidate(t);
+  const catalog = read('api/all.json');
+  const displayCoverage = read('display-coverage.json');
+  const rates = (view) =>
+    view.groups.flatMap(({ quotes }) => quotes).flatMap(({ displayRows }) => displayRows);
+  for (const { providerId, modelId, categories } of displayCoverage.models) {
+    const view = catalog[providerId].models[modelId].pricing_view;
+    if (rates(view).some(({ amount, sourceValue }) => amount !== null || sourceValue)) continue;
+    assert.equal(view.summary.kind, 'unavailable', providerId + '/' + modelId);
+    assert.ok(!categories.includes('reference-only'), providerId + '/' + modelId);
+  }
+  assert.equal(
+    catalog['alibaba-cn'].models['qwen3-asr-flash'].pricing_view.summary.status,
+    'missing',
+  );
+});
+
 test('coverage categories compose across the full catalog and retain lifecycle states', (t) => {
   const read = buildCandidate(t);
   const display = read('display-coverage.json');

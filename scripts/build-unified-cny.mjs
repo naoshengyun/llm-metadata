@@ -8,7 +8,12 @@ import { canonical, generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cn
 import { adaptPrice, domesticProviders, sha } from './upstream-cny.mjs';
 import { makeSnapshot } from './upstream-snapshot.mjs';
 import { verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
-import { buildDisplayData, pricingViewIdentity, reconcileDisplayCoverage } from './pricing-view.mjs';
+import {
+  buildDisplayData,
+  pricingViewIdentity,
+  reconcileDisplayCoverage,
+  SEEDANCE_REFERENCE_QUOTE_ID,
+} from './pricing-view.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const locales = ['en', 'zh', 'ja'];
@@ -540,7 +545,7 @@ function addSeedanceReference(official, policy, selection, records, quotes) {
   const providerId = 'volcengine';
   const held = official.excludedQuotes.find((entry) => entry.officialModel === modelId);
   if (!held?.rawFees?.rows?.length) throw Error('Missing full Seedance 2.5 reference tariff');
-  const quoteId = 'volcengine:' + modelId + ':official-reference';
+  const quoteId = SEEDANCE_REFERENCE_QUOTE_ID;
   const reason = 'seedance-4k-two-target-billing-cases-unverified';
   const previous = records.get(providerModel(providerId, modelId));
   const record = previous ?? {

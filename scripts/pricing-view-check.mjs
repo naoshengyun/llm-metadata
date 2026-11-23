@@ -89,6 +89,21 @@ function costNodes(node, path, ancestors = []) {
   ];
 }
 
+function ordinaryOutputApplicability(sheet, node, depth, usageKey) {
+  if (node !== sheet && (depth !== 2 || !sheet?.tiers?.includes(node))) return {};
+  const { maxInput, maxOutput } = sheet?.short_output ?? {};
+  if (!Number.isSafeInteger(maxInput) || !Number.isSafeInteger(maxOutput)) return {};
+  const edges = (sheet.tiers ?? [])
+    .filter((band) => Number.isFinite(band[usageKey]) && band.tier)
+    .map(({ tier }) => (tier.comparison === 'gte' ? tier.size : tier.size + 1));
+  const from = node.tier ? node.tier.size + (node.tier.comparison === 'gte' ? 0 : 1) : 0;
+  if (from > maxInput) return {};
+  const next = edges.filter((edge) => edge > from).sort((a, b) => a - b)[0];
+  return next <= maxInput + 1
+    ? { minOutput: maxOutput + 1 }
+    : { outsideShortOutput: { maxInput, maxOutput } };
+}
+
 function costRows(sheet, path, currency, unit, baseConditions) {
   return costNodes(sheet ?? {}, path).flatMap(({ path, node, lineage }) => {
     const metadata = Object.assign(
@@ -131,7 +146,11 @@ function costRows(sheet, path, currency, unit, baseConditions) {
       .filter((key) => Number.isFinite(node[key]))
       .map((key) => {
         const resolution = /^per_second_(.*)$/.exec(key)?.[1];
-        const conditions = resolution ? { ...metadata, resolution } : metadata;
+        const conditions = {
+          ...metadata,
+          ...(resolution ? { resolution } : {}),
+          ...ordinaryOutputApplicability(sheet, node, lineage.length, key),
+        };
         return expectedRow(
           path + ':' + key,
           key,
@@ -276,7 +295,8 @@ function explicitChargesInConditions(conditions, currency) {
 
 export function expectedDisplayRows(quote) {
   const source = quote.originalQuote ?? {};
-  const { sourcePrice, sourceUnit, sourceCurrency } = quote;
+  const { sourcePrice, sourceCurrency } = quote;
+  const sourceUnit = quote.sourceUnit ?? (quote.upstreamReportedCost ? 'per_million_tokens' : null);
   const originalConditions = source.conditions ?? quote.conditions;
   const conditions =
     typeof originalConditions === 'string'
@@ -348,6 +368,23 @@ export function expectedDisplayRows(quote) {
         ),
     );
   });
+  const imageEquivalents = (source.imageOutputEquivalents ?? []).flatMap((entry, index) =>
+    Number.isFinite(entry.publishedApproxUSD)
+      ? [
+          {
+            ...expectedRow(
+              'image-output-equivalent:' + index,
+              'image_output_equivalent',
+              entry.publishedApproxUSD,
+              'USD',
+              'per_image',
+              { ...conditions, resolution: entry.resolution, outputTokens: entry.outputTokens },
+            ),
+            approximate: true,
+          },
+        ]
+      : [],
+  );
   const reviewedPrices = [
     ...costRows(source.cost, 'cost', sourceCurrency, sourceUnit, conditions),
     ...chargedFees(
@@ -357,6 +394,7 @@ export function expectedDisplayRows(quote) {
     ),
     ...chargedFees(source.tools, 'tools', conditions),
     ...supplementalRates,
+    ...imageEquivalents,
   ];
   if (reviewedPrices.length) return reviewedPrices;
   if (Array.isArray(sourcePrice))
@@ -376,8 +414,8 @@ export function expectedDisplayRows(quote) {
   return result;
 }
 
-export function expectedPricingSummary(quote, status, hasQuotes) {
-  if (!quote) return { kind: hasQuotes ? 'reference-only' : 'unavailable', status };
+export function expectedPricingSummary(quote, status, hasReferenceRates) {
+  if (!quote) return { kind: hasReferenceRates ? 'reference-only' : 'unavailable', status };
 
   const identity = { quoteId: quote.quoteId, currency: 'CNY' };
   const source = quote.originalQuote;
@@ -451,6 +489,31 @@ export function expectedPricingSummary(quote, status, hasQuotes) {
   };
 }
 
+function reviewedDisplayQuote({ source, normalized }) {
+  return (
+    normalized ?? {
+      originalQuote: source,
+      sourcePrice:
+        source.cost ??
+        source.candidateCost ??
+        source.fees ??
+        source.rawFees ??
+        source.raw ??
+        source.tools,
+      sourceCurrency: source.currency,
+      sourceUnit: source.unit ?? source.rawFees?.unit,
+    }
+  );
+}
+
+function hasRate(rows) {
+  return rows.some((row) => Number.isFinite(row.amount) || Boolean(row.sourceValue));
+}
+
+export function hasExpectedReferenceRates(records) {
+  return records.some((record) => hasRate(expectedDisplayRows(reviewedDisplayQuote(record))));
+}
+
 export function expectedPricingCategories(records, selected, status, upstream) {
   const categories = new Set();
   if (['not-offered', 'deprecated', 'withdrawn', 'deferred'].includes(status))
@@ -464,19 +527,9 @@ export function expectedPricingCategories(records, selected, status, upstream) {
     return [...Object.keys(value), ...Object.values(value).flatMap(keysIn)];
   }
   for (const { source, normalized, sourceType, providerId, modelId } of records) {
-    const quote = normalized ?? {
-      originalQuote: source,
-      sourcePrice:
-        source.cost ??
-        source.candidateCost ??
-        source.fees ??
-        source.rawFees ??
-        source.raw ??
-        source.tools,
-      sourceCurrency: source.currency,
-      sourceUnit: source.unit ?? source.rawFees?.unit,
-    };
-    if (!normalized?.selected) categories.add('reference-only');
+    const quote = reviewedDisplayQuote({ source, normalized });
+    const displayRows = expectedDisplayRows(quote);
+    if (!normalized?.selected && hasRate(displayRows)) categories.add('reference-only');
     const endpoint =
       normalized?.endpoint ??
       source.endpoint ??
@@ -529,7 +582,7 @@ export function expectedPricingCategories(records, selected, status, upstream) {
         : (source.status ?? 'reference-only'));
     if (['pending-effective', 'withdrawn', 'deferred'].includes(quoteStatus))
       categories.add(quoteStatus);
-    for (const { usageKey, unit } of expectedDisplayRows(quote)) {
+    for (const { usageKey, unit } of displayRows) {
       const mediaUnit = [
         'per_second',
         'per_count',

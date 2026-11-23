@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { sha } from './upstream-cny.mjs';
-import { checkDisplayPricing } from './check-display-pricing.mjs';
+import { checkDisplayPricing, checkPricingReviewFindings } from './check-display-pricing.mjs';
 
 const [sitePath, playwrightPath, evidenceDir] = process.argv.slice(2);
 assert.ok(
@@ -526,6 +526,16 @@ try {
         locale,
         coverage: structuredCoverage,
         snapshot: (page, name) => snapshot(page, viewport.width, name),
+      });
+      structured[locale].reviewFindings = await checkPricingReviewFindings({
+        page,
+        goto,
+        select,
+        current,
+        checkStatusUrl,
+        respond: (response) => {
+          statusResponse = response;
+        },
       });
     };
     if (structuredCoverage) {

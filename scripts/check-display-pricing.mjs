@@ -352,3 +352,201 @@ export async function checkDisplayPricing({
   assert.deepEqual(Object.keys(evidence).sort(), [...allCategories].sort());
   return { visibleRows, evidence };
 }
+
+export async function checkPricingReviewFindings({
+  page,
+  goto,
+  select,
+  current,
+  respond,
+  checkStatusUrl,
+}) {
+  const visit = async (provider, model) => {
+    await goto(select(provider, model));
+    await page
+      .locator(`[data-pricing-provider="${provider}"][data-pricing-model="${model}"]`)
+      .first()
+      .waitFor();
+  };
+  const row = (quote, id) => quote.locator(`[data-pricing-row="${id}"]`);
+  const findings = [];
+  const verify = async (name, check) => {
+    try {
+      await check();
+    } catch (error) {
+      findings.push(name + ' – ' + error.message);
+    }
+  };
+
+  await verify('Zhipu short-output rate exclusivity', async () => {
+    for (const model of ['glm-4.7', 'glm-4.5-air']) {
+      await visit('zhipuai', model);
+      const selected = page.locator('[data-syncable="true"]');
+      for (const meter of ['input', 'output', 'cache_read']) {
+        const ordinary = row(selected, 'cost:' + meter);
+        const short = row(selected, 'cost:short_output:' + meter);
+        const high = row(selected, 'cost:tier-0:' + meter);
+        const outputFloor = ordinary.locator('[data-condition="minOutput"]');
+        assert.equal(
+          await outputFloor.count(),
+          1,
+          model + ' ordinary ' + meter + ' must exclude the short-output request',
+        );
+        assert.match(await outputFloor.innerText(), /200/);
+        assert.match(await ordinary.locator('[data-tier-condition]').innerText(), /31999/);
+        assert.match(await short.locator('[data-condition="maxOutput"]').innerText(), /199/);
+        assert.match(await short.locator('[data-condition="maxInput"]').innerText(), /31999/);
+        assert.match(await high.locator('[data-tier-condition]').innerText(), /32000/);
+        assert.equal(await high.locator('[data-condition="minOutput"]').count(), 0);
+      }
+      if (model === 'glm-4.7') {
+        assert.equal(
+          await row(selected, 'cost:short_output:input').getAttribute('data-cny-amount'),
+          '2',
+        );
+        assert.equal(
+          await row(selected, 'cost:short_output:output').getAttribute('data-cny-amount'),
+          '8',
+        );
+      }
+    }
+  });
+  await verify('Volcengine raw token tariff bands', async () => {
+    for (const model of ['doubao-seed-2-0-pro-260215', 'doubao-seed-2-0-code-preview-260215']) {
+      await visit('volcengine', model);
+      const reference = page.locator('[data-quote-status="reference-only"]');
+      for (const [id, amount, bounds] of [
+        ['input', '3.2', /32000/],
+        ['tier-0:input', '4.8', /32001.*128000/],
+        ['tier-1:input', '9.6', /128001/],
+      ]) {
+        const charge = row(reference, 'raw-fees:token:' + id);
+        assert.equal(await charge.getAttribute('data-cny-amount'), amount);
+        const condition = charge.locator('[data-tier-condition]');
+        assert.equal(await condition.count(), 1, model + ' ' + id + ' has no condition');
+        assert.match(await condition.innerText(), bounds);
+      }
+    }
+  });
+  await verify('Seedance 4K daily status identity', async () => {
+    const modelId = 'doubao-seedance-2-5-260628';
+    await visit('volcengine', modelId);
+    const attemptedAt = '2026-11-21T01:47:00.000Z';
+    const lastSuccess = '2026-11-20T01:47:00.000Z';
+    const quoteId = 'volcengine:' + modelId + ':official-reference';
+    respond({
+      schemaVersion: 1,
+      publishedVersion: { candidateId: current.releaseId, sourceSha: current.sourceSha },
+      attemptedAt,
+      runtime: { url: 'https://github.com/naoshengyun/llm-metadata/actions/runs/1' },
+      results: [
+        {
+          quoteId,
+          identity: { providerId: 'volcengine', modelId },
+          status: 'failed',
+          latestAttemptedAt: attemptedAt,
+          latestSuccessfulAt: lastSuccess,
+        },
+      ],
+    });
+    const response = page.waitForResponse(checkStatusUrl);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await (await response).finished();
+    const held = page.locator('[data-quote-status="validation-held"]');
+    assert.equal(await held.getAttribute('data-quote-id'), quoteId);
+    const status = held.locator('[data-official-check="failed"]');
+    await status.waitFor({ timeout: 3500 });
+    assert.deepEqual(
+      await status.locator('time').evaluateAll((nodes) => nodes.map((node) => node.dateTime)),
+      [attemptedAt, lastSuccess],
+    );
+    assert.deepEqual(
+      await held
+        .locator('[data-pricing-row]')
+        .evaluateAll((rows) => rows.map((rate) => rate.dataset.sourceAmount)),
+      ['31', '19'],
+    );
+    assert.equal(
+      await page.locator('[data-syncable="true"] [data-official-check="failed"]').count(),
+      0,
+    );
+  });
+  await verify('MiniMax official service tier titles', async () => {
+    await visit('minimax-cn', 'MiniMax-M3');
+    const references = page.locator('[data-quote-status="incomplete"]');
+    for (const [title, amount] of [
+      ['Standard', '2.1'],
+      ['Priority', '3.15'],
+    ]) {
+      const quote = references.filter({
+        has: page.locator(`[data-pricing-row="raw-fees:0:input"][data-cny-amount="${amount}"]`),
+      });
+      assert.match(await quote.locator('summary h3').first().innerText(), new RegExp(title, 'i'));
+    }
+  });
+  await verify('No reference price when there are no monetary rows', async () => {
+    await visit('alibaba-cn', 'qwen3-asr-flash');
+    assert.equal(await page.locator('[data-pricing-row]').count(), 0);
+    assert.equal(
+      await page
+        .locator('[data-pricing-provider="alibaba-cn"][data-pricing-model="qwen3-asr-flash"]')
+        .getAttribute('data-pricing-summary'),
+      'unavailable',
+    );
+  });
+  await verify('Perplexity token billing unit', async () => {
+    await visit('perplexity', 'sonar-deep-research');
+    for (const [key, amount] of [
+      ['input', '14'],
+      ['output', '56'],
+      ['reasoning', '21'],
+    ]) {
+      const charge = page.locator(`[data-pricing-row="cost:${key}"]`);
+      assert.equal(await charge.getAttribute('data-cny-amount'), amount);
+      assert.equal(await charge.getAttribute('data-unit'), 'per_million_tokens');
+      assert.doesNotMatch(await charge.locator('th').innerText(), /—/);
+    }
+  });
+  await verify('Gemini per-image equivalents, resolution and token counts', async () => {
+    for (const [model, expected] of [
+      [
+        'gemini-3-pro-image',
+        [
+          [0.134, '1K/2K', 1120],
+          [0.24, '4K', 2000],
+        ],
+      ],
+      [
+        'gemini-3.1-flash-image',
+        [
+          [0.045, '0.5K', 747],
+          [0.067, '1K', 1120],
+          [0.101, '2K', 1680],
+          [0.151, '4K', 2520],
+        ],
+      ],
+      ['gemini-3.1-flash-lite-image', [[0.0336, '1K', 1120]]],
+    ]) {
+      await visit('google', model);
+      const rates = page.locator('[data-pricing-row^="image-output-equivalent:"]');
+      assert.equal(await rates.count(), expected.length, model);
+      for (const [index, [amount, resolution, tokens]] of expected.entries()) {
+        const rate = rates.nth(index);
+        assert.equal(await rate.getAttribute('data-source-amount'), String(amount));
+        assert.equal(await rate.getAttribute('data-source-currency'), 'USD');
+        assert.equal(await rate.getAttribute('data-unit'), 'per_image');
+        assert.match(await rate.innerText(), /≈/);
+        assert.ok(
+          (await rate.locator('[data-condition="resolution"]').innerText()).includes(resolution),
+        );
+        assert.ok(
+          (await rate.locator('[data-condition="outputTokens"]').innerText()).includes(
+            String(tokens),
+          ),
+        );
+      }
+    }
+  });
+  assert.deepEqual(findings, [], findings.join('\n'));
+  return { findings: 7, passed: true };
+}

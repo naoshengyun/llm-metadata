@@ -11,12 +11,16 @@ import {
   expectedDisplayRows,
   expectedPricingSummary,
   expectedPricingCategories,
+  hasExpectedReferenceRates,
 } from './pricing-view-check.mjs';
 
 const identity = (providerId, modelId) => JSON.stringify([providerId, modelId]);
 const officialSourceId = (record) => 'official-record:' + record.id;
 const referenceSourceId = (record) => 'reviewed-reference:' + (record.id ?? hash(record));
-const referenceQuoteId = (record) => referenceSourceId(record);
+export const SEEDANCE_REFERENCE_QUOTE_ID =
+  'volcengine:doubao-seedance-2-5-260628:official-reference';
+const referenceQuoteId = (record) =>
+  isSeedanceTable(record) ? SEEDANCE_REFERENCE_QUOTE_ID : referenceSourceId(record);
 const METER_UNITS = {
   per_image: 'per_image',
   per_10k_chars: 'per_10k_chars',
@@ -65,6 +69,42 @@ function displayRow(rowId, usageKey, amount, currency, unit, conditions, tier) {
     ...(tier ? { tier } : {}),
   };
 }
+
+// The ordinary branch applies outside len <= maxInput && output <= maxOutput.
+function markOrdinaryOutputBands(rows, cost, prefix) {
+  const short = cost?.short_output;
+  if (!Number.isSafeInteger(short?.maxInput) || !Number.isSafeInteger(short?.maxOutput))
+    return rows;
+
+  const lastLowerToken = (tier) => tier.size - (tier.comparison === 'gte' ? 1 : 0);
+  const baseAndTiers = rows.filter(
+    ({ rowId }) =>
+      rowId.startsWith(prefix + ':') &&
+      /^(?:tier-\d+:)?[^:]+$/.test(rowId.slice(prefix.length + 1)),
+  );
+  for (const row of baseAndTiers) {
+    const start = row.tier ? lastLowerToken(row.tier) + 1 : 0;
+    if (start > short.maxInput) continue;
+    const nextThreshold = Math.min(
+      ...baseAndTiers
+        .filter(
+          ({ usageKey, tier }) =>
+            usageKey === row.usageKey && tier && lastLowerToken(tier) >= start,
+        )
+        .map(({ tier }) => lastLowerToken(tier)),
+    );
+    row.conditions = {
+      ...row.conditions,
+      ...(nextThreshold <= short.maxInput
+        ? { minOutput: short.maxOutput + 1 }
+        : { outsideShortOutput: { maxInput: short.maxInput, maxOutput: short.maxOutput } }),
+    };
+  }
+  return rows;
+}
+
+const hasDisplayRate = (rows) =>
+  rows.some(({ amount, sourceValue }) => amount !== null || Boolean(sourceValue));
 
 function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
   const rows = [];
@@ -134,7 +174,7 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
     }
   };
   visit(cost, prefix, conditions, undefined);
-  return rows;
+  return markOrdinaryOutputBands(rows, cost, prefix);
 }
 
 function feeDisplayRows(fees, prefix, conditions) {
@@ -340,7 +380,10 @@ function displayRowsFor(quote) {
   const source = quote.originalQuote;
   const conditions = structuredConditions(source?.conditions ?? quote.conditions);
   const currency = quote.sourceCurrency ?? source?.currency;
-  const unit = quote.sourceUnit ?? source?.unit;
+  // The fixed upstream CostFamilyCells schema declares token rates per million,
+  // even when adaptPrice cannot classify or compile the complete sheet.
+  const unit =
+    quote.sourceUnit ?? source?.unit ?? (quote.upstreamReportedCost ? 'per_million_tokens' : null);
   if (source?.kind === 'task' || quote.outputKind === 'task-model')
     return taskDisplayRows(quote.sourcePrice, conditions);
   const rows = [];
@@ -354,6 +397,22 @@ function displayRowsFor(quote) {
       ),
     );
   if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools', conditions));
+  for (const [index, equivalent] of (source?.imageOutputEquivalents ?? []).entries()) {
+    const { publishedApproxUSD, resolution, outputTokens } = equivalent;
+    if (Number.isFinite(publishedApproxUSD)) {
+      rows.push({
+        ...displayRow(
+          'image-output-equivalent:' + index,
+          'image_output_equivalent',
+          publishedApproxUSD,
+          'USD',
+          'per_image',
+          { ...conditions, resolution, outputTokens },
+        ),
+        approximate: true,
+      });
+    }
+  }
 
   if (source?.raw) {
     for (const row of paidTierRows(
@@ -399,7 +458,14 @@ function displayRowsFor(quote) {
 
 function summaryFor(selectedQuote, status, groups) {
   if (!selectedQuote)
-    return groups.length ? { kind: 'reference-only', status } : { kind: 'unavailable', status };
+    return {
+      kind: groups.some(({ quotes }) =>
+        quotes.some(({ displayRows }) => hasDisplayRate(displayRows)),
+      )
+        ? 'reference-only'
+        : 'unavailable',
+      status,
+    };
   if (selectedQuote.outputKind === 'task-model') {
     const rows = displayRowsFor(selectedQuote);
     const units = [...new Set(rows.map(({ unit }) => unit).filter(Boolean))].sort();
@@ -581,7 +647,6 @@ function categoriesFor(status, quotes, selectedQuote) {
   if (['not-offered', 'deprecated', 'withdrawn', 'deferred', 'excluded'].includes(status))
     categories.add(status === 'excluded' ? 'scope-excluded' : status);
   if (!selectedQuote) categories.add('no-current-price');
-  if (quotes.some((quote) => !quote.selected)) categories.add('reference-only');
   const tiers = new Set(quotes.map(serviceTier).filter(Boolean));
   if (
     tiers.size > 1 ||
@@ -610,7 +675,8 @@ function categoriesFor(status, quotes, selectedQuote) {
       categories.add('token-tiers');
     if (quote.outputKind === 'task-model' || source?.task)
       categories.add('task-conditions').add('multimedia-usage');
-    const displayRows = quote.displayRows ?? displayRowsFor(quote);
+    const displayRows = quote.displayRows;
+    if (!quote.selected && hasDisplayRate(displayRows)) categories.add('reference-only');
     if (displayRows.some(isMultimediaCharge)) categories.add('multimedia-usage');
     for (const quoteStatus of ['pending-effective', 'withdrawn', 'deferred'])
       if (quote.status === quoteStatus) categories.add(quoteStatus);
@@ -669,7 +735,9 @@ function referenceQuote(record, current, policy, selectedQuote) {
       record.priceList ??
       (isSeedanceTable(record)
         ? 'Volcengine Ark / mainland / online'
-        : 'Reviewed official reference'),
+        : record.officialServiceTier
+          ? record.officialServiceTier[0].toUpperCase() + record.officialServiceTier.slice(1)
+          : 'Reviewed official reference'),
     endpoint: record.endpoint ?? current.upstreamPrice?.endpoint ?? null,
     sourceCurrency: record.currency ?? null,
     sourcePrice,
@@ -767,11 +835,7 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
       : [
           ...record.quoteIds
             .map((quoteId) => quotes.get(quoteId))
-            .filter(
-              (quote) =>
-                quote &&
-                quote.quoteId !== 'volcengine:doubao-seedance-2-5-260628:official-reference',
-            )
+            .filter((quote) => quote && quote.quoteId !== SEEDANCE_REFERENCE_QUOTE_ID)
             .map((quote) => ({ ...quote, sourceRecordId: officialSourceId(quote.originalQuote) })),
           ...(record.upstreamPrice
             ? [
@@ -815,7 +879,11 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
       nativeKey: record.nativeKey ?? record.modelId,
       status: record.status,
       reason: record.reason ?? null,
-      categories: categoriesFor(record.status, modelQuotes, selectedQuote),
+      categories: categoriesFor(
+        record.status,
+        groups.flatMap(({ quotes }) => quotes),
+        selectedQuote,
+      ),
       quoteIds: modelQuotes.map((quote) => quote.quoteId),
       selectedQuoteId: selectedQuote?.quoteId ?? null,
       groups: groups.map(({ groupId, quotes }) => ({
@@ -1489,7 +1557,13 @@ export function reconcileDisplayCoverage({
       );
     if (
       canonical(view.summary) !==
-      canonical(expectedPricingSummary(selectedQuote, model.status, reviewedByModel.has(key)))
+      canonical(
+        expectedPricingSummary(
+          selectedQuote,
+          model.status,
+          !selectedQuote && hasExpectedReferenceRates(reviewedByModel.get(key) ?? []),
+        ),
+      )
     )
       fail('summary-mismatch', 'Pricing summary differs from selected quote for ' + key, detail);
   }
@@ -1598,7 +1672,10 @@ export function reconcileDisplayCoverage({
       const priceList =
         normalized?.priceList ??
         source.priceList ??
-        (seedance ? 'Volcengine Ark / mainland / online' : 'Reviewed official reference');
+        (seedance
+          ? 'Volcengine Ark / mainland / online'
+          : source.officialServiceTier?.replace(/^./, (initial) => initial.toUpperCase()) ||
+            'Reviewed official reference');
       const endpoint = normalized
         ? normalized.endpoint
         : (source.endpoint ??
@@ -1712,7 +1789,8 @@ export function reconcileDisplayCoverage({
           },
           actual.verification,
         ]);
-      const expectedQuoteId = normalized?.quoteId ?? referenceQuoteId(source);
+      const expectedQuoteId =
+        normalized?.quoteId ?? (seedance ? SEEDANCE_REFERENCE_QUOTE_ID : referenceSourceId(source));
       fields.push([
         'location',
         { providerId, modelId, quoteId: expectedQuoteId, groupId: 'quote:' + expectedQuoteId },
