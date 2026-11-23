@@ -443,7 +443,7 @@ try {
     );
     await expectVisible(
       page
-        .getByText('actual charged token usage is API usage.completion_tokens', { exact: false })
+        .getByText('output token count reported by the API', { exact: false })
         .first(),
     );
     await expectVisible(

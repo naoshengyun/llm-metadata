@@ -171,7 +171,14 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText(),
       /100001/,
     );
-    assert.match(await selected.innerText(), /ordinary input plus cache reads and writes/);
+    assert.match(
+      await selected.locator('[data-price-description]').innerText(),
+      {
+        en: /100,000 prompt tokens, including cache reads and writes/,
+        zh: /100,000 Token（含缓存读写）/,
+        ja: /キャッシュ読書込を含むプロンプトが100,000トークン/,
+      }[locale],
+    );
     const all = view.groups.flatMap(({ quotes }) => quotes);
     const batch = quoteAt(page, all.find(({ priceList }) => priceList.startsWith('Batch')).quoteId);
     await batch.locator('[data-pricing-row="cost:cache_read"]').waitFor();
@@ -211,8 +218,12 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
       ],
     );
     assert.match(
-      await held.innerText(),
-      /actual charged token usage is API usage.completion_tokens/,
+      await held.locator('[data-condition="minimumUsage"]').innerText(),
+      {
+        en: /output token count reported by the API/,
+        zh: /接口返回的输出 Token 数/,
+        ja: /APIが返す出力トークン数/,
+      }[locale],
     );
     assert.match(await held.innerText(), /Draft and final are two separately charged tasks/);
   } else if (modelId === 'wan3.0-video') {
@@ -456,6 +467,79 @@ export async function checkPricingReviewFindings({
         assert.ok(await card.locator('[data-audit-reason]').isVisible());
         assert.ok((await card.locator('[data-audit-reason]').innerText()).includes(original));
       }
+    },
+  );
+
+  await verify(
+    'Technical descriptions stay in audit with readable billing conditions',
+    async () => {
+      for (const model of [
+        'doubao-seedance-2-0-260128',
+        'doubao-seedance-2-0-fast-260128',
+        'doubao-seedance-2-0-mini-260615',
+      ]) {
+        await visit('volcengine', model);
+        const card = page.locator(
+          `[data-quote-id="volcengine--${model}--cn-beijing-task-online-original"]`,
+        );
+        const disclosure = card.locator('details').first();
+        if ((await disclosure.getAttribute('open')) === null)
+          await disclosure.locator('summary').first().click();
+        assert.doesNotMatch(
+          await card.innerText(),
+          /usage[.]completion_tokens|fixed schema condition|Last unconditional fallback/,
+        );
+        const description = await card.locator('[data-price-description]').innerText();
+        assert.match(
+          description,
+          { en: /reported output tokens/, zh: /返回的输出 Token/, ja: /返された出力トークン/ }[
+            locale
+          ],
+        );
+        assert.match(description, { en: /minimum/, zh: /最低/, ja: /最低/ }[locale]);
+        assert.match(
+          description,
+          { en: /Failed generations are free/, zh: /生成失败不收费/, ja: /生成失敗は無料/ }[locale],
+        );
+        await card.locator('[data-price-audit] > summary').click();
+        assert.match(
+          await card.locator('[data-audit-description]').innerText(),
+          /Last unconditional fallback/,
+        );
+      }
+      await visit('volcengine', 'doubao-seedance-2-5-260628');
+      const minimum = page.locator('[data-condition="minimumUsage"]').first();
+      await minimum.evaluate((node) => {
+        for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+          if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+      });
+      assert.doesNotMatch(await minimum.innerText(), /usage[.]completion_tokens/);
+      assert.match(
+        await minimum.innerText(),
+        { en: /aspect ratio and duration/, zh: /宽高比和时长/, ja: /縦横比・時間/ }[locale],
+      );
+      await visit('openai', 'gpt-image-2.5-sunburst');
+      const image = page.locator(
+        '[data-quote-id="us-openai-gpt-image-2.5-sunburst-direct-images-standard"]',
+      );
+      const details = image.locator('details').first();
+      if ((await details.getAttribute('open')) === null)
+        await details.locator('summary').first().click();
+      assert.doesNotMatch(await image.innerText(), /usage[.]output_tokens|img_o|ordinary c meter/);
+      const summary = await image.locator('[data-price-description]').innerText();
+      assert.match(summary, /100/);
+      assert.match(
+        summary,
+        { en: /No cached rate applies/, zh: /不适用缓存价/, ja: /キャッシュ料金は適用されません/ }[
+          locale
+        ],
+      );
+      await image.locator('[data-price-audit] > summary').click();
+      assert.match(
+        await image.locator('[data-audit-description]').innerText(),
+        /usage[.]output_tokens/,
+      );
     },
   );
 
@@ -830,5 +914,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 19, passed: true };
+  return { findings: 20, passed: true };
 }

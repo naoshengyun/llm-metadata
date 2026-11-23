@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import type { DisplayPriceQuote, DisplayPriceRow, PricingView } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
 import { priceExplanation } from '@/lib/pricing-explanation';
+import { priceDescription } from '@/lib/pricing-description';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { officialCheckKey, type OfficialCheckView } from '@/lib/official-check';
 import {
@@ -150,6 +151,28 @@ function serviceOrder(quote: DisplayPriceQuote) {
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
   if (value === null || value === undefined) return '—';
+  if (
+    key === 'minimumUsage' &&
+    value ===
+      'Only successful video tasks are billed. Inputs that include video have a minimum token charge based on output resolution, aspect ratio, and duration. The actual charged token usage is API usage.completion_tokens.'
+  )
+    return localizePrice(
+      [
+        'Only successful video tasks are billed, using the output token count reported by the API. Video inputs have a minimum token charge based on output resolution, aspect ratio and duration.',
+        '仅成功的视频任务收费，按接口返回的输出 Token 数计费。输入视频的最低 Token 计费量取决于输出分辨率、宽高比和时长。',
+        '成功した動画タスクのみ、APIが返す出力トークン数で課金します。入力動画の最低トークン課金量は出力解像度・縦横比・時間によって決まります。',
+      ],
+      locale,
+    );
+  if (key === 'billingUsage' && value === 'usage.completion_tokens')
+    return localizePrice(
+      [
+        'Output tokens reported by the API',
+        '接口返回的输出 Token 数',
+        'API が返した出力トークン数',
+      ],
+      locale,
+    );
   if (key === 'fallback' && value === 'off_peak')
     return localizePrice(
       [
@@ -616,7 +639,11 @@ function QuoteArticle({
             )}
           </div>
           {children}
-          {quote.originalQuote?.description && <p>{quote.originalQuote.description}</p>}
+          {quote.originalQuote?.description && (
+            <p data-price-description>
+              {priceDescription(quote.originalQuote.description, locale)}
+            </p>
+          )}
           {Object.keys(tariffConditions).length > 0 && (
             <div className="space-y-1">
               <h4 className="font-medium">{msg(locale, 'conditions')}</h4>
@@ -627,6 +654,11 @@ function QuoteArticle({
             <summary className="cursor-pointer underline-offset-2 hover:underline">
               {msg(locale, 'audit')}
             </summary>
+            {quote.originalQuote?.description && (
+              <p className="mt-1" data-audit-description>
+                {quote.originalQuote.description}
+              </p>
+            )}
             {quote.reason && (
               <p className="mt-1" data-audit-reason>
                 {quote.reason}
