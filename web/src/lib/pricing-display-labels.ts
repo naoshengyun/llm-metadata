@@ -263,6 +263,7 @@ const condition: LabelMap = {
   amount: ['Amount', '金额', '金額'],
   deployment: ['Deployment', '部署', 'デプロイ'],
   durationSeconds: ['Duration in seconds', '时长（秒）', '長さ（秒）'],
+  eligibility: ['Eligibility', '适用条件', '適用条件'],
   excludeFromPeak: ['Excluded from peak periods', '高峰计费排除时段', 'ピーク時間帯から除外'],
   explicitCacheStorage: ['Explicit cache storage', '显式缓存存储', '明示キャッシュ保存'],
   fullSong: ['Full song', '完整歌曲', '楽曲全体'],

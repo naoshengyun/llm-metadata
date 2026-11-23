@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { reconcileDisplayCoverage } from '../scripts/pricing-view.mjs';
+import { buildDisplayData, reconcileDisplayCoverage } from '../scripts/pricing-view.mjs';
 
 function buildCandidate(t, editOfficial) {
   const directory = mkdtempSync(join(tmpdir(), 'pricing-view-test-'));
@@ -1231,6 +1231,79 @@ test('independent audit rejects a false currency basis or price explanation', (t
         failure.providerId === model.providerId &&
         failure.modelId === model.modelId &&
         failure.field === 'notDisplayedReason',
+    ),
+  );
+});
+
+test('model state and absence reason must match policy even when all candidate artifacts agree', (t) => {
+  const read = buildCandidate(t);
+  const inputs = rawReconciliationInputs();
+  const cases = [
+    [
+      'alibaba',
+      'qwen3-livetranslate-flash-realtime',
+      'not-offered',
+      'deprecated',
+      'model-deprecated',
+    ],
+    [
+      'alibaba',
+      'qwen3-livetranslate-flash-realtime',
+      'not-offered',
+      'not-offered',
+      'wrong-exclusion-reason',
+    ],
+    ['google', 'gemini-2.5-flash', 'deprecated', 'not-offered', 'naoshengyun-service-scope'],
+  ];
+  for (const [providerId, modelId, originalStatus, status, reason] of cases) {
+    const coverage = read('coverage.json');
+    const belongsToModel = (row) => row.providerId === providerId && row.modelId === modelId;
+    const record = coverage.models.find(belongsToModel);
+    assert.equal(record.status, originalStatus);
+    Object.assign(record, { status, reason });
+    const key = JSON.stringify([providerId, modelId]);
+    const regenerated = buildDisplayData({
+      records: new Map([[key, record]]),
+      quotes: new Map(coverage.quotes.map((quote) => [quote.quoteId, quote])),
+      selected: {},
+      official: inputs.official,
+      policy: inputs.policy,
+    });
+    const displayCoverage = read('display-coverage.json');
+    displayCoverage.models[displayCoverage.models.findIndex(belongsToModel)] =
+      regenerated.coverage.models[0];
+    const catalogs = localizedCatalogs(read);
+    for (const catalog of Object.values(catalogs)) {
+      catalog[providerId].models[modelId].pricing_view = structuredClone(
+        regenerated.views.get(key),
+      );
+    }
+    assert.equal(regenerated.coverage.models[0].notDisplayedReason, reason);
+    const result = reconcileDisplayCoverage({ ...inputs, coverage, displayCoverage, catalogs });
+    const fields = result.failures.filter(belongsToModel).map((failure) => failure.field);
+    if (originalStatus !== status)
+      assert.ok(fields.includes('status'), `${modelId}: expected a status mismatch`);
+    assert.ok(fields.includes('reason'), `${modelId}: expected a reason mismatch`);
+    assert.ok(
+      fields.includes('notDisplayedReason'),
+      `${modelId}: expected a no-display reason mismatch`,
+    );
+  }
+  const catalogs = localizedCatalogs(read);
+  const modelId = 'qwen3-livetranslate-flash-realtime';
+  catalogs.ja.alibaba.models[modelId].cnyPrice.status = 'deprecated';
+  const result = reconcileDisplayCoverage({
+    ...inputs,
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  });
+  assert.ok(
+    result.failures.some(
+      (failure) =>
+        failure.modelId === modelId &&
+        failure.locale === 'ja' &&
+        failure.field === 'cnyPrice.status',
     ),
   );
 });

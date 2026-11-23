@@ -1283,10 +1283,51 @@ function officialExpectations(official, policy, selection, upstream) {
   return expectations;
 }
 
-function referenceExclusionReason(source, current, policy) {
+function expectedModelDisposition(
+  source,
+  policy,
+  { selected, officialChoice, hasDomestic, seedanceHeld },
+) {
+  const { providerId, modelId, domestic, status, reason } = source;
+  if (policy.notOfferedModels?.includes(modelId))
+    return { status: 'not-offered', reason: 'naoshengyun-service-scope' };
+  if (seedanceHeld && modelId === 'doubao-seedance-2-5-260628')
+    return providerId === 'volcengine'
+      ? { status: 'validation-held', reason: 'seedance-4k-two-target-billing-cases-unverified' }
+      : { status, reason };
+
+  const lifecycle = policy.lifecycle[modelId]?.at(-1);
+  if (lifecycle?.state === 'withdrawn') {
+    const deprecated = lifecycle.reason === 'model-deprecated';
+    return {
+      status: deprecated ? 'deprecated' : 'withdrawn',
+      reason: lifecycle.reason ?? 'official-price-withdrawn',
+    };
+  }
+  const exclusion = policy.nativeCapabilityExclusions?.[modelId];
+  if (exclusion) return { status: 'unsupported', reason: exclusion.reason };
+  if (selected) return { status: 'selected', reason: null };
+  if (status !== 'eligible') return { status, reason };
+  if (officialChoice && officialChoice.outputKind !== 'tool-reference')
+    return { status: 'not-selected', reason: 'explicit-official-price-selected' };
+  if (policy.ineligibleUpstream[modelId])
+    return {
+      status: 'excluded',
+      reason: 'source-currency-correction-requires-explicit-official-quote',
+    };
+  return {
+    status: 'not-selected',
+    reason:
+      !policy.upstreamSelection[modelId] && hasDomestic && !domestic
+        ? 'domestic-price-identity-preferred'
+        : 'another-price-identity-selected',
+  };
+}
+
+function referenceExclusionReason(source, inCatalog, policy) {
   const modelId = source.officialModel ?? source.model;
   if (!reviewedProvider(source) || !modelId) return 'source-record-identity-incomplete';
-  if (!current) return 'model-not-in-current-catalog';
+  if (!inCatalog) return 'model-not-in-current-catalog';
   if (policy.notOfferedModels?.includes(modelId)) return 'model-not-offered';
   const event = policy.lifecycle[modelId]?.at(-1);
   if (event?.state === 'withdrawn' && event.reason === 'model-deprecated')
@@ -1337,8 +1378,8 @@ export function reconcileDisplayCoverage({
       });
     models.set(key, row);
   }
-  const expectedModelKeys = new Set(
-    upstreamPrices.rows.map((row) => identity(row.providerId, row.modelId)),
+  const sourceModels = new Map(
+    upstreamPrices.rows.map((row) => [identity(row.providerId, row.modelId), row]),
   );
   for (const quote of official.records) {
     if (quote.kind === 'tool') continue;
@@ -1348,13 +1389,37 @@ export function reconcileDisplayCoverage({
       upstreamPrices.excludedProviderIds.has(providerId)
     )
       continue;
-    expectedModelKeys.add(identity(providerId, quote.model));
+    const key = identity(providerId, quote.model);
+    if (!sourceModels.has(key))
+      sourceModels.set(key, {
+        providerId,
+        modelId: quote.model,
+        domestic: quote.origin === 'domestic',
+        status: 'not-selected',
+        reason: 'official-price-not-selected',
+      });
   }
-  for (const quote of official.excludedQuotes ?? []) {
-    if (quote.officialModel === 'doubao-seedance-2-5-260628')
-      expectedModelKeys.add(identity('volcengine', quote.officialModel));
-  }
-  for (const key of expectedModelKeys)
+  const seedanceModel = 'doubao-seedance-2-5-260628';
+  const seedanceKey = identity('volcengine', seedanceModel);
+  const hasSeedanceReference = official.excludedQuotes?.some(
+    (quote) => quote.officialModel === seedanceModel,
+  );
+  if (hasSeedanceReference && !sourceModels.has(seedanceKey))
+    sourceModels.set(seedanceKey, {
+      providerId: 'volcengine',
+      modelId: seedanceModel,
+      domestic: true,
+    });
+  const selectedSeedance = officialPrices.get(selection[seedanceModel]);
+  const seedanceHeld =
+    hasSeedanceReference &&
+    (selectedSeedance?.providerId !== 'volcengine' ||
+      selectedSeedance.modelId !== seedanceModel ||
+      selectedSeedance.outputKind === 'tool-reference');
+  const domesticModels = new Set(
+    [...sourceModels.values()].filter((model) => model.domestic).map((model) => model.modelId),
+  );
+  for (const key of sourceModels.keys())
     if (!models.has(key)) {
       const [providerId, modelId] = JSON.parse(key);
       fail('missing-candidate-model', 'Raw catalog model missing from candidate: ' + key, {
@@ -1363,7 +1428,7 @@ export function reconcileDisplayCoverage({
       });
     }
   for (const key of models.keys())
-    if (!expectedModelKeys.has(key)) {
+    if (!sourceModels.has(key)) {
       const [providerId, modelId] = JSON.parse(key);
       fail('unexpected-candidate-model', 'Candidate model absent from raw catalog: ' + key, {
         providerId,
@@ -1521,14 +1586,14 @@ export function reconcileDisplayCoverage({
   for (const source of official.records ?? []) {
     const providerId = policy.providerAliases[source.provider] ?? source.provider;
     const key = identity(providerId, source.model);
-    const current = models.get(key);
+    const inCatalog = sourceModels.has(key);
     const normalized = officialPrices.get(source.id);
     let reason = null;
     if (source.kind === 'tool') reason = 'tool-reference-not-model-priced';
-    else if (!current) reason = 'source-record-not-in-display-catalog';
+    else if (!inCatalog) reason = 'source-record-not-in-display-catalog';
     else if (normalized.status === 'not-offered') reason = 'model-not-offered';
     else if (normalized.status === 'deprecated') reason = 'model-deprecated';
-    if (current && source.kind !== 'tool' && !coverageQuotes.has(source.id))
+    if (inCatalog && source.kind !== 'tool' && !coverageQuotes.has(source.id))
       fail('missing-candidate-quote', 'Raw official quote missing from candidate: ' + source.id, {
         sourceRecordId: officialSourceId(source),
         providerId,
@@ -1541,7 +1606,6 @@ export function reconcileDisplayCoverage({
       providerId,
       modelId: source.model,
       normalized,
-      current,
       reason,
     });
   }
@@ -1551,7 +1615,7 @@ export function reconcileDisplayCoverage({
       ? (policy.providerAliases[sourceProviderId] ?? sourceProviderId)
       : null;
     const modelId = source.officialModel ?? source.model ?? null;
-    const current = providerId && modelId ? models.get(identity(providerId, modelId)) : null;
+    const inCatalog = providerId && modelId && sourceModels.has(identity(providerId, modelId));
     const selectedQuote = selectedByModel.get(identity(providerId, modelId));
     expectedSources.push({
       source,
@@ -1559,9 +1623,8 @@ export function reconcileDisplayCoverage({
       sourceRecordId: referenceSourceId(source),
       providerId,
       modelId,
-      current,
       selectedQuote,
-      reason: referenceExclusionReason(source, current, policy),
+      reason: referenceExclusionReason(source, inCatalog, policy),
     });
   }
   for (const source of official.optionalToolFees ?? [])
@@ -1574,7 +1637,6 @@ export function reconcileDisplayCoverage({
       reason: 'optional-tool-without-exact-model-identity',
     });
   for (const normalized of upstreamPrices.rows) {
-    const current = models.get(identity(normalized.providerId, normalized.modelId));
     expectedSources.push({
       source: normalized,
       sourceType: 'upstream',
@@ -1582,7 +1644,6 @@ export function reconcileDisplayCoverage({
       providerId: normalized.providerId,
       modelId: normalized.modelId,
       normalized,
-      current,
       reason:
         normalized.status === 'not-offered'
           ? 'model-not-offered'
@@ -1604,14 +1665,56 @@ export function reconcileDisplayCoverage({
     const selectedQuote = selectedByModel.get(key);
     const selectedQuoteId = selectedQuote?.quoteId ?? null;
     const detail = { providerId: model.providerId, modelId: model.modelId };
+    const sourceModel = sourceModels.get(key);
+    if (!sourceModel) continue;
+    const disposition = expectedModelDisposition(sourceModel, policy, {
+      selected: selectedQuote,
+      officialChoice: officialPrices.get(selection[model.modelId]),
+      hasDomestic: domesticModels.has(model.modelId),
+      seedanceHeld,
+    });
+    for (const field of ['status', 'reason']) {
+      if ((model[field] ?? null) !== (disposition[field] ?? null))
+        fail(
+          'model-policy-mismatch',
+          'Model state differs from reviewed inputs for ' + key + ':' + field,
+          {
+            ...detail,
+            field,
+            expected: disposition[field] ?? null,
+            actual: model[field] ?? null,
+          },
+        );
+    }
+    const expectedCnyState = {
+      status: disposition.status === 'selected' ? 'eligible' : disposition.status,
+      reason: disposition.reason,
+    };
+    for (const [locale, catalog] of Object.entries(catalogs)) {
+      const visible = catalog[model.providerId]?.models?.[model.modelId]?.cnyPrice;
+      for (const field of ['status', 'reason']) {
+        if ((visible?.[field] ?? null) !== (expectedCnyState[field] ?? null))
+          fail('model-policy-mismatch', 'Published model state differs for ' + locale + ':' + key, {
+            ...detail,
+            locale,
+            field: 'cnyPrice.' + field,
+            expected: expectedCnyState[field] ?? null,
+            actual: visible?.[field] ?? null,
+          });
+      }
+    }
     const reviewed = reviewedByModel.get(key) ?? [];
-    const expectedAbsence = reviewed.length ? null : (model.reason ?? 'no-displayable-price');
+    const expectedAbsence = reviewed.length ? null : (disposition.reason ?? 'no-displayable-price');
     if ((displayModels.get(key)?.notDisplayedReason ?? null) !== expectedAbsence)
       fail('model-coverage-mismatch', 'No-display reason differs from reviewed inputs for ' + key, {
         ...detail,
         field: 'notDisplayedReason',
       });
-    const expectedCategories = expectedPricingCategories(reviewed, selectedQuote, model.status);
+    const expectedCategories = expectedPricingCategories(
+      reviewed,
+      selectedQuote,
+      disposition.status,
+    );
     if (canonical(displayModels.get(key)?.categories ?? []) !== canonical(expectedCategories))
       fail('model-category-mismatch', 'Categories differ from reviewed inputs for ' + key, detail);
     if (
@@ -1628,8 +1731,8 @@ export function reconcileDisplayCoverage({
       canonical(
         expectedPricingSummary(
           selectedQuote,
-          model.status,
-          !selectedQuote && hasExpectedReferenceRates(reviewedByModel.get(key) ?? []),
+          disposition.status,
+          !selectedQuote && hasExpectedReferenceRates(reviewed),
         ),
       )
     )
@@ -1663,7 +1766,6 @@ export function reconcileDisplayCoverage({
       providerId,
       modelId,
       normalized,
-      current,
       selectedQuote,
       reason,
     } = expected;

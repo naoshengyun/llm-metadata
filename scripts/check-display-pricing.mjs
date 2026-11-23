@@ -734,6 +734,21 @@ export async function checkPricingReviewFindings({
       assert.match(await rate.locator('[data-tier-condition]').innerText(), expected);
     }
   });
+  await verify('StepFun legacy cache eligibility label is localized', async () => {
+    await visit('stepfun', 'step-5-preview');
+    const fee = row(page.locator('[data-syncable="true"]'), 'condition-fee:legacyCacheHit');
+    assert.equal(await fee.getAttribute('data-cny-amount'), '0.35');
+    assert.equal(await fee.getAttribute('data-unit'), 'per_million_tokens');
+    assert.equal(await fee.getByRole('cell').nth(1).innerText(), '¥0.35');
+    const condition = fee.locator('[data-condition="eligibility"]');
+    assert.ok(await condition.isVisible());
+    const label = { en: 'Eligibility', zh: '适用条件', ja: '適用条件' }[locale];
+    assert.equal(await condition.locator('span').innerText(), label);
+    assert.match(
+      await condition.innerText(),
+      /Used Step 5 Preview through the pay-as-you-go API before the effective time/,
+    );
+  });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 16, passed: true };
+  return { findings: 17, passed: true };
 }
