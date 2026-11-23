@@ -412,7 +412,7 @@ function RateTable({
               const tier = tierCondition(row, rows, locale);
               const term = quote.displayFeeTerms?.find(({ usageKey }) => usageKey === row.usageKey);
               const ttlLabel =
-                term?.retentionMinutes === undefined
+                term?.retentionMinutes === undefined || /^cache_write_\d+[hm]$/.test(row.usageKey)
                   ? ''
                   : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
               const amountPrefix = row.approximate ? '≈' : '';

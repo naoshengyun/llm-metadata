@@ -38,6 +38,66 @@ function rawReconciliationInputs() {
   };
 }
 
+test('cache retention comes from exact tariff evidence across the full catalog', (t) => {
+  const read = buildCandidate(t);
+  const catalog = read('api/all.json');
+  const official = JSON.parse(readFileSync('data/cny/official-catalog.json'));
+  let checked = 0;
+  for (const record of official.records) {
+    const seconds = record.conditions?.cacheWriteTtlSeconds;
+    const description = record.description ?? '';
+    const expected =
+      typeof seconds === 'number'
+        ? seconds / 60
+        : seconds?.cache_write / 60 ||
+          (/cache[-_]write (?:is |=)5[- ]minute/i.test(description) ? 5 : undefined);
+    if (!expected) continue;
+    const matches = Object.values(catalog)
+      .flatMap((provider) => Object.values(provider.models))
+      .flatMap((model) => model.pricing_view?.groups.flatMap((group) => group.quotes) ?? [])
+      .filter((quote) => quote.quoteId === record.id);
+    for (const quote of matches) {
+      assert.equal(
+        quote.displayFeeTerms.find((term) => term.usageKey === 'cache_write')?.retentionMinutes,
+        expected,
+        record.id,
+      );
+      checked++;
+    }
+  }
+  assert.ok(checked >= 30);
+  const explicitEndpoint = catalog['alibaba-cn'].models['qwen3.7-max'].pricing_view.groups
+    .flatMap((group) => group.quotes)
+    .find(
+      (quote) =>
+        quote.quoteId === 'dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-explicit',
+    );
+  assert.equal(
+    explicitEndpoint.displayFeeTerms.find((term) => term.usageKey === 'cache_write')
+      .retentionMinutes,
+    5,
+  );
+  const quotes = (provider, model) =>
+    catalog[provider].models[model].pricing_view.groups.flatMap((group) => group.quotes);
+  for (const model of ['gpt-5.6', 'gpt-6.2-astra', 'gpt-6.2-sol']) {
+    const all = quotes('openai', model);
+    assert.equal(
+      all
+        .find((quote) => quote.selected)
+        .displayFeeTerms.find((term) => term.usageKey === 'cache_write').retentionMinutes,
+      30,
+    );
+    assert.equal(
+      all.find((quote) => quote.quoteId.startsWith('upstream:')).displayFeeTerms,
+      undefined,
+    );
+  }
+  assert.equal(
+    createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
+    '4ce3d8a4415534e3e44423b99d1d09cca0347793b188623dcd40c7ec821a6152',
+  );
+});
+
 const localizedCatalogs = (read) => ({
   en: read('api/all.json'),
   zh: read('api/i18n/zh/all.json'),
