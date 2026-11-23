@@ -248,6 +248,7 @@ try {
   for (const viewport of [
     { width: 1366, height: 900 },
     { width: 375, height: 844 },
+    { width: 320, height: 844 },
   ]) {
     const mobile = viewport.width < 700;
     const context = await browser.newContext({
@@ -343,7 +344,7 @@ try {
       select('openai', 'gpt-image-2.5-sunburst').split('/')[1],
     );
     if (english.openai.models['gpt-image-2.5-sunburst'].cnyPrice.exported)
-      await expectVisible(page.getByText('Selected for sync', { exact: true }).first());
+      await expectVisible(page.getByText('Current selection · sync candidate', { exact: true }).first());
     if (mobile)
       assert.ok(
         !(await page.getByRole('textbox', { name: 'Filter providers or models…' }).isVisible()),
@@ -354,7 +355,7 @@ try {
       ?.originalQuote.conditions;
     if (glmConditions) {
       await goto(select('zhipuai', 'glm-4.5-air'));
-      await expectVisible(page.getByRole('heading', { name: 'Charging conditions' }).first());
+      await expectVisible(page.locator('[data-pricing-row]').first());
       if (structuredCoverage) {
         const key = Object.keys(glmConditions)[0];
         await expectVisible(page.locator(`[data-condition="${key}"]`).first());
@@ -431,7 +432,7 @@ try {
     const syncCard = page.locator('article').filter({
       has: page.getByText(syncQuote.quoteId, { exact: true }),
     });
-    await expectVisible(syncCard.getByText('Selected for sync', { exact: true }));
+    await expectVisible(syncCard.getByText('Current selection · sync candidate', { exact: true }));
     assert.deepEqual(syncQuote.originalQuote.conditions.syncableResolutions, [
       '480p',
       '720p',
@@ -534,7 +535,9 @@ try {
         goto,
         select,
         current,
+        catalog,
         locale,
+        mobile,
         checkStatusUrl,
         respond: (response) => {
           statusResponse = response;
