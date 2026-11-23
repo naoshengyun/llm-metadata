@@ -574,6 +574,41 @@ export async function checkPricingReviewFindings({
     assert.match(await rate.getByRole('cell').nth(0).innerText(), /≈\$0\.0011\b/);
     assert.equal(await rate.getByRole('cell').nth(1).innerText(), '≈¥0.0077');
   });
+  await verify('Gemini Maps service tier restrictions', async () => {
+    await visit('google', 'gemini-2.5-flash-lite');
+    const maps = page.locator('[data-pricing-row^="tools:"][data-source-amount="25"]');
+    assert.equal(await maps.count(), 1);
+    const quote = maps.locator('xpath=ancestor::article');
+    assert.equal(await quote.locator('details').nth(1).getAttribute('open'), null);
+    assert.equal(await maps.getAttribute('data-unit'), 'per_thousand_grounded_prompts');
+    assert.match(await maps.getByRole('cell').nth(0).innerText(), /\$25\b/);
+    assert.equal(await maps.getByRole('cell').nth(1).innerText(), '¥175');
+    for (const tier of ['Batch', 'Flex'])
+      assert.ok(await quote.locator(`[data-service-tier="${tier}"]`).count());
+    const note = maps
+      .locator('xpath=ancestor::table/../..')
+      .locator('[data-condition="toolCondition"]');
+    assert.equal(await note.count(), 1, 'Maps restriction must be beside the tool rate table');
+    assert.ok(await note.isVisible());
+    assert.match(await note.innerText(), /2\.5 Batch\/Flex Maps unavailable/);
+  });
+  await verify('Gemini image resolution restrictions', async () => {
+    await visit('google', 'gemini-3.1-flash-lite-image');
+    const image = page.locator('[data-pricing-row="image-output-equivalent:0"]');
+    assert.equal(await image.count(), 1);
+    const quote = image.locator('xpath=ancestor::article');
+    assert.equal(await quote.locator('details').nth(1).getAttribute('open'), null);
+    const note = image
+      .locator('xpath=ancestor::table/../..')
+      .locator('[data-condition="resolutionNote"]');
+    assert.equal(
+      await note.count(),
+      1,
+      'Resolution restriction must be beside the image rate table',
+    );
+    assert.ok(await note.isVisible());
+    assert.match(await note.innerText(), /Only1K is supported;2K\/4K explicitly unsupported/);
+  });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 8, passed: true };
+  return { findings: 10, passed: true };
 }

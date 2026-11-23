@@ -109,6 +109,8 @@ export interface DisplayPriceQuote extends PriceQuote {
     officialRegion?: string;
     effectiveAt?: string;
     region?: string;
+    toolCondition?: string;
+    resolutionNote?: string;
   };
 }
 

@@ -905,6 +905,57 @@ test('the reviewed input image equivalent is displayed and its omission fails re
   );
 });
 
+test('image equivalents supplement token tariffs that are supplied only by candidateCost', (t) => {
+  const model = 'gemini-3-pro-image';
+  const setup = (official) => {
+    const source = official.excludedQuotes.find(({ officialModel }) => officialModel === model);
+    delete source.fees;
+    delete source.tools;
+  };
+  const read = buildCandidate(t, setup);
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  let quoteId;
+  for (const catalog of Object.values(catalogs)) {
+    const { pricing_view: view } = catalog.google.models[model];
+    const quote = view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ originalQuote }) => originalQuote?.inputImageEquivalent);
+    quoteId = quote.quoteId;
+    const tokenRows = quote.displayRows.filter(({ unit }) => unit === 'per_million_tokens');
+    assert.deepEqual(
+      tokenRows.map(({ usageKey, amount, cnyAmount }) => [usageKey, amount, cnyAmount]),
+      [
+        ['input', 2, 14],
+        ['input_image', 2, 14],
+        ['output', 12, 84],
+        ['output_image', 120, 840],
+      ],
+    );
+    assert.deepEqual(
+      quote.displayRows.filter(({ unit }) => unit === 'per_image').map(({ amount }) => amount),
+      [0.0011, 0.134, 0.24],
+    );
+    quote.displayRows = quote.displayRows.filter(({ unit }) => unit !== 'per_million_tokens');
+  }
+  const inputs = rawReconciliationInputs();
+  setup(inputs.official);
+  const result = reconcileDisplayCoverage({
+    ...inputs,
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  });
+  assert.ok(
+    result.failures.some(
+      (failure) => failure.quoteId === quoteId && failure.field === 'displayRows',
+    ),
+  );
+});
+
 test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');

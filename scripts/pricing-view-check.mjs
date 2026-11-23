@@ -399,13 +399,18 @@ export function expectedDisplayRows(quote) {
       approximate: true,
     });
   }
-  const reviewedPrices = [
+  const baseRates = [
     ...costRows(source.cost, 'cost', sourceCurrency, sourceUnit, conditions),
     ...chargedFees(
       source.fees,
       'fees',
       source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
     ),
+  ];
+  const reviewedPrices = [
+    ...(baseRates.length > 0
+      ? baseRates
+      : costRows(source.candidateCost, 'candidate-cost', sourceCurrency, sourceUnit, conditions)),
     ...chargedFees(source.tools, 'tools', conditions),
     ...supplementalRates,
     ...imageEquivalents,
@@ -414,13 +419,7 @@ export function expectedDisplayRows(quote) {
   if (Array.isArray(sourcePrice))
     return rateRows(sourcePrice, sourceCurrency, sourceUnit, conditions);
   if (source.rawFees) return rawRows(sourcePrice, sourceCurrency, conditions);
-  const result = costRows(
-    source.candidateCost ?? sourcePrice,
-    source.candidateCost ? 'candidate-cost' : 'cost',
-    sourceCurrency,
-    sourceUnit,
-    conditions,
-  );
+  const result = costRows(sourcePrice, 'cost', sourceCurrency, sourceUnit, conditions);
   if (!quote.originalQuote) result.push(...explicitChargesInConditions(conditions, sourceCurrency));
   if (quote.originalCurrencyEligible === false) {
     for (const row of result) Object.assign(row, { cnyAmount: null, cnyCurrency: null });

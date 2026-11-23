@@ -344,6 +344,7 @@ const condition: LabelMap = {
   priceState: ['Rate status', '报价状态', '料金の状態'],
   region: ['Region', '地域', '地域'],
   resolution: ['Resolution', '分辨率', '解像度'],
+  resolutionNote: ['Supported resolutions', '支持的分辨率', '対応解像度'],
   resolutions: ['Resolutions', '分辨率', '解像度'],
   rounding: ['Billing period rounding', '计费时间进位', '課金時間の丸め'],
   scope: ['Scope', '范围', '対象範囲'],
@@ -352,6 +353,7 @@ const condition: LabelMap = {
   textUnit: ['Text billing unit', '文本计费单位', 'テキスト課金単位'],
   tierName: ['Tier', '档位', '料金帯'],
   timezone: ['Time zone', '时区', 'タイムゾーン'],
+  toolCondition: ['Tool availability', '工具适用限制', 'ツールの利用条件'],
   validThrough: ['Valid through', '有效期截至', '有効期限'],
   videoInputTokenMinimum: [
     'Minimum tokens apply with input video',

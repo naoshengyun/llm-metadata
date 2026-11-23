@@ -396,6 +396,10 @@ function displayRowsFor(quote) {
         source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
       ),
     );
+  if (!rows.length && source?.candidateCost)
+    rows.push(
+      ...costDisplayRows(source.candidateCost, unit, currency, conditions, 'candidate-cost'),
+    );
   if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools', conditions));
   const inputImage = source?.inputImageEquivalent;
   if (Number.isFinite(inputImage?.publishedApproxUSD)) {
@@ -459,8 +463,6 @@ function displayRowsFor(quote) {
   const value = quote.sourcePrice;
   if (Array.isArray(value)) return rawFeeArrayRows(value, unit, currency, conditions);
   if (source?.rawFees) return rawFeeObjectRows(value, currency, conditions);
-  if (source?.candidateCost)
-    return costDisplayRows(source.candidateCost, unit, currency, conditions, 'candidate-cost');
   const genericRows = [
     ...costDisplayRows(value, unit, currency, conditions),
     ...(source ? [] : capabilityFeeRows(conditions, currency)),

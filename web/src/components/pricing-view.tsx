@@ -292,7 +292,12 @@ function RateTable({
   common: Record<string, unknown>;
 }) {
   const groupName = rateSection(rows[0]);
-  const unitName = rows[0].unit ? priceUnit(rows[0].unit, locale) : msg(locale, 'unknownUnit');
+  const unit = rows[0].unit;
+  const unitName = unit ? priceUnit(unit, locale) : msg(locale, 'unknownUnit');
+  const toolCondition = rows.some(({ rowId }) => rowId.startsWith('tools:'))
+    ? quote.originalQuote?.toolCondition
+    : undefined;
+  const resolutionNote = unit === 'per_image' ? quote.originalQuote?.resolutionNote : undefined;
   const hasConditions = rows.some(
     (row) =>
       row.tier ||
@@ -309,6 +314,7 @@ function RateTable({
           {groupName}
         </h4>
       )}
+      <Conditions values={{ toolCondition, resolutionNote }} locale={locale} />
       <div
         className="max-w-full overflow-x-auto rounded-md border"
         role="region"
