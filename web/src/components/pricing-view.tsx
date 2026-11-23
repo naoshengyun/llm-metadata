@@ -126,14 +126,39 @@ export function PricingViewCell({
   return <>{row?.cnyAmount == null ? '—' : formatMoney('¥', row.cnyAmount)}</>;
 }
 
-const quoteOrder = ['standard', 'batch', 'flex', 'fast', 'ultrafast', 'priority'];
-const serviceLabel = (quote: DisplayPriceQuote) =>
-  quote.originalQuote?.officialServiceTier ??
-  quote.priceList
-    .split('/')
-    .map((part) => part.trim())
-    .find((part) => quoteOrder.includes(part.toLowerCase())) ??
-  '';
+const serviceTiers = [
+  { key: 'standard', name: 'Standard' },
+  { key: 'batch', name: 'Batch' },
+  { key: 'flex', name: 'Flex' },
+  { key: 'fast', name: 'Fast' },
+  { key: 'ultrafast', name: 'Ultrafast' },
+  { key: 'priority', name: 'Priority' },
+];
+const quoteOrder = serviceTiers.map(({ key }) => key);
+const serviceNames = Object.fromEntries(serviceTiers.map(({ key, name }) => [key, name]));
+const priceListParts = (quote: DisplayPriceQuote) =>
+  quote.priceList.split('/').map((part) => part.trim());
+const serviceTierKey = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+  return quoteOrder.find(
+    (key) => normalized === key || new RegExp(`\\b${key}\\b`, 'i').test(normalized),
+  );
+};
+function priceListIdentity(quote: DisplayPriceQuote) {
+  const parts = priceListParts(quote);
+  const serviceIndex = parts.findIndex((part) => serviceTierKey(part));
+  const key = serviceIndex < 0 ? undefined : serviceTierKey(parts[serviceIndex]);
+  return {
+    provider: serviceIndex > 0 ? parts[0] : '',
+    serviceName: key ? serviceNames[key] : '',
+    qualifier: serviceIndex < 0 ? '' : parts.slice(serviceIndex + 1).join(' / '),
+  };
+}
+const serviceLabel = (quote: DisplayPriceQuote) => {
+  const explicit = quote.originalQuote?.officialServiceTier;
+  const explicitKey = explicit ? serviceTierKey(explicit) : undefined;
+  return explicitKey ? serviceNames[explicitKey] : priceListIdentity(quote).serviceName;
+};
 function region(quote: DisplayPriceQuote) {
   const conditions = quote.originalQuote?.conditions ?? quote.conditions;
   return (
@@ -144,9 +169,73 @@ function region(quote: DisplayPriceQuote) {
       : '')
   );
 }
-function serviceOrder(quote: DisplayPriceQuote) {
-  const index = quoteOrder.indexOf(serviceLabel(quote).toLowerCase());
-  return index < 0 ? quoteOrder.length : index;
+function priceListScopeQualifier(quote: DisplayPriceQuote) {
+  const explicit = region(quote);
+  return explicit || priceListIdentity(quote).qualifier;
+}
+function serviceOrderName(name: string) {
+  const key = serviceTierKey(name);
+  return key ? quoteOrder.indexOf(key) : quoteOrder.length;
+}
+const anchorPart = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+
+type QuoteEntry = {
+  quote: DisplayPriceQuote;
+  groupId: string;
+  rows: DisplayPriceRow[];
+  entryKey: string;
+  serviceName: string;
+  entryId: string;
+  qualifier: string;
+  endpoint: string;
+};
+
+type QuoteScope = {
+  qualifier: string;
+  endpoint: string;
+  entries: QuoteEntry[];
+};
+
+function quoteEntries(groupId: string, quote: DisplayPriceQuote): QuoteEntry[] {
+  const base = {
+    quote,
+    groupId,
+    qualifier: priceListScopeQualifier(quote),
+    endpoint: quote.endpoint ?? '',
+  };
+  const serviceSections = new Map<string, DisplayPriceRow[]>();
+  const baseRows: DisplayPriceRow[] = [];
+  for (const row of quote.displayRows) {
+    const section = rateSection(row);
+    if (!section) baseRows.push(row);
+    else {
+      const rows = serviceSections.get(section);
+      if (rows) rows.push(row);
+      else serviceSections.set(section, [row]);
+    }
+  }
+  const makeEntry = (name: string, rows: DisplayPriceRow[]): QuoteEntry => {
+    const key = serviceTierKey(name) ?? 'other';
+    return {
+      ...base,
+      rows,
+      entryKey: key,
+      serviceName: name || quote.priceList,
+      entryId: `${quote.quoteId}::${key}`,
+    };
+  };
+  if (!serviceSections.size)
+    return [makeEntry(serviceLabel(quote), quote.displayRows)].map((entry, index) => ({
+      ...entry,
+      entryId: `${quote.quoteId}::${index + 1}-${entry.entryKey}`,
+    }));
+  const entries: QuoteEntry[] = [];
+  if (baseRows.length) entries.push(makeEntry(serviceLabel(quote), baseRows));
+  for (const [name, rows] of serviceSections) entries.push(makeEntry(name, rows));
+  return entries.map((entry, index) => ({
+    ...entry,
+    entryId: `${quote.quoteId}::${index + 1}-${entry.entryKey}`,
+  }));
 }
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
@@ -250,7 +339,7 @@ function Conditions({
   return (
     <ul className="space-y-0.5 break-words whitespace-normal">
       {entries.map(([key, value]) => (
-        <li key={key} data-condition={key}>
+        <li key={key} data-condition={key} data-condition-value={JSON.stringify(value)}>
           {key === 'freeQuantity' && usage ? (
             freeLabel(locale, value, usage)
           ) : ['officialCondition', 'condition', 'tierName'].includes(key) ? (
@@ -307,8 +396,11 @@ function lastPublishedInputToken({ inputBands, inputOutputBands }: DisplayPriceR
   );
 }
 
+const relatedRateRows = (row: DisplayPriceRow, rows: DisplayPriceRow[]) =>
+  rows.filter((candidate) => rateScope(candidate) === rateScope(row));
+
 function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], locale: Locale) {
-  const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
+  const related = relatedRateRows(row, sectionRows);
   const structuredTiers = related.some(({ tier }) => tier?.size);
   const meterRows = related.filter(({ usageKey }) => usageKey === row.usageKey);
   const thresholds = [
@@ -339,6 +431,16 @@ function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], loc
   return `${msg(locale, type === 'context' ? 'tokContext' : 'tokInput')} · ${numbers} · ${msg(locale, 'wholeRequest')}`;
 }
 
+function rowDisplayConditions(row: DisplayPriceRow, common: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(row.conditions).filter(
+      ([key, value]) =>
+        !['tier', 'serviceTier', 'above'].includes(key) &&
+        !(key in common && JSON.stringify(common[key]) === JSON.stringify(value)),
+    ),
+  );
+}
+
 function RateTable({
   rows,
   locale,
@@ -357,128 +459,201 @@ function RateTable({
     ? quote.originalQuote?.toolCondition
     : undefined;
   const resolutionNote = unit === 'per_image' ? quote.originalQuote?.resolutionNote : undefined;
-  const hasConditions = rows.some(
-    (row) =>
-      row.tier ||
-      legacyTier(row) ||
-      quote.displayFeeTerms?.some(
-        ({ usageKey, condition }) => usageKey === row.usageKey && condition,
-      ) ||
-      Object.keys(row.conditions).some((key) => !(key in common) && key !== 'serviceTier'),
-  );
+  const rowModels = rows.map((row) => ({
+    row,
+    tier: tierCondition(row, rows, locale),
+    conditions: rowDisplayConditions(row, common),
+  }));
+  const hasTiers = rowModels.some(({ tier }) => tier);
+  const bandMap = new Map<string, { rows: typeof rowModels; threshold: number | null }>();
+  for (const model of rowModels) {
+    const { row } = model;
+    const related = relatedRateRows(row, rows);
+    const structuredTiers = related.some(({ tier }) => tier?.size);
+    const threshold = model.tier ? lastLowerBandToken(row, structuredTiers) : null;
+    // Hoist a heading only when every enclosed rate has that exact applicability.
+    const key = hasTiers ? JSON.stringify([rateScope(row), threshold, model.tier]) : 'all';
+    const band = bandMap.get(key);
+    if (band) band.rows.push(model);
+    else bandMap.set(key, { rows: [model], threshold });
+  }
+  const bands = [...bandMap.entries()]
+    .map(([key, band]) => ({ key, ...band }))
+    .sort(
+      (a, b) =>
+        (a.threshold ?? -1) - (b.threshold ?? -1) || a.key.localeCompare(b.key, 'en'),
+    );
   return (
-    <div className="min-w-0 space-y-2">
-      {groupName && (
-        <h4 className="text-sm font-medium" data-service-tier={groupName}>
-          {groupName}
-        </h4>
-      )}
+    <div className="min-w-0 space-y-3">
       <Conditions values={{ toolCondition, resolutionNote }} locale={locale} />
-      <div
-        className="max-w-full overflow-x-auto rounded-md border"
-        role="region"
-        aria-label={unitName}
-        tabIndex={0}
-      >
-        <table className="w-full text-left text-xs" aria-label={unitName}>
-          <thead className="bg-muted/40 text-muted-foreground">
-            <tr>
-              <th className="px-2.5 py-2 font-medium" scope="col">
-                {msg(locale, 'usage')}
-              </th>
-              <th className="px-2.5 py-2 font-medium" scope="col">
-                {msg(locale, quote.originalCurrencyEligible === false ? 'reported' : 'source')}
-              </th>
-              <th className="px-2.5 py-2 font-medium" scope="col">
-                {msg(locale, 'cny')}
-              </th>
-              {hasConditions && (
-                <th className="min-w-36 px-2.5 py-2 font-medium" scope="col">
-                  {msg(locale, 'conditions')}
-                </th>
+      {bands.map((band) => {
+        const tier = band.rows.find(({ tier }) => tier)?.tier;
+        const hasConditions = band.rows.some(
+          ({ row, conditions }) =>
+            quote.displayFeeTerms?.some(
+              ({ usageKey, condition }) => usageKey === row.usageKey && condition,
+            ) || Object.keys(conditions).length > 0,
+        );
+        return (
+          <section
+            key={band.key}
+            className="min-w-0 border-t pt-3 first:border-t-0 first:pt-0"
+            data-rate-band={band.key}
+            data-unit={unit ?? ''}
+            data-service-tier={groupName}
+            aria-label={tier ? `${tier} · ${unitName}` : unitName}
+          >
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              {tier ? (
+                <>
+                  <h4 className="text-sm font-medium" data-tier-condition>
+                    {tier}
+                  </h4>
+                  <p className="text-muted-foreground text-xs">{unitName}</p>
+                </>
+              ) : (
+                <h4 className="text-muted-foreground text-xs font-medium">{unitName}</h4>
               )}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const conditions = Object.fromEntries(
-                Object.entries(row.conditions).filter(
-                  ([key, value]) =>
-                    !['tier', 'serviceTier', 'above'].includes(key) &&
-                    !(key in common && JSON.stringify(common[key]) === JSON.stringify(value)),
-                ),
-              );
-              const label = priceUsage(row.usageKey, locale);
-              const tier = tierCondition(row, rows, locale);
-              const term = quote.displayFeeTerms?.find(({ usageKey }) => usageKey === row.usageKey);
-              const ttlLabel =
-                term?.retentionMinutes === undefined || /^cache_write_\d+[hm]$/.test(row.usageKey)
-                  ? ''
-                  : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
-              const amountPrefix = row.approximate ? '≈' : '';
-              const source =
-                row.amount === null
-                  ? (row.sourceValue ?? '—')
-                  : amountPrefix + exactMoney(row.amount, row.currency);
-              return (
-                <tr
-                  key={row.rowId}
-                  data-pricing-row={row.rowId}
-                  data-unit={row.unit ?? ''}
-                  data-source-currency={row.currency ?? ''}
-                  data-source-amount={row.amount ?? ''}
-                  data-cny-amount={row.cnyAmount ?? ''}
-                  className="border-t align-top"
-                >
-                  <th className="px-2.5 py-2 text-left font-medium" scope="row">
-                    {label}
-                    {ttlLabel}
-                    <span className="text-muted-foreground block font-normal">{unitName}</span>
+            </div>
+            <table className="w-full text-left text-xs max-sm:block" aria-label={unitName}>
+              <thead className="text-muted-foreground max-sm:hidden">
+                <tr>
+                  <th className="px-2.5 py-2 font-medium" scope="col">
+                    {msg(locale, 'usage')}
                   </th>
-                  <td className="px-2.5 py-2 tabular-nums">
-                    {source}
-                    {row.currency && (
-                      <span className="text-muted-foreground block">{row.currency}</span>
-                    )}
-                  </td>
-                  <td className="px-2.5 py-2 tabular-nums">
-                    {row.cnyAmount === null
-                      ? '—'
-                      : amountPrefix + exactMoney(row.cnyAmount, row.cnyCurrency)}
-                  </td>
+                  <th className="px-2.5 py-2 text-right font-medium" scope="col">
+                    {msg(locale, quote.originalCurrencyEligible === false ? 'reported' : 'source')}
+                  </th>
+                  <th className="px-2.5 py-2 text-right font-medium" scope="col">
+                    {msg(locale, 'cny')}
+                  </th>
                   {hasConditions && (
-                    <td className="px-2.5 py-2 space-y-1">
-                      {tier && <p data-tier-condition>{tier}</p>}
-                      {term?.condition && <p>{term.condition}</p>}
-                      <Conditions values={conditions} locale={locale} usage={row.usageKey} />
-                    </td>
+                    <th className="min-w-36 px-2.5 py-2 font-medium" scope="col">
+                      {msg(locale, 'conditions')}
+                    </th>
                   )}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="max-sm:block">
+                {band.rows.map(({ row, conditions }) => {
+                  const label = priceUsage(row.usageKey, locale);
+                  const term = quote.displayFeeTerms?.find(
+                    ({ usageKey }) => usageKey === row.usageKey,
+                  );
+                  const ttlLabel =
+                    term?.retentionMinutes === undefined ||
+                    /^cache_write_\d+[hm]$/.test(row.usageKey)
+                      ? ''
+                      : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
+                  const amountPrefix = row.approximate ? '≈' : '';
+                  const source =
+                    row.amount === null
+                      ? (row.sourceValue ?? '—')
+                      : amountPrefix + exactMoney(row.amount, row.currency);
+                  const sourceContent = (
+                    <>
+                      {row.currency && (
+                        <span className="text-muted-foreground mr-1 text-[0.65rem]">
+                          {row.currency}
+                        </span>
+                      )}
+                      {source}
+                    </>
+                  );
+                  const cnyContent =
+                    row.cnyAmount === null
+                      ? '—'
+                      : amountPrefix + exactMoney(row.cnyAmount, row.cnyCurrency);
+                  return (
+                    <tr
+                      key={row.rowId}
+                      data-pricing-row={row.rowId}
+                      data-unit={row.unit ?? ''}
+                      data-source-currency={row.currency ?? ''}
+                      data-source-amount={row.amount ?? ''}
+                      data-cny-amount={row.cnyAmount ?? ''}
+                      className="border-t align-top max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto] max-sm:gap-x-3 max-sm:px-1 max-sm:py-2"
+                    >
+                      <th
+                        className="px-2.5 py-2 text-left font-medium max-sm:row-span-2 max-sm:px-0 max-sm:py-0"
+                        scope="row"
+                      >
+                        {label}
+                        {ttlLabel}
+                      </th>
+                      <td className="px-2.5 py-2 text-right tabular-nums max-sm:hidden">
+                        <span data-price-source>{sourceContent}</span>
+                      </td>
+                      <td className="px-2.5 py-2 text-right font-medium tabular-nums max-sm:hidden">
+                        <span data-price-cny>{cnyContent}</span>
+                      </td>
+                      <td className="px-1 text-right tabular-nums max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1 sm:hidden">
+                        <span className="block" data-price-source>
+                          {sourceContent}
+                        </span>
+                        <span className="block font-medium" data-price-cny>
+                          {cnyContent}
+                        </span>
+                      </td>
+                      {hasConditions && (
+                        <td className="space-y-1 px-2.5 py-2 max-sm:col-span-full max-sm:px-0 max-sm:pt-2">
+                          {term?.condition && <p>{term.condition}</p>}
+                          <Conditions values={conditions} locale={locale} usage={row.usageKey} />
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
+const rowOnlyConditionKeys = new Set([
+  'cacheHitRenewsTtl',
+  'cacheTtl',
+  'cacheWriteTtlSeconds',
+  'cacheWrite',
+  'cacheWriteIncludedInInput',
+  'durationSeconds',
+  'condition',
+  'tierName',
+  'when',
+  'resolution',
+  'amount',
+  'currency',
+  'unit',
+  'referenceFee',
+  'maxInput',
+  'maxOutput',
+  'minOutput',
+  'inputBands',
+  'inputOutputBands',
+]);
+
 function QuoteArticle({
-  quote,
-  groupId,
+  entry,
+  anchorId,
+  scopeId,
   children,
 }: {
-  quote: DisplayPriceQuote;
-  groupId: string;
+  entry: QuoteEntry;
+  anchorId: string;
+  scopeId: string;
   children?: ReactNode;
 }) {
+  const { quote, groupId, rows: entryRows, serviceName } = entry;
   const { locale } = useI18n();
   const sections = new Map<string, DisplayPriceRow[]>();
-  for (const row of quote.displayRows) {
+  for (const row of entryRows) {
     // Keep legacy fields in the raw audit record, not alongside their authoritative tiers.
     if (
       legacyTier(row) &&
-      quote.displayRows.some(
+      entryRows.some(
         (candidate) =>
           candidate.tier?.size &&
           rateScope(candidate) === rateScope(row) &&
@@ -493,54 +668,103 @@ function QuoteArticle({
     else sections.set(key, [row]);
   }
   const details = quote.originalQuote?.conditions ?? quote.conditions;
-  const quoteConditions: Record<string, unknown> = {
-    ...(details && typeof details === 'object' ? details : {}),
-    ...(typeof details === 'string' ? { officialCondition: details } : {}),
-    ...(quote.originalQuote?.effectiveAt ? { effectiveAt: quote.originalQuote.effectiveAt } : {}),
-  };
-  for (const key of ['minimumUsage', 'draft', 'rounding']) {
-    const value = quote.displayRows[0]?.conditions[key];
-    if (
-      typeof value === 'string' &&
-      quote.displayRows.every((row) => row.conditions[key] === value)
-    )
-      quoteConditions[key] = value;
-  }
   const meteredConditions = new Set(
     quote.displayRows
       .filter(({ rowId }) => rowId.startsWith('condition-fee:'))
       .map(({ usageKey }) => usageKey),
   );
-  const tariffConditions = Object.fromEntries(
-    Object.entries(quoteConditions).filter(([key]) => !meteredConditions.has(key)),
-  );
+  const commonRowConditionKeys = ['minimumUsage', 'draft', 'rounding'];
+  const originalConditions = Object.fromEntries([
+    ...(details && typeof details === 'object' ? Object.entries(details) : []),
+    ...(typeof details === 'string' ? [['officialCondition', details] as const] : []),
+    ...(quote.originalQuote?.effectiveAt
+      ? [['effectiveAt', quote.originalQuote.effectiveAt] as const]
+      : []),
+  ]);
+  const quoteConditions: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(originalConditions)) {
+    if (meteredConditions.has(key) || rowOnlyConditionKeys.has(key)) continue;
+    const rowsWithCondition = entryRows.filter((row) => key in row.conditions);
+    if (!rowsWithCondition.length) {
+      quoteConditions[key] = value;
+      continue;
+    }
+    const first = rowsWithCondition[0].conditions[key];
+    if (
+      rowsWithCondition.length === entryRows.length &&
+      rowsWithCondition.every(
+        (row) => JSON.stringify(row.conditions[key]) === JSON.stringify(first),
+      )
+    )
+      quoteConditions[key] = first;
+  }
+  for (const key of commonRowConditionKeys) {
+    if (key in originalConditions || rowOnlyConditionKeys.has(key)) continue;
+    const value = entryRows[0]?.conditions[key];
+    if (
+      typeof value === 'string' &&
+      entryRows.every((row) => row.conditions[key] === value)
+    )
+      quoteConditions[key] = value;
+  }
+  const tariffConditions = quoteConditions;
   const date = quote.source.checkedAt ?? quote.source.snapshotAt;
   const digest = quote.source.recordSha256 ?? quote.source.sha256 ?? quote.source.upstreamSha;
-  const hasRate = quote.displayRows.some(
-    ({ amount, sourceValue }) => amount !== null || !!sourceValue,
-  );
+  const hasRate = entryRows.some(({ amount, sourceValue }) => amount !== null || !!sourceValue);
   const statusLabel = quoteStatus(quote.status, locale);
   const badgeLabel = quote.syncable
     ? msg(locale, 'selected')
     : hasRate
       ? msg(locale, 'reference')
       : statusLabel;
+  const hasCommonConditions = Boolean(
+    quote.originalQuote?.contextNote ||
+      quote.originalQuote?.cache?.reason ||
+      quote.originalQuote?.description ||
+      Object.keys(tariffConditions).length,
+  );
   return (
     <article
-      className="min-w-0 rounded-lg border bg-card px-3 py-2.5 sm:px-4"
+      id={anchorId}
+      tabIndex={-1}
+      className="min-w-0 scroll-mt-4 rounded-lg border bg-card px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4"
       data-quote-id={quote.quoteId}
       data-pricing-group={groupId}
+      data-pricing-scope={scopeId}
+      data-service-entry={entry.entryId}
+      data-service-name={serviceName}
+      data-service-tier={entry.entryKey}
       data-syncable={String(quote.syncable)}
       data-quote-status={quote.status}
     >
-      <details open={quote.originalCurrencyEligible !== false}>
+      <details open>
         <summary className="cursor-pointer leading-relaxed break-words">
-          <h3 className="inline text-sm font-semibold">{quote.priceList}</h3>
+          <h3 className="inline text-base font-semibold">{serviceName}</h3>
           <Badge className="ml-2 align-middle" variant={quote.syncable ? 'default' : 'secondary'}>
             {badgeLabel}
           </Badge>
         </summary>
         <div className="mt-2 space-y-3 text-xs break-words whitespace-normal">
+          {hasCommonConditions && (
+            <div className="space-y-2 border-b pb-3" data-common-conditions>
+              <h4 className="font-medium">{msg(locale, 'commonConditions')}</h4>
+              <Conditions
+                values={{
+                  contextNote: quote.originalQuote?.contextNote,
+                  cacheAvailability: quote.originalQuote?.cache?.reason,
+                }}
+                locale={locale}
+              />
+              {quote.originalQuote?.description && (
+                <p data-price-description>
+                  {priceDescription(quote.originalQuote.description, locale)}
+                </p>
+              )}
+              {Object.keys(tariffConditions).length > 0 && (
+                <Conditions values={tariffConditions} locale={locale} />
+              )}
+            </div>
+          )}
           {quote.displayExamples?.map(
             ({ resolution, inputSeconds, outputSeconds, amount, currency }) => (
               <p
@@ -557,13 +781,6 @@ function QuoteArticle({
               </p>
             ),
           )}
-          <Conditions
-            values={{
-              contextNote: quote.originalQuote?.contextNote,
-              cacheAvailability: quote.originalQuote?.cache?.reason,
-            }}
-            locale={locale}
-          />
           {[...sections.entries()].map(([key, rows]) => (
             <RateTable
               key={key}
@@ -574,6 +791,7 @@ function QuoteArticle({
             />
           ))}
           <div className="text-muted-foreground space-y-0.5">
+            <p data-price-list>{quote.priceList}</p>
             <p className="font-mono break-all">{quote.quoteId}</p>
             {quote.nativeKey && (
               <p>
@@ -639,17 +857,6 @@ function QuoteArticle({
             )}
           </div>
           {children}
-          {quote.originalQuote?.description && (
-            <p data-price-description>
-              {priceDescription(quote.originalQuote.description, locale)}
-            </p>
-          )}
-          {Object.keys(tariffConditions).length > 0 && (
-            <div className="space-y-1">
-              <h4 className="font-medium">{msg(locale, 'conditions')}</h4>
-              <Conditions values={tariffConditions} locale={locale} />
-            </div>
-          )}
           <details className="text-muted-foreground" data-price-audit>
             <summary className="cursor-pointer underline-offset-2 hover:underline">
               {msg(locale, 'audit')}
@@ -689,31 +896,130 @@ export function PricingViewQuotes({
   compact?: boolean;
 }) {
   const { locale } = useI18n();
-  const quotes = view.groups
-    .flatMap(({ groupId, quotes }) => quotes.map((quote) => ({ groupId, quote })))
+  const entries = view.groups.flatMap(({ groupId, quotes }) =>
+    quotes.flatMap((quote) => quoteEntries(groupId, quote)),
+  );
+  if (!entries.length) return null;
+  const navigationName = (entry: QuoteEntry) =>
+    serviceTierKey(entry.serviceName) ? entry.serviceName : msg(locale, 'otherTariff');
+
+  const defaultQualifiers = new Map<string, string>();
+  for (const entry of entries.filter(({ quote }) => quote.selected))
+    if (entry.qualifier) defaultQualifiers.set(entry.endpoint, entry.qualifier);
+  for (const entry of entries)
+    if (entry.qualifier && !defaultQualifiers.has(entry.endpoint))
+      defaultQualifiers.set(entry.endpoint, entry.qualifier);
+
+  const scopeMap = new Map<string, Map<string, QuoteScope>>();
+  for (const entry of entries) {
+    const qualifier = entry.qualifier || defaultQualifiers.get(entry.endpoint) || '';
+    let endpointScopes = scopeMap.get(qualifier);
+    if (!endpointScopes) {
+      endpointScopes = new Map<string, QuoteScope>();
+      scopeMap.set(qualifier, endpointScopes);
+    }
+    let scope = endpointScopes.get(entry.endpoint);
+    if (!scope) {
+      scope = { qualifier, endpoint: entry.endpoint, entries: [] };
+      endpointScopes.set(entry.endpoint, scope);
+    }
+    scope.entries.push(entry);
+  }
+  const scopes = [...scopeMap.values()]
+    .flatMap((endpointScopes) => [...endpointScopes.values()])
     .sort(
       (a, b) =>
-        Number(b.quote.selected) - Number(a.quote.selected) ||
-        serviceOrder(a.quote) - serviceOrder(b.quote) ||
-        region(a.quote).localeCompare(region(b.quote), 'en') ||
-        (a.quote.endpoint ?? '').localeCompare(b.quote.endpoint ?? '', 'en') ||
-        a.quote.quoteId.localeCompare(b.quote.quoteId, 'en'),
+        a.qualifier.localeCompare(b.qualifier, 'en') ||
+        a.endpoint.localeCompare(b.endpoint, 'en') ||
+        a.entries[0].quote.quoteId.localeCompare(b.entries[0].quote.quoteId, 'en'),
     );
-  if (!quotes.length) return null;
+  const viewAnchor = `pricing-${anchorPart(view.providerId)}-${anchorPart(view.modelId)}`;
   const content = (
-    <div className="grid min-w-0 gap-3">
+    <div className="grid min-w-0 gap-5">
       {check && <OfficialCheckNotice view={check} />}
-      {quotes.map(({ quote, groupId }) => {
+      {scopes.map((scope, scopeIndex) => {
+        const scopeId = `${viewAnchor}-scope-${scopeIndex + 1}`;
+        const scopeEntries = [...scope.entries].sort(
+          (a, b) =>
+            Number(b.quote.selected) - Number(a.quote.selected) ||
+            serviceOrderName(a.serviceName) - serviceOrderName(b.serviceName) ||
+            a.quote.quoteId.localeCompare(b.quote.quoteId, 'en') ||
+            a.entryId.localeCompare(b.entryId, 'en'),
+        );
+        const provider =
+          scopeEntries.map(({ quote }) => priceListIdentity(quote).provider).find(Boolean) ||
+          view.providerId;
+        const scopeTitle = [provider, scope.qualifier].filter(Boolean).join(' · ');
+        const serviceCounts = new Map<string, number>();
+        for (const entry of scopeEntries) {
+          const name = navigationName(entry);
+          serviceCounts.set(name, (serviceCounts.get(name) ?? 0) + 1);
+        }
         return (
-          <QuoteArticle key={quote.quoteId} quote={quote} groupId={groupId}>
-            {check?.results && (
-              <QuoteOfficialCheck
-                result={check.results.get(
-                  officialCheckKey(view.providerId, view.modelId, quote.quoteId),
-                )}
-              />
+          <section
+            key={scopeId}
+            className="min-w-0 space-y-3"
+            data-pricing-scope={scopeId}
+            aria-label={scopeTitle}
+          >
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold" data-scope-title>
+                {scopeTitle}
+              </h3>
+              {scope.endpoint && (
+                <p className="text-muted-foreground text-xs break-all">{scope.endpoint}</p>
+              )}
+            </div>
+            {scopeEntries.length > 1 && (
+              <nav
+                className="flex flex-wrap gap-x-4 gap-y-1 text-xs"
+                aria-label={msg(locale, 'serviceNavigation')}
+              >
+                {scopeEntries.map((entry, entryIndex) => {
+                  const anchorId = `${scopeId}-service-${entryIndex + 1}`;
+                  const navigationLabel = navigationName(entry);
+                  const label =
+                    (serviceCounts.get(navigationLabel) ?? 0) > 1
+                      ? `${navigationLabel} · ${entry.quote.priceList}`
+                      : navigationLabel;
+                  return (
+                    <a
+                      key={entry.entryId}
+                      href={`#${anchorId}`}
+                      className="underline-offset-4 hover:underline"
+                      data-price-anchor-target={entry.entryId}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        const target = document.getElementById(anchorId);
+                        target?.scrollIntoView({ block: 'start' });
+                        target?.focus({ preventScroll: true });
+                      }}
+                    >
+                      {label}
+                    </a>
+                  );
+                })}
+              </nav>
             )}
-          </QuoteArticle>
+            <div className="grid min-w-0 gap-3">
+              {scopeEntries.map((entry, entryIndex) => (
+                <QuoteArticle
+                  key={entry.entryId}
+                  entry={entry}
+                  scopeId={scopeId}
+                  anchorId={`${scopeId}-service-${entryIndex + 1}`}
+                >
+                  {check?.results && (
+                    <QuoteOfficialCheck
+                      result={check.results.get(
+                        officialCheckKey(view.providerId, view.modelId, entry.quote.quoteId),
+                      )}
+                    />
+                  )}
+                </QuoteArticle>
+              ))}
+            </div>
+          </section>
         );
       })}
     </div>

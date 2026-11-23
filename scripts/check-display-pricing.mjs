@@ -10,6 +10,7 @@ const messages = {
     multi: 'Multiple billing units',
     cards: 'Card view',
     table: 'Table view',
+    wholeRequest: 'Rates apply to the entire request',
   },
   zh: {
     heading: '官方价目',
@@ -19,6 +20,7 @@ const messages = {
     multi: '多种计费单位',
     cards: '卡片视图',
     table: '表格视图',
+    wholeRequest: '整次请求按该档计费',
   },
   ja: {
     heading: '公式料金表',
@@ -28,6 +30,7 @@ const messages = {
     multi: '複数の課金単位',
     cards: 'カード表示',
     table: 'テーブル表示',
+    wholeRequest: 'リクエスト全体に適用',
   },
 };
 
@@ -56,45 +59,115 @@ async function assertNoPageOverflow(page) {
   assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1, JSON.stringify(dimensions));
 }
 
-async function compareVisibleQuotes(page, view, labels) {
+const nestedConditionKeys = (value) => {
+  if (!value || typeof value !== 'object') return [];
+  if (Array.isArray(value)) return value.flatMap(nestedConditionKeys);
+  return Object.entries(value).flatMap(([key, nested]) => {
+    if (nested && typeof nested === 'object' && Object.keys(nested).length === 0) return [];
+    return [key, ...nestedConditionKeys(nested)];
+  });
+};
+
+const rowOnlyConditionKeys = new Set([
+  'cacheHitRenewsTtl',
+  'cacheTtl',
+  'cacheWriteTtlSeconds',
+  'cacheWrite',
+  'cacheWriteIncludedInInput',
+  'durationSeconds',
+  'condition',
+  'tierName',
+  'when',
+  'resolution',
+  'amount',
+  'currency',
+  'unit',
+  'referenceFee',
+  'maxInput',
+  'maxOutput',
+  'minOutput',
+  'inputBands',
+  'inputOutputBands',
+]);
+
+async function compareVisibleQuotes(page, view, labels, locale) {
   const expected = view.groups.flatMap(({ groupId, quotes }) =>
     quotes.map((quote) => ({ groupId, quote })),
   );
   if (expected.length)
     await page.getByRole('heading', { name: labels.heading, exact: true }).waitFor();
   const actual = page.locator('[data-quote-id]');
-  assert.equal(await actual.count(), expected.length);
-  if (view.selectedQuoteId)
-    assert.equal(await actual.first().getAttribute('data-quote-id'), view.selectedQuoteId);
+  const actualQuoteIds = await actual.evaluateAll(
+    (entries) => [...new Set(entries.map((entry) => entry.dataset.quoteId))].sort(),
+  );
+  assert.deepEqual(actualQuoteIds, expected.map(({ quote }) => quote.quoteId).sort());
+  if (view.selectedQuoteId) {
+    const selected = quoteAt(page, view.selectedQuoteId).first();
+    const scope = await selected.getAttribute('data-pricing-scope');
+    assert.ok(scope);
+    assert.equal(
+      await page.locator(`[data-pricing-scope="${scope}"][data-quote-id]`).first().getAttribute('data-quote-id'),
+      view.selectedQuoteId,
+    );
+  }
   let count = 0;
   for (const { groupId, quote } of expected) {
-    const card = quoteAt(page, quote.quoteId);
-    assert.equal(await card.getAttribute('data-pricing-group'), groupId);
-    assert.equal(await card.getAttribute('data-syncable'), String(quote.syncable));
-    assert.equal(await card.getAttribute('data-quote-status'), quote.status);
-    const disclosure = card.locator('details').first();
-    assert.equal(
-      (await disclosure.getAttribute('open')) !== null,
-      quote.originalCurrencyEligible !== false,
+    const cards = quoteAt(page, quote.quoteId);
+    assert.ok((await cards.count()) >= 1, quote.quoteId);
+    for (const card of await cards.all()) {
+      assert.equal(await card.getAttribute('data-pricing-group'), groupId);
+      assert.equal(await card.getAttribute('data-syncable'), String(quote.syncable));
+      assert.equal(await card.getAttribute('data-quote-status'), quote.status);
+      assert.ok(await card.getAttribute('data-service-entry'), quote.quoteId);
+      const disclosure = card.locator('details').first();
+      assert.equal((await disclosure.getAttribute('open')) !== null, true, quote.quoteId);
+    }
+    const rendered = await cards.locator('[data-pricing-row]').evaluateAll((entries) =>
+      entries.map((element) => [
+        element.dataset.pricingRow,
+        {
+          amount: element.dataset.sourceAmount,
+          currency: element.dataset.sourceCurrency,
+          unit: element.dataset.unit,
+          bandUnit: element.closest('[data-rate-band]')?.dataset.unit,
+          cny: element.dataset.cnyAmount,
+          text: element.innerText,
+          entry: element.closest('article')?.dataset.serviceEntry,
+          rowConditions: [...element.querySelectorAll('[data-condition]')].map(
+            (condition) => condition.dataset.condition,
+          ),
+          rowConditionValues: [...element.querySelectorAll('[data-condition]')].reduce(
+            (values, condition) => {
+              const key = condition.dataset.condition;
+              (values[key] ??= []).push(condition.dataset.conditionValue ?? null);
+              return values;
+            },
+            {},
+          ),
+          commonConditionValues: [
+            ...element
+              .closest('article')
+              .querySelectorAll('[data-common-conditions] [data-condition]'),
+          ].reduce((values, condition) => {
+            const key = condition.dataset.condition;
+            (values[key] ??= []).push(condition.dataset.conditionValue ?? null);
+            return values;
+          }, {}),
+          commonConditions: [
+            ...element
+              .closest('article')
+              .querySelectorAll('[data-common-conditions] [data-condition]'),
+          ].map((condition) => condition.dataset.condition),
+          commonDescriptionCount: element
+            .closest('article')
+            .querySelectorAll('[data-common-conditions] [data-price-description]').length,
+          cells: [...element.cells].slice(0, 3).map((cell) => cell.innerText),
+          visible: element.getClientRects().length > 0,
+        },
+      ]),
     );
-    if (quote.originalCurrencyEligible === false)
-      await disclosure.locator('summary').first().click();
-    const rows = await card.locator('[data-pricing-row]').evaluateAll((entries) =>
-      Object.fromEntries(
-        entries.map((element) => [
-          element.dataset.pricingRow,
-          {
-            amount: element.dataset.sourceAmount,
-            currency: element.dataset.sourceCurrency,
-            unit: element.dataset.unit,
-            cny: element.dataset.cnyAmount,
-            text: element.innerText,
-            cells: [...element.cells].slice(0, 3).map((cell) => cell.innerText),
-            visible: element.getClientRects().length > 0,
-          },
-        ]),
-      ),
-    );
+    const rows = Object.fromEntries(rendered);
+    assert.equal(rendered.length, Object.keys(rows).length, quote.quoteId + ' duplicate rows');
     const visibleRows = quote.displayRows.filter((row) => {
       if (!row.rowId.split(':').includes('context_over_200k')) return true;
       const prefix = row.rowId.split(':context_over_200k:')[0];
@@ -107,27 +180,157 @@ async function compareVisibleQuotes(page, view, labels) {
       );
     });
     assert.equal(Object.keys(rows).length, visibleRows.length, quote.quoteId);
-    for (const { rowId, amount, sourceValue, currency, unit, cnyAmount } of visibleRows) {
+    const meteredConditions = new Set(
+      quote.displayRows
+        .filter(({ rowId }) => rowId.startsWith('condition-fee:'))
+        .map(({ usageKey }) => usageKey),
+    );
+    const details = quote.originalQuote?.conditions ?? quote.conditions;
+    const originalConditionKeys = new Set([
+      ...(details && typeof details === 'object' ? Object.keys(details) : []),
+      ...(typeof details === 'string' ? ['officialCondition'] : []),
+      ...(quote.originalQuote?.effectiveAt ? ['effectiveAt'] : []),
+    ]);
+    const commonRowConditionKeys = ['minimumUsage', 'draft', 'rounding'];
+    for (const { rowId, usageKey, amount, sourceValue, currency, unit, cnyAmount, conditions } of visibleRows) {
       const row = rows[rowId];
       assert.ok(row?.visible, quote.quoteId + ' ' + rowId);
       assert.equal(row.amount, String(amount ?? ''), rowId);
       assert.equal(row.currency, currency ?? '', rowId);
       assert.equal(row.unit, unit ?? '', rowId);
+      assert.equal(row.bandUnit, unit ?? '', rowId);
       assert.equal(row.cny, String(cnyAmount ?? ''), rowId);
       if (amount !== null || sourceValue)
         assert.ok(row.cells[1].includes(String(amount ?? sourceValue)), rowId);
       if (currency) assert.ok(row.cells[1].includes(currency), rowId);
       if (cnyAmount !== null) assert.ok(row.cells[2].includes('¥' + cnyAmount), rowId);
-      if (unit) assert.ok(row.cells[0].includes('\n'), rowId);
+      const term = quote.displayFeeTerms?.find((candidate) => candidate.usageKey === usageKey);
+      if (term?.retentionMinutes !== undefined && !/^cache_write_\d+[hm]$/.test(usageKey)) {
+        const minutes = { en: 'min', zh: '分钟', ja: '分' }[locale];
+        assert.ok(
+          row.text.includes(`${term.retentionMinutes} ${minutes}`),
+          `${quote.quoteId} ${rowId} missing TTL ${term.retentionMinutes}`,
+        );
+      }
+      if (term?.condition) assert.ok(row.text.includes(term.condition), rowId + ' missing fee term');
+      const expectedRowConditions = Object.entries(conditions).filter(
+        ([key, value]) =>
+          !['tier', 'serviceTier', 'above'].includes(key) &&
+          !meteredConditions.has(key) &&
+          value !== undefined &&
+          !(value && typeof value === 'object' && Object.keys(value).length === 0),
+      );
+      for (const [key, value] of expectedRowConditions) {
+        const entryRows = visibleRows.filter((candidate) => rows[candidate.rowId].entry === row.entry);
+        const canBeCommon =
+          !rowOnlyConditionKeys.has(key) &&
+          (commonRowConditionKeys.includes(key) || originalConditionKeys.has(key)) &&
+          entryRows.every(
+            (candidate) =>
+              key in candidate.conditions &&
+              JSON.stringify(candidate.conditions[key]) === JSON.stringify(value),
+          );
+        const serialized = JSON.stringify(value);
+        if (canBeCommon) {
+          assert.ok(
+            row.commonConditionValues[key]?.includes(serialized),
+            `${quote.quoteId} ${row.entry} lost common condition value ${key}`,
+          );
+        } else {
+          assert.ok(
+            row.rowConditionValues[key]?.includes(serialized),
+            `${quote.quoteId} ${rowId} lost row condition value ${key}`,
+          );
+          assert.ok(
+            !row.commonConditions.includes(key),
+            `${quote.quoteId} ${rowId} incorrectly hoisted ${key}`,
+          );
+        }
+      }
+      for (const key of meteredConditions)
+        assert.ok(
+          !row.commonConditions.includes(key),
+          `${quote.quoteId} ${row.entry} invented common metered condition ${key}`,
+        );
       count += 1;
     }
-    if (quote.displayRows.length && quote.originalCurrencyEligible !== false) {
-      await card.getByRole('columnheader', { name: labels.source, exact: true }).first().waitFor();
-      await card.getByRole('columnheader', { name: labels.base, exact: true }).first().waitFor();
+    const originalCommonEntries = details && typeof details === 'object'
+      ? Object.entries(details).filter(
+          ([key, value]) =>
+            !meteredConditions.has(key) &&
+            !rowOnlyConditionKeys.has(key) &&
+            value !== undefined &&
+            !(value && typeof value === 'object' && Object.keys(value).length === 0),
+        )
+      : [];
+    if (quote.originalQuote?.effectiveAt && !rowOnlyConditionKeys.has('effectiveAt'))
+      originalCommonEntries.push(['effectiveAt', quote.originalQuote.effectiveAt]);
+    for (const entry of new Set(Object.values(rows).map((row) => row.entry))) {
+      const entryRows = visibleRows.filter(({ rowId }) => rows[rowId].entry === entry);
+      const commonEntries = originalCommonEntries.flatMap(([key, value]) => {
+        const rowsWithCondition = entryRows.filter((row) => key in row.conditions);
+        if (!rowsWithCondition.length) return [[key, value]];
+        const first = rowsWithCondition[0].conditions[key];
+        return rowsWithCondition.length === entryRows.length &&
+          rowsWithCondition.every(
+            (row) => JSON.stringify(row.conditions[key]) === JSON.stringify(first),
+          )
+          ? [[key, first]]
+          : [];
+      });
+      for (const key of commonRowConditionKeys) {
+        const value = entryRows[0]?.conditions[key];
+        if (
+          typeof value === 'string' &&
+          entryRows.every((row) => row.conditions[key] === value) &&
+          !commonEntries.some(([existing]) => existing === key)
+        )
+          commonEntries.push([key, value]);
+      }
+      const commonKeys = new Set(entryRows.flatMap(({ rowId }) => rows[rowId].commonConditions));
+      const commonValues = entryRows[0] ? rows[entryRows[0].rowId].commonConditionValues : {};
+      const allowedCommonKeys = new Set(
+        commonEntries.flatMap(([key, value]) => [key, ...nestedConditionKeys(value)]),
+      );
+      if (typeof details === 'string') allowedCommonKeys.add('officialCondition');
+      if (quote.originalQuote?.contextNote) allowedCommonKeys.add('contextNote');
+      if (quote.originalQuote?.cache?.reason) allowedCommonKeys.add('cacheAvailability');
+      for (const key of commonKeys)
+        assert.ok(
+          allowedCommonKeys.has(key),
+          `${quote.quoteId} ${entry} incorrectly hoisted ${key}`,
+        );
+      for (const [key, value] of commonEntries)
+        assert.ok(
+          commonValues[key]?.includes(JSON.stringify(value)),
+          `${quote.quoteId} ${entry} lost common condition value ${key}`,
+        );
+      if (typeof details === 'string')
+        assert.ok(commonKeys.has('officialCondition'), `${quote.quoteId} ${entry} lost condition text`);
+      for (const { rowId } of entryRows)
+        assert.equal(
+          rows[rowId].commonDescriptionCount,
+          quote.originalQuote?.description ? 1 : 0,
+          `${quote.quoteId} ${entry} description placement`,
+        );
+    }
+    if (quote.displayRows.length) {
+      await cards
+        .getByRole('columnheader', { name: labels.source, exact: true, includeHidden: true })
+        .first()
+        .waitFor({ state: 'attached' });
+      await cards
+        .getByRole('columnheader', { name: labels.base, exact: true, includeHidden: true })
+        .first()
+        .waitFor({ state: 'attached' });
     }
   }
   return count;
 }
+
+const bandText = (row) => row.evaluate((element) => element.closest('[data-rate-band]').innerText);
+const sourceText = (row) => row.locator('[data-price-source]:visible').innerText();
+const cnyText = (row) => row.locator('[data-price-cny]:visible').innerText();
 
 async function exactRepresentativePrices(page, locale, providerId, modelId, view) {
   const selected = view.selectedQuoteId ? quoteAt(page, view.selectedQuoteId) : null;
@@ -145,30 +348,31 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
         await card.locator('[data-pricing-row="cost:cache_write"]').innerText(),
         /30\s*(?:min|分钟|分)/,
       );
-      assert.match(await rows.first().innerText(), /272000/);
+      assert.match(await bandText(rows.first()), /272000/);
     }
     assert.match(
       await selected.locator('[data-pricing-row="cost:input"]').innerText(),
-      /\$2[\s\S]*¥14[\s\S]*272000/,
+      /\$2[\s\S]*¥14/,
     );
+    assert.match(await bandText(selected.locator('[data-pricing-row="cost:input"]')), /272000/);
     assert.match(
       await selected.locator('[data-pricing-row="cost:output"]').innerText(),
       /\$10[\s\S]*¥70/,
     );
     assert.match(
-      await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText(),
+      await bandText(selected.locator('[data-pricing-row="cost:tier-0:input"]')),
       /272001/,
     );
   } else if (modelId === 'grok-4.20-0309-non-reasoning') {
-    const low = await selected.locator('[data-pricing-row="cost:input"]').innerText();
-    const high = await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText();
+    const low = await bandText(selected.locator('[data-pricing-row="cost:input"]'));
+    const high = await bandText(selected.locator('[data-pricing-row="cost:tier-0:input"]'));
     assert.match(low, /199999/);
     assert.match(high, /200000/);
     assert.doesNotMatch(high, /200001/);
   } else if (modelId === 'claude-haiku-5-5') {
-    assert.match(await selected.locator('[data-pricing-row="cost:input"]').innerText(), /100000/);
+    assert.match(await bandText(selected.locator('[data-pricing-row="cost:input"]')), /100000/);
     assert.match(
-      await selected.locator('[data-pricing-row="cost:tier-0:input"]').innerText(),
+      await bandText(selected.locator('[data-pricing-row="cost:tier-0:input"]')),
       /100001/,
     );
     assert.match(
@@ -192,8 +396,7 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
         page,
         all.find(({ priceList }) => priceList.includes('inference_geo=us')).quoteId,
       )
-        .locator('summary')
-        .first()
+        .locator('[data-price-list]')
         .innerText(),
       /inference_geo=us/,
     );
@@ -255,7 +458,7 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
     const cache = repeat.locator('[data-pricing-row="cost:cache_write"]');
     await cache.waitFor();
     assert.equal(await cache.locator('[data-tier-condition]').count(), 0);
-    assert.match(await repeat.locator('[data-pricing-row="cost:input"]').innerText(), /32000/);
+    assert.match(await bandText(repeat.locator('[data-pricing-row="cost:input"]')), /32000/);
   } else if (modelId === 'gemini-3.8-flash') {
     const labels = {
       en: ['Effective from', 'Valid through', 'Announced rates', 'Cache read'],
@@ -349,7 +552,7 @@ export async function checkDisplayPricing({
       .locator(`[data-pricing-provider="${providerId}"][data-pricing-model="${modelId}"]`)
       .first()
       .waitFor();
-    const renderedRows = await compareVisibleQuotes(page, view, labels);
+    const renderedRows = await compareVisibleQuotes(page, view, labels, locale);
     visibleRows += renderedRows;
     await exactRepresentativePrices(page, locale, providerId, modelId, view);
     await assertNoPageOverflow(page);
@@ -380,10 +583,13 @@ export async function checkPricingReviewFindings({
   goto,
   select,
   current,
+  catalog,
   locale,
+  mobile,
   respond,
   checkStatusUrl,
 }) {
+  const models = (provider, model) => catalog[provider].models[model];
   const visit = async (provider, model) => {
     await goto(select(provider, model));
     await page
@@ -411,8 +617,8 @@ export async function checkPricingReviewFindings({
       await row(selected, 'cost:tier-0:output').getAttribute('data-source-amount'),
       '60',
     );
-    assert.match(await row(selected, 'cost:input').innerText(), /272000/);
-    assert.match(await row(selected, 'cost:tier-0:input').innerText(), /272001/);
+    assert.match(await bandText(row(selected, 'cost:input')), /272000/);
+    assert.match(await bandText(row(selected, 'cost:tier-0:input')), /272001/);
     assert.match(await selected.locator('pre').textContent(), /context_over_200k/);
     for (const id of ['cost:cache_write', 'cost:tier-0:cache_write'])
       assert.match(
@@ -582,6 +788,168 @@ export async function checkPricingReviewFindings({
     },
   );
 
+  await verify('Service scopes, anchors and disclosures preserve the selected quote', async () => {
+    await visit('openai', 'gpt-6.1-sol');
+    const view = models('openai', 'gpt-6.1-sol').pricing_view;
+    const selected = page.locator('[data-syncable="true"]');
+    const summary = await selected.locator('summary').first().innerText();
+    assert.match(summary, /Standard/);
+    assert.doesNotMatch(summary, /OpenAI API \/ Standard \/ global/);
+    const selectedScope = await selected.getAttribute('data-pricing-scope');
+    const scope = selected.locator('xpath=ancestor::section[@data-pricing-scope][1]');
+    assert.match(await scope.locator('[data-scope-title]').innerText(), /OpenAI API/);
+    assert.match(await scope.locator('[data-scope-title]').innerText(), /global/);
+    assert.ok(await selected.locator('[data-common-conditions]').count());
+    const batchView = view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ priceList }) => priceList === 'Batch');
+    const batch = quoteAt(page, batchView.quoteId);
+    assert.equal(await batch.getAttribute('data-pricing-scope'), selectedScope);
+    assert.equal(await batch.getAttribute('data-syncable'), 'false');
+    assert.equal(await batch.getAttribute('data-quote-status'), 'reference-only');
+    assert.ok(
+      await page
+        .locator('[data-quote-id] > details')
+        .first()
+        .evaluate((details) => details.open),
+    );
+    const batchEntry = await batch.getAttribute('data-service-entry');
+    const routeHash = await page.evaluate(() => location.hash);
+    await scope.locator(`[data-price-anchor-target="${batchEntry}"]`).click();
+    assert.equal(await page.evaluate(() => location.hash), routeHash);
+    assert.ok(await batch.evaluate((article) => document.activeElement === article));
+    await batch.locator('summary').first().click();
+    assert.equal(await batch.locator('details').first().getAttribute('open'), null);
+    assert.equal(await selected.getAttribute('data-syncable'), 'true');
+    assert.equal(await selected.getAttribute('data-quote-id'), view.selectedQuoteId);
+    await batch.locator('summary').first().click();
+    assert.ok(
+      await page
+        .locator('[data-quote-id] > details')
+        .evaluateAll((details) => details.every((entry) => entry.open)),
+    );
+
+    const input = row(selected, 'cost:input');
+    const source = input.locator('[data-price-source]:visible');
+    const cny = input.locator('[data-price-cny]:visible');
+    const usageBox = await input.locator('th').boundingBox();
+    const sourceBox = await source.boundingBox();
+    const cnyBox = await cny.boundingBox();
+    assert.ok(usageBox && sourceBox && cnyBox);
+    const sourceCell = source.locator('xpath=ancestor::td[1]');
+    const cnyCell = cny.locator('xpath=ancestor::td[1]');
+    const sharesPriceCell = await sourceCell.evaluate(
+      (cell, other) => cell === other,
+      await cnyCell.elementHandle(),
+    );
+    assert.equal(sharesPriceCell, mobile);
+    if (mobile) {
+      assert.ok(cnyBox.y > sourceBox.y, JSON.stringify({ sourceBox, cnyBox }));
+      assert.ok(Math.abs(sourceBox.x + sourceBox.width - (cnyBox.x + cnyBox.width)) < 2);
+    } else {
+      assert.ok(Math.abs(sourceBox.y - cnyBox.y) < 2, JSON.stringify({ sourceBox, cnyBox }));
+      assert.ok(cnyBox.x > sourceBox.x, JSON.stringify({ sourceBox, cnyBox }));
+    }
+
+    await visit('anthropic', 'claude-haiku-5-5');
+    const anthropic = models('anthropic', 'claude-haiku-5-5').pricing_view;
+    const globalScope = await page
+      .locator('[data-syncable="true"]')
+      .getAttribute('data-pricing-scope');
+    const inference = anthropic.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ priceList }) => priceList === 'Standard / inference_geo=us');
+    const otherScope = quoteAt(page, inference.quoteId);
+    assert.notEqual(await otherScope.getAttribute('data-pricing-scope'), globalScope);
+    assert.match(await otherScope.locator('[data-price-list]').innerText(), /inference_geo=us/);
+    await assertNoPageOverflow(page);
+  });
+
+  await verify('One source record can expose independent service entries without losing rows', async () => {
+    await visit('google', 'gemini-3.8-flash');
+    const reference = models('google', 'gemini-3.8-flash').pricing_view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ quoteId }) => quoteId.startsWith('reviewed-reference:'));
+    const entries = quoteAt(page, reference.quoteId);
+    assert.deepEqual(
+      (await entries.evaluateAll((nodes) => nodes.map((node) => node.dataset.serviceName))).sort(),
+      ['Batch', 'Flex', 'Priority', 'Standard'],
+    );
+    assert.equal(await entries.locator('[data-pricing-row]').count(), reference.displayRows.length);
+    assert.ok(
+      await entries
+        .locator('details')
+        .first()
+        .evaluateAll((details) => details.every((entry) => entry.open)),
+    );
+    const scope = entries.first().locator('xpath=ancestor::section[@data-pricing-scope][1]');
+    for (const service of ['Standard', 'Batch', 'Flex', 'Priority'])
+      assert.ok(await scope.locator(`[data-service-name="${service}"]`).count(), service);
+    await assertNoPageOverflow(page);
+  });
+
+  await verify('Two-band, multi-band and partially tiered rates keep exact group semantics', async () => {
+    await visit('openai', 'gpt-6.2-astra');
+    const selected = page.locator('[data-syncable="true"]');
+    const bands = selected.locator('[data-rate-band][data-unit="per_million_tokens"]');
+    assert.equal(await bands.count(), 2);
+    assert.match(await bandText(row(selected, 'cost:input')), /272000/);
+    assert.match(await bandText(row(selected, 'cost:tier-0:input')), /272001/);
+    for (const id of ['cost:input', 'cost:tier-0:input']) {
+      const charge = row(selected, id);
+      assert.match(await bandText(charge), new RegExp(messages[locale].wholeRequest));
+      assert.equal(await charge.locator('[data-tier-condition]').count(), 0);
+    }
+
+    await visit('alibaba', 'qwen3-coder-flash');
+    const multi = quoteAt(page, 'upstream:alibaba:qwen3-coder-flash:USD');
+    assert.equal(await multi.locator('[data-rate-band]').count(), 4);
+    for (const [id, bound] of [
+      ['cost:input', /32000/],
+      ['cost:tier-0:input', /32001.*128000/],
+      ['cost:tier-1:input', /128001.*256000/],
+      ['cost:tier-2:input', /256001/],
+    ])
+      assert.match(await bandText(row(multi, id)), bound);
+    await assertNoPageOverflow(page);
+
+    await visit('alibaba', 'qwen3.5-plus');
+    const partial = quoteAt(page, 'upstream:alibaba:qwen3.5-plus:USD');
+    const lowBand = row(partial, 'cost:input').locator('xpath=ancestor::*[@data-rate-band][1]');
+    const highBand = row(partial, 'cost:tier-0:input').locator(
+      'xpath=ancestor::*[@data-rate-band][1]',
+    );
+    const reasoningBand = row(partial, 'cost:reasoning').locator(
+      'xpath=ancestor::*[@data-rate-band][1]',
+    );
+    assert.equal(await highBand.locator('[data-pricing-row]').count(), 2);
+    assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await lowBand.getAttribute('data-rate-band'));
+    assert.equal(await reasoningBand.locator('[data-tier-condition]').count(), 0);
+    assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await highBand.getAttribute('data-rate-band'));
+    await assertNoPageOverflow(page);
+  });
+
+  await verify('Mixed billing units retain their own group labels', async () => {
+    await visit('minimax-cn', 'MiniMax-H3');
+    const selected = page.locator('[data-syncable="true"]');
+    const labels = {
+      en: { per_second: 'Per second', per_count: 'Per item' },
+      zh: { per_second: '每秒', per_count: '每个用量单位' },
+      ja: { per_second: '1 秒あたり', per_count: '1 件あたり' },
+    }[locale];
+    assert.deepEqual(
+      (await selected
+        .locator('[data-rate-band]')
+        .evaluateAll((bands) => [...new Set(bands.map((band) => band.dataset.unit))])).sort(),
+      ['per_count', 'per_second'],
+    );
+    for (const [unit, label] of Object.entries(labels)) {
+      const band = selected.locator(`[data-rate-band][data-unit="${unit}"]`).first();
+      assert.ok((await band.innerText()).includes(label), unit);
+    }
+    await assertNoPageOverflow(page);
+  });
+
   await verify('Zhipu short-output rate exclusivity', async () => {
     for (const model of ['glm-4.7', 'glm-4.5-air']) {
       await visit('zhipuai', model);
@@ -597,10 +965,10 @@ export async function checkPricingReviewFindings({
           model + ' ordinary ' + meter + ' must exclude the short-output request',
         );
         assert.match(await outputFloor.innerText(), /200/);
-        assert.match(await ordinary.locator('[data-tier-condition]').innerText(), /31999/);
+        assert.match(await bandText(ordinary), /31999/);
         assert.match(await short.locator('[data-condition="maxOutput"]').innerText(), /199/);
         assert.match(await short.locator('[data-condition="maxInput"]').innerText(), /31999/);
-        assert.match(await high.locator('[data-tier-condition]').innerText(), /32000/);
+        assert.match(await bandText(high), /32000/);
         assert.equal(await high.locator('[data-condition="minOutput"]').count(), 0);
       }
       if (model === 'glm-4.7') {
@@ -627,8 +995,8 @@ export async function checkPricingReviewFindings({
         const charge = row(reference, 'raw-fees:token:' + id);
         assert.equal(await charge.getAttribute('data-cny-amount'), amount);
         const condition = charge.locator('[data-tier-condition]');
-        assert.equal(await condition.count(), 1, model + ' ' + id + ' has no condition');
-        assert.match(await condition.innerText(), bounds);
+        assert.equal(await condition.count(), 0, model + ' ' + id + ' repeats the band on the row');
+        assert.match(await bandText(charge), bounds);
       }
     }
   });
@@ -770,12 +1138,12 @@ export async function checkPricingReviewFindings({
     const units = { en: 'Per image', zh: '每张图片', ja: '画像 1 枚あたり' };
     const label = await rate.getByRole('rowheader').innerText();
     assert.ok(label.toLowerCase().includes(direction[locale].toLowerCase()));
-    assert.ok(label.includes(units[locale]));
+    assert.ok((await bandText(rate)).includes(units[locale]));
     const tokens = await rate.locator('[data-condition="inputTokens"]').innerText();
     assert.ok(tokens.includes(direction[locale]));
     assert.match(tokens, /\b560\b/);
-    assert.match(await rate.getByRole('cell').nth(0).innerText(), /≈\$0\.0011\b/);
-    assert.equal(await rate.getByRole('cell').nth(1).innerText(), '≈¥0.0077');
+    assert.match(await sourceText(rate), /≈\$0\.0011\b/);
+    assert.equal(await cnyText(rate), '≈¥0.0077');
   });
   await verify('Gemini Maps service tier restrictions', async () => {
     await visit('google', 'gemini-2.5-flash-lite');
@@ -784,10 +1152,11 @@ export async function checkPricingReviewFindings({
     const quote = maps.locator('xpath=ancestor::article');
     assert.equal(await quote.locator('details').nth(1).getAttribute('open'), null);
     assert.equal(await maps.getAttribute('data-unit'), 'per_thousand_grounded_prompts');
-    assert.match(await maps.getByRole('cell').nth(0).innerText(), /\$25\b/);
-    assert.equal(await maps.getByRole('cell').nth(1).innerText(), '¥175');
+    assert.match(await sourceText(maps), /\$25\b/);
+    assert.equal(await cnyText(maps), '¥175');
+    const scope = maps.locator('xpath=ancestor::section[@data-pricing-scope][1]');
     for (const tier of ['Batch', 'Flex'])
-      assert.ok(await quote.locator(`[data-service-tier="${tier}"]`).count());
+      assert.ok(await scope.locator(`[data-service-name="${tier}"]`).count());
     const note = maps
       .locator('xpath=ancestor::table/../..')
       .locator('[data-condition="toolCondition"]');
@@ -814,9 +1183,9 @@ export async function checkPricingReviewFindings({
   });
   await verify('Gemini Standard reference has exclusive input bands', async () => {
     await visit('google', 'gemini-3.1-pro-preview');
-    const reference = page.locator('article[data-quote-id^="reviewed-reference:"]').filter({
-      has: page.getByRole('heading', { name: 'Gemini Developer API / paid Standard', exact: true }),
-    });
+    const reference = page.locator(
+      'article[data-quote-id^="reviewed-reference:"][data-service-name="Standard"]',
+    );
     const upper = { en: 'up to 200000', zh: '不超过 200000', ja: '200000 以下' };
     const lower = { en: 'from 200001', zh: '从 200001 起', ja: '200001 以上' };
     for (const [usage, low, high] of [
@@ -828,8 +1197,8 @@ export async function checkPricingReviewFindings({
       const above = row(reference, `raw:tier-0:${usage}`);
       assert.equal(await standard.getAttribute('data-cny-amount'), low);
       assert.equal(await above.getAttribute('data-cny-amount'), high);
-      const lowCondition = await standard.locator('[data-tier-condition]').innerText();
-      const highCondition = await above.locator('[data-tier-condition]').innerText();
+      const lowCondition = await bandText(standard);
+      const highCondition = await bandText(above);
       assert.match(lowCondition, /\b200000\b/);
       assert.match(highCondition, /\b200001\b/);
       assert.ok(lowCondition.toLowerCase().includes(upper[locale]), lowCondition);
@@ -890,8 +1259,8 @@ export async function checkPricingReviewFindings({
     const fee = row(selected, 'condition-fee:explicitCacheStorage');
     assert.equal(await fee.getAttribute('data-unit'), 'per_million_tokens_per_hour');
     assert.equal(await fee.getAttribute('data-source-currency'), 'USD');
-    assert.match(await fee.getByRole('cell').nth(0).innerText(), /\$4\.5\b/);
-    assert.equal(await fee.getByRole('cell').nth(1).innerText(), '¥31.5');
+    assert.match(await sourceText(fee), /\$4\.5\b/);
+    assert.equal(await cnyText(fee), '¥31.5');
     assert.ok(await fee.locator('[data-condition="referenceFee"]').isVisible());
     assert.match(await selected.innerText(), /https:\/\/generativelanguage\.googleapis\.com/);
 
@@ -934,7 +1303,7 @@ export async function checkPricingReviewFindings({
     ]) {
       await visit(provider, model);
       const rate = row(page.locator('[data-syncable="true"]'), id);
-      assert.match(await rate.locator('[data-tier-condition]').innerText(), expected);
+      assert.match(await bandText(rate), expected);
     }
   });
   await verify('StepFun legacy cache eligibility label is localized', async () => {
@@ -942,7 +1311,7 @@ export async function checkPricingReviewFindings({
     const fee = row(page.locator('[data-syncable="true"]'), 'condition-fee:legacyCacheHit');
     assert.equal(await fee.getAttribute('data-cny-amount'), '0.35');
     assert.equal(await fee.getAttribute('data-unit'), 'per_million_tokens');
-    assert.equal(await fee.getByRole('cell').nth(1).innerText(), '¥0.35');
+    assert.equal(await cnyText(fee), '¥0.35');
     const condition = fee.locator('[data-condition="eligibility"]');
     assert.ok(await condition.isVisible());
     const label = { en: 'Eligibility', zh: '适用条件', ja: '適用条件' }[locale];
@@ -953,5 +1322,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 21, passed: true };
+  return { findings: 25, passed: true };
 }

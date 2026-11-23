@@ -167,9 +167,9 @@ function reviewedFixture(t) {
   return { root, repo, common, previousUpstream, directory, business, policy };
 }
 
-function prepareReviewed(f, upstream, output = join(f.root, 'candidate')) {
+function prepareReviewed(f, upstream, output = join(f.root, 'candidate'), env = process.env) {
   const result = spawnSync(process.execPath, [script, '--reviewed', '--repo', f.repo,
-    '--upstream', upstream, '--business', f.business, '--output', output], { encoding: 'utf8' });
+    '--upstream', upstream, '--business', f.business, '--output', output], { encoding: 'utf8', env });
   return { ...result, report: JSON.parse(result.stdout) };
 }
 
@@ -234,7 +234,9 @@ test('reviewed sync reports conflicts against the pinned tree and removes the fa
   git(f.repo, 'switch', '-q', 'main');
   put(f.repo, 'README.md', 'New upstream text\n');
   const upstream = commit(f.repo, 'edit the same README line upstream');
-  const { status, report } = prepareReviewed(f, upstream);
+  const { status, report } = prepareReviewed(f, upstream, join(f.root, 'candidate'), {
+    ...process.env, LC_ALL: 'zh_CN.UTF-8', LANG: 'zh_CN.UTF-8', LANGUAGE: 'zh_CN',
+  });
   assert.equal(status, 1, JSON.stringify(report));
   assert.equal(report.stage, 'merge');
   assert.match(report.error, /Upstream merge conflicts:.*README\.md/);
