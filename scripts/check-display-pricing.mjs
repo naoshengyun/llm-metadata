@@ -923,7 +923,8 @@ export async function checkPricingReviewFindings({
       'xpath=ancestor::*[@data-rate-band][1]',
     );
     assert.equal(await highBand.locator('[data-pricing-row]').count(), 2);
-    assert.equal(await reasoningBand.getAttribute('data-rate-band'), await lowBand.getAttribute('data-rate-band'));
+    assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await lowBand.getAttribute('data-rate-band'));
+    assert.equal(await reasoningBand.locator('[data-tier-condition]').count(), 0);
     assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await highBand.getAttribute('data-rate-band'));
     await assertNoPageOverflow(page);
   });

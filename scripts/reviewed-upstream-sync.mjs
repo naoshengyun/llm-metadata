@@ -155,7 +155,10 @@ function simulateMerge(repo, upstream, business, previousUpstream, upstreamWorkf
   const ourSide = commitTree(repo, `${business}^{tree}`, previousUpstream, date, 'Business side of reviewed sync');
   const theirSide = commitTree(repo, normalizedUpstream, previousUpstream, date, 'Upstream side of reviewed sync');
   try {
-    return git(repo, 'merge-tree', '--write-tree', ourSide, theirSide).split('\n')[0];
+    // Conflict diagnostics below are parsed in English; do not inherit the host locale.
+    return gitBytes(repo, ['merge-tree', '--write-tree', ourSide, theirSide], undefined, {
+      ...gitEnv, LC_ALL: 'C', LANGUAGE: 'C',
+    }).toString('utf8').split('\n')[0];
   } catch (error) {
     if (error.status !== 1) throw error;
     const conflicts = error.stdout.toString('utf8').split('\n').filter(line => line.startsWith('CONFLICT'));

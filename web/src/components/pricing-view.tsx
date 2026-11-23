@@ -470,8 +470,9 @@ function RateTable({
     const { row } = model;
     const related = relatedRateRows(row, rows);
     const structuredTiers = related.some(({ tier }) => tier?.size);
-    const threshold = hasTiers ? lastLowerBandToken(row, structuredTiers) : null;
-    const key = hasTiers ? JSON.stringify([rateScope(row), threshold]) : 'all';
+    const threshold = model.tier ? lastLowerBandToken(row, structuredTiers) : null;
+    // Hoist a heading only when every enclosed rate has that exact applicability.
+    const key = hasTiers ? JSON.stringify([rateScope(row), threshold, model.tier]) : 'all';
     const band = bandMap.get(key);
     if (band) band.rows.push(model);
     else bandMap.set(key, { rows: [model], threshold });
