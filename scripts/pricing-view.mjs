@@ -194,6 +194,9 @@ function feeDisplayRows(fees, prefix, conditions) {
   );
 }
 
+const rateIdentity = ({ usageKey, amount, currency, unit, conditions, tier }) =>
+  canonical([usageKey, amount, currency, unit, conditions, tier ?? null]);
+
 function taskDisplayRows(tiers, conditions) {
   return (tiers ?? []).flatMap((tier, tierIndex) =>
     tier.charges.map((charge) =>
@@ -396,10 +399,14 @@ function displayRowsFor(quote) {
         source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
       ),
     );
-  if (!rows.length && source?.candidateCost)
+  if (source?.candidateCost) {
+    const itemizedRates = new Set(rows.map(rateIdentity));
     rows.push(
-      ...costDisplayRows(source.candidateCost, unit, currency, conditions, 'candidate-cost'),
+      ...costDisplayRows(source.candidateCost, unit, currency, conditions, 'candidate-cost').filter(
+        (row) => !itemizedRates.has(rateIdentity(row)),
+      ),
     );
+  }
   if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools', conditions));
   const inputImage = source?.inputImageEquivalent;
   if (Number.isFinite(inputImage?.publishedApproxUSD)) {

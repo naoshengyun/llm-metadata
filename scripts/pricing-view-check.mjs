@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
 
 // Inventory audited source fields directly. Keep the inventory and the summary assertions
@@ -407,10 +408,27 @@ export function expectedDisplayRows(quote) {
       source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
     ),
   ];
+  const candidateRates = costRows(
+    source.candidateCost,
+    'candidate-cost',
+    sourceCurrency,
+    sourceUnit,
+    conditions,
+  );
   const reviewedPrices = [
-    ...(baseRates.length > 0
-      ? baseRates
-      : costRows(source.candidateCost, 'candidate-cost', sourceCurrency, sourceUnit, conditions)),
+    ...baseRates,
+    ...candidateRates.filter(
+      (candidate) =>
+        !baseRates.some(
+          (itemized) =>
+            itemized.usageKey === candidate.usageKey &&
+            itemized.amount === candidate.amount &&
+            itemized.currency === candidate.currency &&
+            itemized.unit === candidate.unit &&
+            isDeepStrictEqual(itemized.conditions, candidate.conditions) &&
+            isDeepStrictEqual(itemized.tier, candidate.tier),
+        ),
+    ),
     ...chargedFees(source.tools, 'tools', conditions),
     ...supplementalRates,
     ...imageEquivalents,

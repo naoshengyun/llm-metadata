@@ -956,6 +956,107 @@ test('image equivalents supplement token tariffs that are supplied only by candi
   );
 });
 
+test('candidateCost completes partially itemized Gemini rates in every locale', (t) => {
+  const model = 'gemini-3-pro-image';
+  const setup = (official) => {
+    const source = official.excludedQuotes.find(({ officialModel }) => officialModel === model);
+    source.fees = source.fees.filter(({ name }) => name !== 'output_image');
+  };
+  const read = buildCandidate(t, setup);
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  const quotes = Object.values(catalogs).map((catalog) =>
+    catalog.google.models[model].pricing_view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ originalQuote }) => originalQuote?.inputImageEquivalent),
+  );
+  for (const { displayRows } of quotes) {
+    assert.deepEqual(
+      displayRows
+        .filter(({ unit }) => unit === 'per_million_tokens')
+        .map(({ rowId, usageKey, amount, currency, cnyAmount }) => [
+          rowId,
+          usageKey,
+          amount,
+          currency,
+          cnyAmount,
+        ]),
+      [
+        ['fees:0:input', 'input', 2, 'USD', 14],
+        ['fees:1:input_image', 'input_image', 2, 'USD', 14],
+        ['fees:2:output', 'output', 12, 'USD', 84],
+        ['candidate-cost:output_image', 'output_image', 120, 'USD', 840],
+      ],
+    );
+    assert.equal(displayRows.filter(({ approximate }) => approximate).length, 3);
+    assert.equal(displayRows.filter(({ usageKey }) => usageKey === 'Google Search').length, 1);
+  }
+
+  const { quoteId, displayRows } = quotes[0];
+  const inputs = rawReconciliationInputs();
+  setup(inputs.official);
+  const candidate = {
+    ...inputs,
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  };
+  assert.equal(reconcileDisplayCoverage(candidate).status, 'passed');
+  for (const { rowId } of displayRows) {
+    // Simulate the same omission in all locales so only the source audit detects it.
+    for (const quote of quotes)
+      quote.displayRows = displayRows.filter((row) => row.rowId !== rowId);
+    const result = reconcileDisplayCoverage(candidate);
+    assert.ok(
+      result.failures.some(
+        (failure) => failure.quoteId === quoteId && failure.field === 'displayRows',
+      ),
+      `Expected an independent source mismatch after removing ${rowId}`,
+    );
+  }
+});
+
+test('candidateCost deduplicates only fees with matching amount, currency, unit and applicability', (t) => {
+  const model = 'gemini-3-pro-image';
+  const read = buildCandidate(t, (official) => {
+    const source = official.excludedQuotes.find(({ officialModel }) => officialModel === model);
+    // Give each explicit fee one independent reason to differ from the candidate rate.
+    const differences = {
+      input: { amount: 3 },
+      input_image: { currency: 'CNY' },
+      output: { unit: 'per_thousand_tokens' },
+      output_image: { condition: 'Batch only' },
+    };
+    for (const fee of source.fees) Object.assign(fee, differences[fee.name]);
+  });
+  const view = read('api/all.json').google.models[model].pricing_view;
+  const { displayRows } = view.groups
+    .flatMap(({ quotes }) => quotes)
+    .find(({ originalQuote }) => originalQuote?.inputImageEquivalent);
+  const rates = displayRows
+    .filter(({ rowId }) => rowId.startsWith('fees:') || rowId.startsWith('candidate-cost:'))
+    .map(({ rowId, amount, currency, unit, conditions }) => [
+      rowId,
+      amount,
+      currency,
+      unit,
+      conditions,
+    ]);
+  assert.deepEqual(rates, [
+    ['fees:0:input', 3, 'USD', 'per_million_tokens', {}],
+    ['fees:1:input_image', 2, 'CNY', 'per_million_tokens', {}],
+    ['fees:2:output', 12, 'USD', 'per_thousand_tokens', {}],
+    ['fees:3:output_image', 120, 'USD', 'per_million_tokens', { condition: 'Batch only' }],
+    ['candidate-cost:input', 2, 'USD', 'per_million_tokens', {}],
+    ['candidate-cost:input_image', 2, 'USD', 'per_million_tokens', {}],
+    ['candidate-cost:output', 12, 'USD', 'per_million_tokens', {}],
+    ['candidate-cost:output_image', 120, 'USD', 'per_million_tokens', {}],
+  ]);
+});
+
 test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');
