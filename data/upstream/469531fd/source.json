@@ -1,0 +1,23 @@
+{
+  "upstreamSha": "469531fd20f31c50748cbe5c1a72c99e648fdb45",
+  "repository": "https://github.com/basellm/llm-metadata",
+  "files": {
+    "en.json": {
+      "path": "dist/api/all.json",
+      "sha256": "bbe4028bc060468a349252e997582155eba20978f57da7f95be293efd5336018"
+    },
+    "zh.json": {
+      "path": "dist/api/i18n/zh/all.json",
+      "sha256": "c5bdcc7c3f7f46247af5e72caa78b09ed35615be1d382a925b435249dee4783d"
+    },
+    "ja.json": {
+      "path": "dist/api/i18n/ja/all.json",
+      "sha256": "146fbf28159de2146a21347f3d3b08e010603c475097eaa0d5e4e178c728b4f8"
+    },
+    "native.json": {
+      "path": "data/native-providers.json",
+      "sha256": "86c9a45ef71ed9e0eea73a1032bc70a5a6e64ca9e08a346162a8563fa7f0ebff"
+    }
+  },
+  "snapshotAt": "2026-11-22T05:09:43Z"
+}
