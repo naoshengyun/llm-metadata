@@ -880,7 +880,11 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
           ...record.quoteIds
             .map((quoteId) => quotes.get(quoteId))
             .filter((quote) => quote && quote.quoteId !== SEEDANCE_REFERENCE_QUOTE_ID)
-            .map((quote) => ({ ...quote, sourceRecordId: officialSourceId(quote.originalQuote) })),
+            .map((quote) => ({
+              ...quote,
+              endpoint: quote.originalQuote.endpoint ?? null,
+              sourceRecordId: officialSourceId(quote.originalQuote),
+            })),
           ...(record.upstreamPrice
             ? [
                 {
@@ -1087,10 +1091,19 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
             : incapable
               ? 'unsupported'
               : price.status;
+      let reason = price.reason ?? null;
+      if (incapable) reason = exclusion.reason;
+      if (corrected) reason = correction.reason;
+      if (evidence) reason = 'approved-deferred-evidence:complete-tariff-requires-' + evidence;
+      if (deferred) reason = 'approved-deferred-model';
       const event = policy.lifecycle[modelId]?.at(-1);
-      if (policy.notOfferedModels?.includes(modelId)) status = 'not-offered';
-      else if (event?.state === 'withdrawn' && event.reason === 'model-deprecated')
+      if (policy.notOfferedModels?.includes(modelId)) {
+        status = 'not-offered';
+        reason = 'naoshengyun-service-scope';
+      } else if (event?.state === 'withdrawn' && event.reason === 'model-deprecated') {
         status = 'deprecated';
+        reason = event.reason;
+      }
       const amount = originalUpstreamPrice(model, sourceCurrency);
       const quoteId =
         'upstream:' + providerId + ':' + modelId + ':' + (sourceCurrency ?? 'unknown');
@@ -1128,6 +1141,7 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
               sha256: amount ? hash({ amount, sourceCurrency }) : null,
             },
         status,
+        reason,
         selected: false,
         syncable: false,
         outputKind: 'model',
@@ -1209,6 +1223,13 @@ function officialExpectations(official, policy, selection, upstream) {
         : pending
           ? 'pending-effective'
           : diagnostic.status;
+    const reason = notOffered
+      ? 'naoshengyun-service-scope'
+      : withdrawn
+        ? (event.reason ?? 'official-price-withdrawn')
+        : pending
+          ? 'official-price-not-yet-effective'
+          : diagnostic.fields.join('; ') || null;
     expectations.set(source.id, {
       quoteId: source.id,
       providerId: policy.providerAliases[source.provider] ?? source.provider,
@@ -1238,6 +1259,7 @@ function officialExpectations(official, policy, selection, upstream) {
       },
       originalQuote: source,
       status,
+      reason,
       selected,
       syncable: selected && status === 'ready',
       outputKind: tool ? 'tool-reference' : task ? 'task-model' : 'model',
@@ -1582,12 +1604,14 @@ export function reconcileDisplayCoverage({
     const selectedQuote = selectedByModel.get(key);
     const selectedQuoteId = selectedQuote?.quoteId ?? null;
     const detail = { providerId: model.providerId, modelId: model.modelId };
-    const expectedCategories = expectedPricingCategories(
-      reviewedByModel.get(key) ?? [],
-      selectedQuote,
-      model.status,
-      upstream,
-    );
+    const reviewed = reviewedByModel.get(key) ?? [];
+    const expectedAbsence = reviewed.length ? null : (model.reason ?? 'no-displayable-price');
+    if ((displayModels.get(key)?.notDisplayedReason ?? null) !== expectedAbsence)
+      fail('model-coverage-mismatch', 'No-display reason differs from reviewed inputs for ' + key, {
+        ...detail,
+        field: 'notDisplayedReason',
+      });
+    const expectedCategories = expectedPricingCategories(reviewed, selectedQuote, model.status);
     if (canonical(displayModels.get(key)?.categories ?? []) !== canonical(expectedCategories))
       fail('model-category-mismatch', 'Categories differ from reviewed inputs for ' + key, detail);
     if (
@@ -1713,6 +1737,11 @@ export function reconcileDisplayCoverage({
         null;
       const expectedStatus =
         normalized?.status ?? (seedance ? 'validation-held' : (source.status ?? 'reference-only'));
+      const expectedReason = normalized
+        ? normalized.reason
+        : seedance
+          ? 'seedance-4k-two-target-billing-cases-unverified'
+          : (source.reason ?? 'reviewed-reference-only');
       const priceList =
         normalized?.priceList ??
         source.priceList ??
@@ -1720,7 +1749,7 @@ export function reconcileDisplayCoverage({
           ? 'Volcengine Ark / mainland / online'
           : source.officialServiceTier?.replace(/^./, (initial) => initial.toUpperCase()) ||
             'Reviewed official reference');
-      const endpoint = normalized ? normalized.endpoint : (source.endpoint ?? null);
+      const endpoint = source.endpoint ?? null;
       const expectedCny = normalized
         ? (normalized.cnyTaskTiers ?? normalized.cnyCost ?? null)
         : source.cost || source.candidateCost
@@ -1747,6 +1776,12 @@ export function reconcileDisplayCoverage({
           actual.originalQuote?.conditions ?? actual.conditions ?? null,
         ],
         ['status', expectedStatus, actual.status],
+        ['reason', expectedReason ?? null, actual.reason ?? null],
+        [
+          'originalCurrencyEligible',
+          normalized?.originalCurrencyEligible ?? null,
+          actual.originalCurrencyEligible ?? null,
+        ],
         ['nativeKey', normalized ? normalized.nativeKey : modelId, actual.nativeKey],
         [
           'quoteIdentity',

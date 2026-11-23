@@ -657,7 +657,7 @@ export function hasExpectedReferenceRates(records) {
   return records.some((record) => hasRate(expectedDisplayRows(reviewedDisplayQuote(record))));
 }
 
-export function expectedPricingCategories(records, selected, status, upstream) {
+export function expectedPricingCategories(records, selected, status) {
   const categories = new Set();
   if (['not-offered', 'deprecated', 'withdrawn', 'deferred'].includes(status))
     categories.add(status);
@@ -669,16 +669,11 @@ export function expectedPricingCategories(records, selected, status, upstream) {
     if (!value || typeof value !== 'object') return [];
     return [...Object.keys(value), ...Object.values(value).flatMap(keysIn)];
   }
-  for (const { source, normalized, sourceType, providerId, modelId } of records) {
+  for (const { source, normalized, providerId, modelId } of records) {
     const quote = reviewedDisplayQuote({ source, normalized });
     const displayRows = expectedDisplayRows(quote);
     if (!normalized?.selected && hasRate(displayRows)) categories.add('reference-only');
-    const endpoint =
-      normalized?.endpoint ??
-      source.endpoint ??
-      (sourceType === 'reviewed-reference' && upstream[providerId]?.models?.[modelId]
-        ? upstream[providerId].api
-        : null);
+    const endpoint = source.endpoint;
     if (endpoint) endpoints.add(endpoint);
     const original = quote.originalQuote;
     const listName =

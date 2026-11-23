@@ -1175,6 +1175,66 @@ test('independent audit rejects altered native identity, cache TTL and example a
   }
 });
 
+test('independent audit rejects a false currency basis or price explanation', (t) => {
+  const read = buildCandidate(t);
+  const inputs = { ...rawReconciliationInputs(), coverage: read('coverage.json') };
+  const cases = [
+    [
+      'alibaba-cn',
+      'qvq-max',
+      'originalCurrencyEligible',
+      (quote) => {
+        quote.originalCurrencyEligible = true;
+      },
+    ],
+    [
+      'anthropic',
+      'claude-haiku-5-5',
+      'reason',
+      (quote) => {
+        quote.reason = 'model-not-offered';
+      },
+    ],
+  ];
+  for (const [provider, model, field, mutate] of cases) {
+    const catalogs = localizedCatalogs(read);
+    for (const catalog of Object.values(catalogs)) {
+      const quote = modelQuotes(catalog, provider, model).find(
+        (quote) => quote.selected || quote.quoteId === 'upstream:alibaba-cn:qvq-max:USD',
+      );
+      mutate(quote);
+    }
+    const result = reconcileDisplayCoverage({
+      ...inputs,
+      catalogs,
+      displayCoverage: read('display-coverage.json'),
+    });
+    assert.ok(
+      result.failures.some(
+        (failure) =>
+          failure.providerId === provider && failure.modelId === model && failure.field === field,
+      ),
+      `Expected independent reconciliation to reject changed ${field}`,
+    );
+  }
+  const displayCoverage = read('display-coverage.json');
+  const model = displayCoverage.models.find((model) => model.notDisplayedReason);
+  model.notDisplayedReason = 'wrong-exclusion-reason';
+  const result = reconcileDisplayCoverage({
+    ...inputs,
+    displayCoverage,
+    catalogs: localizedCatalogs(read),
+  });
+  assert.ok(
+    result.failures.some(
+      (failure) =>
+        failure.providerId === model.providerId &&
+        failure.modelId === model.modelId &&
+        failure.field === 'notDisplayedReason',
+    ),
+  );
+});
+
 test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');

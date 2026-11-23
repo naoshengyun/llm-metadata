@@ -262,6 +262,27 @@ function lastLowerBandToken(row: DisplayPriceRow, structuredTiers: boolean) {
   return !structuredTiers && legacyTier(row) ? 200_000 : null;
 }
 
+function lastPublishedInputToken({ inputBands, inputOutputBands }: DisplayPriceRow['conditions']) {
+  const bands = inputBands ?? inputOutputBands;
+  if (!Array.isArray(bands)) return undefined;
+  const last: unknown = bands.at(-1);
+  if (
+    last &&
+    typeof last === 'object' &&
+    'upper' in last &&
+    typeof last.upper === 'number' &&
+    Number.isSafeInteger(last.upper)
+  )
+    return last.upper;
+  if (typeof last !== 'string') return undefined;
+  const bound = /^输入(?:长度)?\s*\[\d+[KM]?,\s*(\d+)([KM]?)\s*([)\]])$/.exec(last);
+  if (!bound) return undefined;
+  const [, amount, scale, end] = bound;
+  return (
+    Number(amount) * (scale === 'K' ? 1000 : scale === 'M' ? 1000000 : 1) - (end === ')' ? 1 : 0)
+  );
+}
+
 function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], locale: Locale) {
   const related = sectionRows.filter((candidate) => rateScope(candidate) === rateScope(row));
   const structuredTiers = related.some(({ tier }) => tier?.size);
@@ -280,16 +301,18 @@ function tierCondition(row: DisplayPriceRow, sectionRows: DisplayPriceRow[], loc
   // Explicit conditional fee descriptions provide their own direction.
   if (low && typeof row.conditions.condition === 'string' && row.rowId.startsWith('fees:'))
     return null;
-  const upper = low ? thresholds[0] : thresholds[thresholds.indexOf(threshold) + 1];
+  const type =
+    row.tier?.type ??
+    related.find(({ tier }) => tier)?.tier?.type ??
+    (related.some(legacyTier) ? 'context' : undefined);
+  const terminal = type === 'context' ? undefined : lastPublishedInputToken(row.conditions);
+  const next = low ? thresholds[0] : thresholds[thresholds.indexOf(threshold) + 1];
+  const upper = next ?? terminal;
   const numbers = low
     ? msg(locale, 'inclusive', { size: upper })
     : upper
       ? msg(locale, 'between', { from: threshold + 1, to: upper })
       : msg(locale, 'over', { size: threshold + 1 });
-  const type =
-    row.tier?.type ??
-    related.find(({ tier }) => tier)?.tier?.type ??
-    (related.some(legacyTier) ? 'context' : undefined);
   return `${msg(locale, type === 'context' ? 'tokContext' : 'tokInput')} · ${numbers} · ${msg(locale, 'wholeRequest')}`;
 }
 

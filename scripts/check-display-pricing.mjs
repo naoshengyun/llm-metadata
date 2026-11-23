@@ -662,7 +662,7 @@ export async function checkPricingReviewFindings({
       ),
     );
   });
-  await verify('MiniMax reference tiers do not borrow a model endpoint', async () => {
+  await verify('MiniMax tariffs do not borrow a model endpoint', async () => {
     await visit('minimax-cn', 'MiniMax-M3');
     for (const [tier, amount] of [
       ['Standard', '2.1'],
@@ -673,6 +673,12 @@ export async function checkPricingReviewFindings({
       });
       assert.equal(await row(quote, 'raw-fees:0:input').getAttribute('data-cny-amount'), amount);
       assert.doesNotMatch(await quote.innerText(), /api\.minimax\.cn\/anthropic\/v1/);
+    }
+    for (const model of ['MiniMax-M3', 'MiniMax-M3.1-Flash']) {
+      await visit('minimax-cn', model);
+      const selected = page.locator('[data-syncable="true"]');
+      assert.equal(await selected.count(), 1);
+      assert.doesNotMatch(await selected.innerText(), /api\.minimax\.cn\/anthropic\/v1/);
     }
   });
   await verify('Gemini cache storage rates remain outside the native expression', async () => {
@@ -717,6 +723,17 @@ export async function checkPricingReviewFindings({
       assert.match(await cache.innerText(), /Context caching not supported/);
     },
   );
+  await verify('Highest input tiers stop at their published upper bounds', async () => {
+    for (const [provider, model, id, expected] of [
+      ['volcengine', 'doubao-seed-2-0-pro-260215', 'cost:tier-1:input', /128001.*256000/],
+      ['alibaba-cn', 'qwen3.7-plus', 'cost:tier-0:input', /256001.*1000000/],
+      ['zhipuai', 'glm-4.7', 'cost:tier-0:input', /32000.*199999/],
+    ]) {
+      await visit(provider, model);
+      const rate = row(page.locator('[data-syncable="true"]'), id);
+      assert.match(await rate.locator('[data-tier-condition]').innerText(), expected);
+    }
+  });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 15, passed: true };
+  return { findings: 16, passed: true };
 }
