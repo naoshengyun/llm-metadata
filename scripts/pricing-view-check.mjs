@@ -513,19 +513,32 @@ export function expectedDisplayRows(quote) {
 export function expectedDisplayFeeTerms(source, digest) {
   const required = [];
   for (const declaration of source?.feeDeclarations ?? []) {
-    const { field, retention = '', condition } = declaration;
+    const { field, retention = '', condition, note = '' } = declaration;
     if (!field) continue;
     const term = { usageKey: field };
     if (/^\d+m$/.test(retention)) term.retentionMinutes = Number.parseInt(retention, 10);
+    else if (field === 'cache_write' && /^\d+-minute explicit cache creation\b/.test(note))
+      term.retentionMinutes = Number.parseInt(note, 10);
     if (condition) term.condition = condition;
     if (term.retentionMinutes !== undefined || term.condition) required.push(term);
+  }
+  const ttl = source?.conditions?.cacheWriteTtlSeconds;
+  for (const [key, seconds] of Object.entries(
+    typeof ttl === 'number' ? { cache_write: ttl } : (ttl ?? {}),
+  )) {
+    if (
+      typeof seconds === 'number' &&
+      seconds > 0 &&
+      !required.some((term) => term.usageKey === key)
+    )
+      required.push({ usageKey: key, retentionMinutes: seconds / 60 });
   }
   if (!required.some((term) => term.usageKey === 'cache_write')) {
     const description = source?.description ?? '';
     const reason = source?.reason ?? '';
     const match =
-      description.match(/cache_write\s*(?:=|is)\s*(\d+)(?:m\b|\s*[- ]?minutes?\b)/i) ??
-      reason.match(/\b(\d+)m\/\d+h writes\b/i);
+      description.match(/cache[-_]write\s*(?:=|is)\s*(\d+)(?:m\b|\s*[- ]?minutes?\b)/i) ??
+      reason.match(/(\d+)m\s*\/\s*\d+h writes\b/i);
     if (match) required.push({ usageKey: 'cache_write', retentionMinutes: Number(match[1]) });
   }
   const declaredUsage = new Set(required.map((term) => term.usageKey));

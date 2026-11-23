@@ -414,6 +414,45 @@ export async function checkPricingReviewFindings({
     assert.match(await row(selected, 'cost:input').innerText(), /272000/);
     assert.match(await row(selected, 'cost:tier-0:input').innerText(), /272001/);
     assert.match(await selected.locator('pre').textContent(), /context_over_200k/);
+    for (const id of ['cost:cache_write', 'cost:tier-0:cache_write'])
+      assert.match(
+        await row(selected, id).locator('th').innerText(),
+        { en: /30 min/, zh: /30 分钟/, ja: /30 分/ }[locale],
+      );
+    const longLabel = await row(selected, 'cost:cache_write_12h').locator('th').innerText();
+    assert.equal((longLabel.match(/12/g) ?? []).length, 1);
+    assert.doesNotMatch(longLabel, /720/);
+  });
+
+  await verify('Documented cache TTLs stay scoped to each tariff', async () => {
+    for (const [provider, model, quoteId, minutes] of [
+      ['moonshotai-cn', 'kimi-k3', 'cn-moonshot-kimi-k3-standard', 5],
+      ['moonshotai-cn', 'kimi-k3', 'cn-moonshot-kimi-k3-batch', 5],
+      ['alibaba-cn', 'qwen-flash', 'dashscope--qwen-flash--cn-beijing-online-original-explicit', 5],
+      [
+        'alibaba',
+        'qwen-flash',
+        'dashscope--qwen-flash--sg-international-online-original-explicit',
+        5,
+      ],
+    ]) {
+      await visit(provider, model);
+      const card = page.locator(`[data-quote-id="${quoteId}"]`);
+      const details = card.locator('details').first();
+      if ((await details.getAttribute('open')) === null)
+        await details.locator('summary').first().click();
+      for (const label of await card
+        .locator('[data-pricing-row$=":cache_write"] th')
+        .allTextContents())
+        assert.match(
+          label,
+          new RegExp(minutes + ' ' + { en: 'min', zh: '分钟', ja: '分' }[locale]),
+        );
+      for (const label of await card
+        .locator('[data-pricing-row$=":cache_write_1h"] th')
+        .allTextContents())
+        assert.doesNotMatch(label, /60/);
+    }
   });
 
   await verify(
@@ -914,5 +953,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 20, passed: true };
+  return { findings: 21, passed: true };
 }

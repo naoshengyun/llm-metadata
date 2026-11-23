@@ -592,8 +592,12 @@ function summaryFor(selectedQuote, status, groups) {
 function documentedFeeTerms(quote) {
   const source = quote.originalQuote;
   if (!source) return [];
-  const terms = (source.feeDeclarations ?? []).flatMap(({ field, retention, condition }) => {
-    const minutes = /^(\d+)m$/.exec(retention ?? '')?.[1];
+  const terms = (source.feeDeclarations ?? []).flatMap(({ field, retention, condition, note }) => {
+    const minutes =
+      /^(\d+)m$/.exec(retention ?? '')?.[1] ??
+      (field === 'cache_write'
+        ? /^(\d+)-minute explicit cache creation\b/.exec(note ?? '')?.[1]
+        : undefined);
     return field && (minutes || condition)
       ? [
           {
@@ -604,11 +608,17 @@ function documentedFeeTerms(quote) {
         ]
       : [];
   });
+  const seconds = source.conditions?.cacheWriteTtlSeconds;
+  const durations = typeof seconds === 'number' ? { cache_write: seconds } : (seconds ?? {});
+  for (const [usageKey, value] of Object.entries(durations)) {
+    if (typeof value === 'number' && value > 0 && !terms.some((term) => term.usageKey === usageKey))
+      terms.push({ usageKey, retentionMinutes: value / 60 });
+  }
   if (!terms.some(({ usageKey }) => usageKey === 'cache_write')) {
     const minutes =
-      /cache_write\s*(?:=|is)\s*(\d+)(?:\s*[- ]?minutes?\b|m\b)/i.exec(
+      /cache[-_]write\s*(?:=|is)\s*(\d+)(?:\s*[- ]?minutes?\b|m\b)/i.exec(
         source.description ?? '',
-      )?.[1] ?? /\b(\d+)m\/\d+h writes\b/i.exec(source.reason ?? '')?.[1];
+      )?.[1] ?? /(\d+)m\s*\/\s*\d+h writes\b/i.exec(source.reason ?? '')?.[1];
     if (minutes) terms.push({ usageKey: 'cache_write', retentionMinutes: Number(minutes) });
   }
   for (const term of cacheTermsByRecord.get(quote.source.recordSha256) ?? []) {
