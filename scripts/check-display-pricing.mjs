@@ -358,6 +358,7 @@ export async function checkPricingReviewFindings({
   goto,
   select,
   current,
+  locale,
   respond,
   checkStatusUrl,
 }) {
@@ -547,6 +548,32 @@ export async function checkPricingReviewFindings({
       }
     }
   });
+  await verify('Gemini per-input-image equivalent', async () => {
+    await visit('google', 'gemini-3-pro-image');
+    const rate = page.locator('[data-pricing-row="image-input-equivalent"]');
+    assert.equal(
+      await rate.count(),
+      1,
+      'Expected one input image equivalent in the visible tariff',
+    );
+    assert.ok(await rate.isVisible());
+    assert.equal(
+      await rate.locator('xpath=ancestor::article').getAttribute('data-syncable'),
+      'false',
+    );
+    assert.equal(await rate.getAttribute('data-unit'), 'per_image');
+    assert.equal(await rate.getAttribute('data-source-currency'), 'USD');
+    const direction = { en: 'Input tokens', zh: '输入 Token', ja: '入力トークン' };
+    const units = { en: 'Per image', zh: '每张图片', ja: '画像 1 枚あたり' };
+    const label = await rate.getByRole('rowheader').innerText();
+    assert.ok(label.toLowerCase().includes(direction[locale].toLowerCase()));
+    assert.ok(label.includes(units[locale]));
+    const tokens = await rate.locator('[data-condition="inputTokens"]').innerText();
+    assert.ok(tokens.includes(direction[locale]));
+    assert.match(tokens, /\b560\b/);
+    assert.match(await rate.getByRole('cell').nth(0).innerText(), /≈\$0\.0011\b/);
+    assert.equal(await rate.getByRole('cell').nth(1).innerText(), '≈¥0.0077');
+  });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 7, passed: true };
+  return { findings: 8, passed: true };
 }

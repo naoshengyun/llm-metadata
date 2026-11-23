@@ -385,6 +385,20 @@ export function expectedDisplayRows(quote) {
         ]
       : [],
   );
+  const { tokens: inputTokens, publishedApproxUSD: inputPrice } = source.inputImageEquivalent ?? {};
+  if (Number.isFinite(inputPrice)) {
+    imageEquivalents.push({
+      ...expectedRow(
+        'image-input-equivalent',
+        'image_input_equivalent',
+        inputPrice,
+        'USD',
+        'per_image',
+        { ...conditions, inputTokens },
+      ),
+      approximate: true,
+    });
+  }
   const reviewedPrices = [
     ...costRows(source.cost, 'cost', sourceCurrency, sourceUnit, conditions),
     ...chargedFees(

@@ -188,6 +188,11 @@ const usage: LabelMap = {
   seconds: ['Video seconds', '视频秒数', '動画の秒数'],
   tokens: ['Billable tokens', '计费 Token', '課金対象トークン'],
   reasoning: ['Reasoning', '推理', '推論'],
+  image_input_equivalent: [
+    'Approximate image cost from input tokens',
+    '按输入 Token 折算的每张图片约价',
+    '入力トークンから換算した画像の概算料金',
+  ],
   image_output_equivalent: [
     'Approximate image cost from output tokens',
     '按输出 Token 折算的每张图片约价',
@@ -328,6 +333,7 @@ const condition: LabelMap = {
   maxOutput: ['Maximum output', '输出上限', '最大出力'],
   minOutput: ['Minimum output tokens', '最少输出 Token', '最小出力トークン数'],
   outsideShortOutput: priceLabels.when,
+  inputTokens: ['Input tokens', '输入 Token 数', '入力トークン数'],
   outputTokens: ['Output tokens', '输出 Token 数', '出力トークン数'],
   minimumUsage: ['Minimum billed usage', '最低计费用量', '最低課金使用量'],
   modality: ['Modality', '模态', 'モダリティ'],

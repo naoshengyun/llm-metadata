@@ -532,6 +532,7 @@ try {
         goto,
         select,
         current,
+        locale,
         checkStatusUrl,
         respond: (response) => {
           statusResponse = response;

@@ -397,6 +397,20 @@ function displayRowsFor(quote) {
       ),
     );
   if (source?.tools) rows.push(...feeDisplayRows(source.tools, 'tools', conditions));
+  const inputImage = source?.inputImageEquivalent;
+  if (Number.isFinite(inputImage?.publishedApproxUSD)) {
+    rows.push({
+      ...displayRow(
+        'image-input-equivalent',
+        'image_input_equivalent',
+        inputImage.publishedApproxUSD,
+        'USD',
+        'per_image',
+        { ...conditions, inputTokens: inputImage.tokens },
+      ),
+      approximate: true,
+    });
+  }
   for (const [index, equivalent] of (source?.imageOutputEquivalents ?? []).entries()) {
     const { publishedApproxUSD, resolution, outputTokens } = equivalent;
     if (Number.isFinite(publishedApproxUSD)) {

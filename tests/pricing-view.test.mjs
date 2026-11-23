@@ -861,6 +861,50 @@ test('fixed reviewed rates declare mutually exclusive branches and reject lost a
     );
 });
 
+test('the reviewed input image equivalent is displayed and its omission fails reconciliation', (t) => {
+  const read = buildCandidate(t);
+  const catalogs = {
+    en: read('api/all.json'),
+    zh: read('api/i18n/zh/all.json'),
+    ja: read('api/i18n/ja/all.json'),
+  };
+  let quoteId;
+  for (const catalog of Object.values(catalogs)) {
+    const { pricing_view: view } = catalog.google.models['gemini-3-pro-image'];
+    const quote = view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ originalQuote }) => originalQuote?.inputImageEquivalent);
+    quoteId = quote.quoteId;
+    assert.equal(quote.syncable, false);
+    assert.deepEqual(
+      quote.displayRows.find(({ rowId }) => rowId === 'image-input-equivalent'),
+      {
+        rowId: 'image-input-equivalent',
+        usageKey: 'image_input_equivalent',
+        amount: 0.0011,
+        currency: 'USD',
+        unit: 'per_image',
+        cnyAmount: 0.0077,
+        cnyCurrency: 'CNY',
+        conditions: { inputTokens: 560 },
+        approximate: true,
+      },
+    );
+    quote.displayRows = quote.displayRows.filter(({ rowId }) => rowId !== 'image-input-equivalent');
+  }
+  const result = reconcileDisplayCoverage({
+    ...rawReconciliationInputs(),
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  });
+  assert.ok(
+    result.failures.some(
+      (failure) => failure.quoteId === quoteId && failure.field === 'displayRows',
+    ),
+  );
+});
+
 test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');
