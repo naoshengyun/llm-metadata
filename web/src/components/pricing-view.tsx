@@ -5,6 +5,7 @@ import { OfficialCheckNotice, QuoteOfficialCheck } from '@/components/official-c
 import { Badge } from '@/components/ui/badge';
 import type { DisplayPriceQuote, DisplayPriceRow, PricingView } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
+import { priceExplanation } from '@/lib/pricing-explanation';
 import { useI18n, type Locale } from '@/lib/i18n';
 import { officialCheckKey, type OfficialCheckView } from '@/lib/official-check';
 import {
@@ -585,7 +586,7 @@ function QuoteArticle({
           </div>
           <div className="space-y-0.5">
             {hasRate && !['ready', 'reference-only'].includes(quote.status) && <p>{statusLabel}</p>}
-            {quote.reason && <p>{quote.reason}</p>}
+            {quote.reason && <p data-price-explanation>{priceExplanation(quote.reason, locale)}</p>}
             {quote.originalCurrencyEligible === false && <p>{msg(locale, 'missingBasis')}</p>}
             {(quote.syncable || quote.verification?.officialPrice) && (
               <p>{msg(locale, 'hasPrice')}</p>
@@ -622,10 +623,15 @@ function QuoteArticle({
               <Conditions values={tariffConditions} locale={locale} />
             </div>
           )}
-          <details className="text-muted-foreground">
+          <details className="text-muted-foreground" data-price-audit>
             <summary className="cursor-pointer underline-offset-2 hover:underline">
               {msg(locale, 'audit')}
             </summary>
+            {quote.reason && (
+              <p className="mt-1" data-audit-reason>
+                {quote.reason}
+              </p>
+            )}
             {digest && (
               <p className="mt-1 break-all">
                 {msg(locale, 'digest')} · {digest}

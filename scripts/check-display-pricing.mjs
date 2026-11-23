@@ -396,11 +396,68 @@ export async function checkPricingReviewFindings({
     assert.equal(await selected.locator('[data-pricing-row*="context_over_200k"]').count(), 0);
     assert.equal(await row(selected, 'cost:input').getAttribute('data-source-amount'), '8');
     assert.equal(await row(selected, 'cost:tier-0:input').getAttribute('data-source-amount'), '16');
-    assert.equal(await row(selected, 'cost:tier-0:output').getAttribute('data-source-amount'), '60');
+    assert.equal(
+      await row(selected, 'cost:tier-0:output').getAttribute('data-source-amount'),
+      '60',
+    );
     assert.match(await row(selected, 'cost:input').innerText(), /272000/);
     assert.match(await row(selected, 'cost:tier-0:input').innerText(), /272001/);
     assert.match(await selected.locator('pre').textContent(), /context_over_200k/);
   });
+
+  await verify(
+    'Price explanations are readable and technical originals stay in audit details',
+    async () => {
+      const cases = [
+        [
+          'alibaba-cn',
+          'qvq-max',
+          'missing-original-CNY',
+          {
+            en: 'Official CNY pricing is not yet verified.',
+            zh: '尚未核实官方人民币原价。',
+            ja: '公式の人民元料金は未確認です。',
+          },
+        ],
+        [
+          'inception',
+          'mercury-2',
+          'approved-deferred-evidence:complete-tariff-requires-source-currency',
+          {
+            en: 'Source currency will be verified before planned integration.',
+            zh: '源币种待确认，将在计划接入前核查。',
+            ja: '導入予定時に元の通貨を確認します。',
+          },
+        ],
+        [
+          'google',
+          'gemini-3.8-flash',
+          'Explicit cache storage charges',
+          {
+            en: 'Cache storage is charged by duration and cannot currently be fully synchronized. See the tariff below for the published conditions.',
+            zh: '缓存存储按时长另行收费，当前尚不能完整同步；已公布条件见价目明细。',
+            ja: 'キャッシュ保存は時間に応じて別途課金され、現在は完全な同期に未対応です。公表済みの条件は料金明細をご確認ください。',
+          },
+        ],
+      ];
+      for (const [provider, model, original, labels] of cases) {
+        await visit(provider, model);
+        const card = page
+          .locator('[data-quote-id]')
+          .filter({ has: page.locator('[data-audit-reason]').filter({ hasText: original }) })
+          .first();
+        const disclosure = card.locator('details').first();
+        if ((await disclosure.getAttribute('open')) === null)
+          await disclosure.locator('summary').first().click();
+        assert.equal(await card.locator('[data-price-explanation]').innerText(), labels[locale]);
+        assert.equal(await card.locator('[data-audit-reason]').isVisible(), false);
+        assert.ok(!(await card.innerText()).includes(original));
+        await card.locator('[data-price-audit] > summary').click();
+        assert.ok(await card.locator('[data-audit-reason]').isVisible());
+        assert.ok((await card.locator('[data-audit-reason]').innerText()).includes(original));
+      }
+    },
+  );
 
   await verify('Zhipu short-output rate exclusivity', async () => {
     for (const model of ['glm-4.7', 'glm-4.5-air']) {
@@ -773,5 +830,5 @@ export async function checkPricingReviewFindings({
     );
   });
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 18, passed: true };
+  return { findings: 19, passed: true };
 }
