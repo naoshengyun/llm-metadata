@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
+import { cacheTermsByRecord } from './pricing-display-evidence.mjs';
 
 // Inventory audited source fields directly. Keep the inventory and the summary assertions
 // independent of the production display traversal and its amount conversion.
@@ -116,6 +117,7 @@ function costRows(sheet, path, currency, unit, baseConditions) {
             ([key, value]) =>
               !costRates.includes(key) &&
               key !== 'currency' &&
+              !(key === 'fallback' && Array.isArray(ancestor.windows)) &&
               (key === 'tier' ||
                 value === null ||
                 typeof value !== 'object' ||
@@ -147,8 +149,12 @@ function costRows(sheet, path, currency, unit, baseConditions) {
       .filter((key) => Number.isFinite(node[key]))
       .map((key) => {
         const resolution = /^per_second_(.*)$/.exec(key)?.[1];
+        const { fallback, windows } = node.schedule ?? {};
         const conditions = {
           ...metadata,
+          ...(fallback && windows?.some((window) => Number.isFinite(window[key]))
+            ? { fallback }
+            : {}),
           ...(resolution ? { resolution } : {}),
           ...ordinaryOutputApplicability(sheet, node, lineage.length, key),
         };
@@ -271,7 +277,26 @@ function chargedFees(fees, prefix, baseConditions) {
   );
 }
 
-function explicitChargesInConditions(conditions, currency) {
+function tariffMatchesItemizedRate(tariff, itemized) {
+  if (
+    itemized.usageKey !== tariff.usageKey ||
+    itemized.amount !== tariff.amount ||
+    itemized.currency !== tariff.currency ||
+    itemized.unit !== tariff.unit ||
+    !isDeepStrictEqual(itemized.tier, tariff.tier)
+  )
+    return false;
+  const { above, ...scope } = tariff.conditions;
+  if (Number.isSafeInteger(above) && above > 0 && itemized.conditions.above === undefined) {
+    return isDeepStrictEqual(itemized.conditions, {
+      ...scope,
+      condition: `Entire request prompt >${above} input tokens.`,
+    });
+  }
+  return isDeepStrictEqual(itemized.conditions, tariff.conditions);
+}
+
+function explicitChargesInConditions(conditions, currency, isOfficial) {
   const rates = Object.entries(conditions).filter(
     ([, value]) =>
       typeof value?.unit === 'string' &&
@@ -282,15 +307,45 @@ function explicitChargesInConditions(conditions, currency) {
   );
   return rates.flatMap(([name, rate]) => {
     const entries = rate.rates ?? [rate.amount];
-    const { rates: _rates, amount: _amount, unit, currency: rateCurrency, ...metadata } = rate;
-    return entries.map((amount, index) => {
+    const {
+      rates: _rates,
+      amount: _amount,
+      unit,
+      currency: rateCurrency,
+      announcedPrice,
+      ...metadata
+    } = rate;
+    const rows = entries.map((amount, index) => {
       const conditionsForMeter = { ...qualifiers, ...metadata };
-      if (name === 'separateExplicitCacheStorage') conditionsForMeter.cacheMode = 'explicit';
+      if (isOfficial) conditionsForMeter.referenceFee = true;
+      if (rate.rates && name === 'separateExplicitCacheStorage')
+        conditionsForMeter.cacheMode = 'explicit';
       if (rate.rates && conditions.inputBands?.[index])
         conditionsForMeter.inputBand = conditions.inputBands[index];
+      if (!rate.rates && announcedPrice?.through)
+        conditionsForMeter.validThrough = announcedPrice.through;
       const rowId = ['condition-fee', name, ...(rate.rates ? [index] : [])].join(':');
       return expectedRow(rowId, name, amount, rateCurrency ?? currency, unit, conditionsForMeter);
     });
+    if (!rate.rates && Number.isFinite(announcedPrice?.amount)) {
+      rows.push(
+        expectedRow(
+          'condition-fee:' + name + ':next',
+          name,
+          announcedPrice.amount,
+          announcedPrice.currency ?? rateCurrency ?? currency,
+          unit,
+          {
+            ...qualifiers,
+            ...metadata,
+            ...(isOfficial ? { referenceFee: true } : {}),
+            priceState: 'announced',
+            ...(announcedPrice.starts ? { effectiveAt: announcedPrice.starts } : {}),
+          },
+        ),
+      );
+    }
+    return rows;
   });
 }
 
@@ -356,18 +411,19 @@ export function expectedDisplayRows(quote) {
       sections.push(['service:' + name + ':next', next, when]);
     }
   }
+  const itemized = chargedFees(
+    source.fees,
+    'fees',
+    source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
+  );
+  const tieredStandard = Boolean(source.raw?.tiers?.length);
   const supplementalRates = sections.flatMap(([id, sheet, when]) => {
     const rows = costRows(sheet, id, sourceCurrency, sourceUnit, when).map((row) => ({
       ...row,
       unit: source.otherTierUnits?.[row.usageKey] ?? row.unit,
     }));
-    if (id !== 'raw') return rows;
-    return rows.filter(
-      ({ usageKey, amount, unit }) =>
-        !(source.fees ?? []).some(
-          (fee) => fee.name === usageKey && fee.amount === amount && fee.unit === unit,
-        ),
-    );
+    if (id !== 'raw' || tieredStandard) return rows;
+    return rows.filter((rate) => !itemized.some((fee) => tariffMatchesItemizedRate(rate, fee)));
   });
   const imageEquivalents = (source.imageOutputEquivalents ?? []).flatMap((entry, index) =>
     Number.isFinite(entry.publishedApproxUSD)
@@ -402,10 +458,12 @@ export function expectedDisplayRows(quote) {
   }
   const baseRates = [
     ...costRows(source.cost, 'cost', sourceCurrency, sourceUnit, conditions),
-    ...chargedFees(
-      source.fees,
-      'fees',
-      source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
+    ...itemized.filter(
+      (fee) =>
+        !tieredStandard ||
+        !supplementalRates.some(
+          (tariff) => tariff.rowId.startsWith('raw:') && tariffMatchesItemizedRate(tariff, fee),
+        ),
     ),
   ];
   const candidateRates = costRows(
@@ -433,16 +491,70 @@ export function expectedDisplayRows(quote) {
     ...supplementalRates,
     ...imageEquivalents,
   ];
-  if (reviewedPrices.length) return reviewedPrices;
+  const declaredCharges = explicitChargesInConditions(
+    conditions,
+    sourceCurrency,
+    Boolean(quote.originalQuote),
+  );
+  if (reviewedPrices.length) return reviewedPrices.concat(declaredCharges);
   if (Array.isArray(sourcePrice))
-    return rateRows(sourcePrice, sourceCurrency, sourceUnit, conditions);
-  if (source.rawFees) return rawRows(sourcePrice, sourceCurrency, conditions);
-  const result = costRows(sourcePrice, 'cost', sourceCurrency, sourceUnit, conditions);
-  if (!quote.originalQuote) result.push(...explicitChargesInConditions(conditions, sourceCurrency));
+    return rateRows(sourcePrice, sourceCurrency, sourceUnit, conditions).concat(declaredCharges);
+  if (source.rawFees)
+    return rawRows(sourcePrice, sourceCurrency, conditions).concat(declaredCharges);
+  const result = costRows(sourcePrice, 'cost', sourceCurrency, sourceUnit, conditions).concat(
+    declaredCharges,
+  );
   if (quote.originalCurrencyEligible === false) {
     for (const row of result) Object.assign(row, { cnyAmount: null, cnyCurrency: null });
   }
   return result;
+}
+
+export function expectedDisplayFeeTerms(source, digest) {
+  const required = [];
+  for (const declaration of source?.feeDeclarations ?? []) {
+    const { field, retention = '', condition } = declaration;
+    if (!field) continue;
+    const term = { usageKey: field };
+    if (/^\d+m$/.test(retention)) term.retentionMinutes = Number.parseInt(retention, 10);
+    if (condition) term.condition = condition;
+    if (term.retentionMinutes !== undefined || term.condition) required.push(term);
+  }
+  if (!required.some((term) => term.usageKey === 'cache_write')) {
+    const description = source?.description ?? '';
+    const reason = source?.reason ?? '';
+    const match =
+      description.match(/cache_write\s*(?:=|is)\s*(\d+)(?:m\b|\s*[- ]?minutes?\b)/i) ??
+      reason.match(/\b(\d+)m\/\d+h writes\b/i);
+    if (match) required.push({ usageKey: 'cache_write', retentionMinutes: Number(match[1]) });
+  }
+  const declaredUsage = new Set(required.map((term) => term.usageKey));
+  required.push(
+    ...(cacheTermsByRecord.get(digest) ?? []).filter((term) => !declaredUsage.has(term.usageKey)),
+  );
+  return required;
+}
+
+export function expectedDisplayExamples(source) {
+  if (source?.kind !== 'task' || source.conditions?.basis !== 'input-and-output-seconds') return [];
+  for (const tier of source.task.tiers) {
+    const resolution = tier.when?.resolution;
+    if (!/^720p$/i.test(resolution ?? '')) continue;
+    for (const { unit, amount, currency } of tier.charges) {
+      const rate = cny(amount, currency);
+      if (unit !== 'per_second' || rate === null) continue;
+      return [
+        {
+          resolution,
+          inputSeconds: 5,
+          outputSeconds: 10,
+          amount: Number((15 * rate).toPrecision(15)),
+          currency: 'CNY',
+        },
+      ];
+    }
+  }
+  return [];
 }
 
 export function expectedPricingSummary(quote, status, hasReferenceRates) {

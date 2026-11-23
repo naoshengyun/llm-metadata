@@ -111,6 +111,8 @@ export interface DisplayPriceQuote extends PriceQuote {
     region?: string;
     toolCondition?: string;
     resolutionNote?: string;
+    contextNote?: string;
+    cache?: { reason?: string };
   };
 }
 

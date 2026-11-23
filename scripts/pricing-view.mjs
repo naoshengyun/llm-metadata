@@ -7,8 +7,11 @@ import {
   PRICE_KEYS,
 } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
+import { cacheTermsByRecord } from './pricing-display-evidence.mjs';
 import {
   expectedDisplayRows,
+  expectedDisplayFeeTerms,
+  expectedDisplayExamples,
   expectedPricingSummary,
   expectedPricingCategories,
   hasExpectedReferenceRates,
@@ -115,11 +118,22 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
         value === null ||
         typeof value !== 'object' ||
         (Array.isArray(value) && value.every((item) => item === null || typeof item !== 'object'));
-      if (primitiveMetadata && !COST_CHARGE_KEYS.has(key) && key !== 'currency')
+      if (
+        primitiveMetadata &&
+        !COST_CHARGE_KEYS.has(key) &&
+        key !== 'currency' &&
+        !(key === 'fallback' && path.endsWith(':schedule'))
+      )
         localConditions[key] = value;
     }
     for (const [key, value] of Object.entries(sheet ?? {})) {
       if (COST_CHARGE_KEYS.has(key) && typeof value === 'number') {
+        const rateConditions = { ...localConditions };
+        const schedule = sheet.schedule;
+        if (schedule?.fallback && schedule.windows?.some((window) => Number.isFinite(window[key])))
+          rateConditions.fallback = schedule.fallback;
+        if (key.startsWith('per_second_'))
+          rateConditions.resolution = key.slice('per_second_'.length);
         rows.push(
           displayRow(
             path + ':' + key,
@@ -127,9 +141,7 @@ function costDisplayRows(cost, unit, currency, conditions, prefix = 'cost') {
             value,
             currency,
             METER_UNITS[key] ?? (unit === 'mixed' ? conditions.textUnit : unit),
-            key.startsWith('per_second_')
-              ? { ...localConditions, resolution: key.slice('per_second_'.length) }
-              : localConditions,
+            rateConditions,
             tier,
           ),
         );
@@ -196,6 +208,14 @@ function feeDisplayRows(fees, prefix, conditions) {
 
 const rateIdentity = ({ usageKey, amount, currency, unit, conditions, tier }) =>
   canonical([usageKey, amount, currency, unit, conditions, tier ?? null]);
+
+function itemizedRateIdentity(row) {
+  const { condition, ...qualifiers } = row.conditions;
+  const boundary = /^Entire request prompt >([1-9]\d*) input tokens\.$/.exec(condition ?? '');
+  if (boundary && qualifiers.above === undefined)
+    return rateIdentity({ ...row, conditions: { ...qualifiers, above: Number(boundary[1]) } });
+  return rateIdentity(row);
+}
 
 function taskDisplayRows(tiers, conditions) {
   return (tiers ?? []).flatMap((tier, tierIndex) =>
@@ -352,7 +372,7 @@ function paidTierRows(sheet, prefix, currency, sourceUnit, units, conditions) {
   }));
 }
 
-function capabilityFeeRows(conditions, currency) {
+function conditionFeeRows(conditions, currency, referenceOnly) {
   const fees = [];
   const applicability = {};
   for (const [key, value] of Object.entries(conditions)) {
@@ -363,14 +383,41 @@ function capabilityFeeRows(conditions, currency) {
     }
   }
   return fees.flatMap(([key, fee]) => {
-    const { amount, unit, currency: feeCurrency, rates, ...qualifiers } = fee;
-    const context = { ...applicability, ...qualifiers };
-    if (!rates)
-      return [
-        displayRow('condition-fee:' + key, key, amount, feeCurrency ?? currency, unit, context),
+    const { amount, unit, currency: feeCurrency, rates, announcedPrice, ...qualifiers } = fee;
+    const sourceCurrency = feeCurrency ?? currency;
+    const context = {
+      ...applicability,
+      ...qualifiers,
+      ...(referenceOnly && { referenceFee: true }),
+    };
+    if (!rates) {
+      const id = 'condition-fee:' + key;
+      const rows = [
+        displayRow(id, key, amount, sourceCurrency, unit, {
+          ...context,
+          ...(announcedPrice?.through && { validThrough: announcedPrice.through }),
+        }),
       ];
+      if (Number.isFinite(announcedPrice?.amount)) {
+        rows.push(
+          displayRow(
+            id + ':next',
+            key,
+            announcedPrice.amount,
+            announcedPrice.currency ?? sourceCurrency,
+            unit,
+            {
+              ...context,
+              priceState: 'announced',
+              ...(announcedPrice.starts && { effectiveAt: announcedPrice.starts }),
+            },
+          ),
+        );
+      }
+      return rows;
+    }
     return rates.map((rate, index) =>
-      displayRow('condition-fee:' + key + ':' + index, key, rate, feeCurrency ?? currency, unit, {
+      displayRow('condition-fee:' + key + ':' + index, key, rate, sourceCurrency, unit, {
         ...context,
         ...(key === 'separateExplicitCacheStorage' ? { cacheMode: 'explicit' } : {}),
         ...(conditions.inputBands?.[index] ? { inputBand: conditions.inputBands[index] } : {}),
@@ -389,16 +436,22 @@ function displayRowsFor(quote) {
     quote.sourceUnit ?? source?.unit ?? (quote.upstreamReportedCost ? 'per_million_tokens' : null);
   if (source?.kind === 'task' || quote.outputKind === 'task-model')
     return taskDisplayRows(quote.sourcePrice, conditions);
+  const rawRows = source?.raw
+    ? paidTierRows(source.raw, 'raw', currency, unit, source.otherTierUnits, conditions)
+    : [];
+  const itemizedRows = feeDisplayRows(
+    source?.fees,
+    'fees',
+    source?.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
+  );
+  const preferRaw = Boolean(source?.raw?.tiers?.length);
+  const rawIdentities = new Set(rawRows.map(rateIdentity));
   const rows = [];
   if (source?.cost) rows.push(...costDisplayRows(source.cost, unit, currency, conditions));
-  if (source?.fees)
-    rows.push(
-      ...feeDisplayRows(
-        source.fees,
-        'fees',
-        source.raw?.expires ? { ...conditions, validThrough: source.raw.expires } : conditions,
-      ),
-    );
+  // Keep a threshold series together so its ordinary and higher rates share one scope.
+  rows.push(
+    ...itemizedRows.filter((fee) => !preferRaw || !rawIdentities.has(itemizedRateIdentity(fee))),
+  );
   if (source?.candidateCost) {
     const itemizedRates = new Set(rows.map(rateIdentity));
     rows.push(
@@ -439,26 +492,8 @@ function displayRowsFor(quote) {
     }
   }
 
-  if (source?.raw) {
-    for (const row of paidTierRows(
-      source.raw,
-      'raw',
-      currency,
-      unit,
-      source.otherTierUnits,
-      conditions,
-    )) {
-      const represented = rows.some(
-        (fee) =>
-          fee.rowId.startsWith('fees:') &&
-          fee.usageKey === row.usageKey &&
-          fee.amount === row.amount &&
-          fee.unit === row.unit &&
-          !row.conditions.priceState,
-      );
-      if (!represented) rows.push(row);
-    }
-  }
+  const itemizedIdentities = new Set(itemizedRows.map(itemizedRateIdentity));
+  rows.push(...rawRows.filter((row) => preferRaw || !itemizedIdentities.has(rateIdentity(row))));
   for (const [serviceTier, sheet] of Object.entries(source?.otherPaidTiers ?? {}))
     rows.push(
       ...paidTierRows(sheet, 'service:' + serviceTier, currency, unit, source.otherTierUnits, {
@@ -466,14 +501,13 @@ function displayRowsFor(quote) {
         serviceTier,
       }),
     );
-  if (rows.length) return rows;
+  const ancillaryFees = conditionFeeRows(conditions, currency, Boolean(source));
+  if (rows.length) return [...rows, ...ancillaryFees];
   const value = quote.sourcePrice;
-  if (Array.isArray(value)) return rawFeeArrayRows(value, unit, currency, conditions);
-  if (source?.rawFees) return rawFeeObjectRows(value, currency, conditions);
-  const genericRows = [
-    ...costDisplayRows(value, unit, currency, conditions),
-    ...(source ? [] : capabilityFeeRows(conditions, currency)),
-  ];
+  if (Array.isArray(value))
+    return [...rawFeeArrayRows(value, unit, currency, conditions), ...ancillaryFees];
+  if (source?.rawFees) return [...rawFeeObjectRows(value, currency, conditions), ...ancillaryFees];
+  const genericRows = [...costDisplayRows(value, unit, currency, conditions), ...ancillaryFees];
   return quote.originalCurrencyEligible === false
     ? genericRows.map((row) => ({ ...row, cnyAmount: null, cnyCurrency: null }))
     : genericRows;
@@ -555,17 +589,6 @@ function summaryFor(selectedQuote, status, groups) {
   };
 }
 
-// Acceptance conditions in #86 DSP-AC-05/06 apply to these exact reviewed reference
-// records. Bind them by digest so a changed source is reviewed before reusing the terms.
-const OPENAI_RESPONSES_CACHE_REFERENCES = new Set([
-  'ac78ac97fcf28c9e45ce2d4b7cd1d76445f74aa3e01b0324c7e04336cc63738d', // Batch
-  '3d7d8d0512145734625d8cfae11db5b95d208f83892f7ea611bd35d7e499b9fc', // Flex
-  '3272c723a3e7628e52bc38698f6065b933f307854aff0a1690dc245e1ffc11a1', // Fast
-  'a344f33c2b7111c2b5f28a275fc7e6c4ca5b70f98b78db5cbafe2f66653be440', // Ultrafast
-]);
-const ANTHROPIC_BATCH_CACHE_REFERENCE =
-  'f5386f9c833521c4ec9f2f471992f3d3e85065100f5d2a568972467937c7107c';
-
 function documentedFeeTerms(quote) {
   const source = quote.originalQuote;
   if (!source) return [];
@@ -588,13 +611,9 @@ function documentedFeeTerms(quote) {
       )?.[1] ?? /\b(\d+)m\/\d+h writes\b/i.exec(source.reason ?? '')?.[1];
     if (minutes) terms.push({ usageKey: 'cache_write', retentionMinutes: Number(minutes) });
   }
-  if (OPENAI_RESPONSES_CACHE_REFERENCES.has(quote.source.recordSha256)) {
-    if (!terms.some(({ usageKey }) => usageKey === 'cache_write'))
-      terms.push({ usageKey: 'cache_write', retentionMinutes: 30 });
-    terms.push({ usageKey: 'cache_write_12h', condition: 'Responses API' });
+  for (const term of cacheTermsByRecord.get(quote.source.recordSha256) ?? []) {
+    if (!terms.some(({ usageKey }) => usageKey === term.usageKey)) terms.push(term);
   }
-  if (quote.source.recordSha256 === ANTHROPIC_BATCH_CACHE_REFERENCE)
-    terms.push({ usageKey: 'cache_write', retentionMinutes: 5 });
   return terms;
 }
 
@@ -604,13 +623,15 @@ function quoteGroup(quote) {
   const feeTerms = documentedFeeTerms(quote);
   if (feeTerms.length) displayQuote.displayFeeTerms = feeTerms;
   // Use the same reviewed seconds rate shown beside the illustrative input and output durations.
-  const rate = displayQuote.displayRows.find(
-    ({ unit, cnyAmount, conditions }) =>
-      unit === 'per_second' &&
-      cnyAmount !== null &&
-      conditions.basis === 'input-and-output-seconds' &&
-      /^720p$/i.test(conditions.when?.resolution ?? ''),
-  );
+  const rate =
+    quote.originalQuote?.kind === 'task' &&
+    displayQuote.displayRows.find(
+      ({ unit, cnyAmount, conditions }) =>
+        unit === 'per_second' &&
+        cnyAmount !== null &&
+        conditions.basis === 'input-and-output-seconds' &&
+        /^720p$/i.test(conditions.when?.resolution ?? ''),
+    );
   if (rate) {
     const inputSeconds = 5;
     const outputSeconds = 10;
@@ -739,7 +760,7 @@ function referenceSourcePrice(record, selected) {
   return structuredClone(value);
 }
 
-function referenceQuote(record, current, policy, selectedQuote) {
+function referenceQuote(record, policy, selectedQuote) {
   const sourceProviderId = reviewedProvider(record);
   const providerId = sourceProviderId
     ? (policy.providerAliases[sourceProviderId] ?? sourceProviderId)
@@ -761,7 +782,7 @@ function referenceQuote(record, current, policy, selectedQuote) {
         : record.officialServiceTier
           ? record.officialServiceTier[0].toUpperCase() + record.officialServiceTier.slice(1)
           : 'Reviewed official reference'),
-    endpoint: record.endpoint ?? current.upstreamPrice?.endpoint ?? null,
+    endpoint: record.endpoint ?? null,
     sourceCurrency: record.currency ?? null,
     sourcePrice,
     sourceUnit: record.unit ?? record.rawFees?.unit ?? null,
@@ -843,7 +864,7 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
       continue;
     }
     const selectedQuote = selected[modelId]?.providerId === providerId ? selected[modelId] : null;
-    const quote = referenceQuote(source, current, policy, selectedQuote);
+    const quote = referenceQuote(source, policy, selectedQuote);
     const key = identity(providerId, modelId);
     if (!referencesByModel.has(key)) referencesByModel.set(key, []);
     referencesByModel.get(key).push(quote);
@@ -1699,10 +1720,7 @@ export function reconcileDisplayCoverage({
           ? 'Volcengine Ark / mainland / online'
           : source.officialServiceTier?.replace(/^./, (initial) => initial.toUpperCase()) ||
             'Reviewed official reference');
-      const endpoint = normalized
-        ? normalized.endpoint
-        : (source.endpoint ??
-          (upstream[providerId]?.models?.[modelId] ? (upstream[providerId].api ?? null) : null));
+      const endpoint = normalized ? normalized.endpoint : (source.endpoint ?? null);
       const expectedCny = normalized
         ? (normalized.cnyTaskTiers ?? normalized.cnyCost ?? null)
         : source.cost || source.candidateCost
@@ -1729,6 +1747,7 @@ export function reconcileDisplayCoverage({
           actual.originalQuote?.conditions ?? actual.conditions ?? null,
         ],
         ['status', expectedStatus, actual.status],
+        ['nativeKey', normalized ? normalized.nativeKey : modelId, actual.nativeKey],
         [
           'quoteIdentity',
           { providerId, modelId, priceList, endpoint },
@@ -1786,6 +1805,15 @@ export function reconcileDisplayCoverage({
         sourceUnit: source.unit ?? source.rawFees?.unit ?? null,
       };
       const expectedRows = expectedDisplayRows(sourceQuote);
+      const termSource = sourceQuote.originalQuote;
+      fields.push(
+        [
+          'displayFeeTerms',
+          expectedDisplayFeeTerms(termSource, termSource && hash(termSource)),
+          actual.displayFeeTerms ?? [],
+        ],
+        ['displayExamples', expectedDisplayExamples(termSource), actual.displayExamples ?? []],
+      );
       const expectedGroupKind =
         expectedRows.length === 0
           ? 'status'

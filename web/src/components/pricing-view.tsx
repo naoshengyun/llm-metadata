@@ -149,6 +149,18 @@ function serviceOrder(quote: DisplayPriceQuote) {
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
   if (value === null || value === undefined) return '—';
+  if (key === 'fallback' && value === 'off_peak')
+    return localizePrice(
+      [
+        'Off-peak · outside the listed peak times',
+        '非高峰 · 所列高峰时段之外',
+        'オフピーク・記載のピーク時間帯以外',
+      ],
+      locale,
+    );
+  if (key === 'chineseLegalHolidays' && value === 'off_peak')
+    return localizePrice(['Off-peak rate', '适用非高峰价', 'オフピーク料金'], locale);
+  if (key === 'name' && value === 'peak') return localizePrice(['Peak', '高峰', 'ピーク'], locale);
   if (
     key === 'outsideShortOutput' &&
     typeof value === 'object' &&
@@ -222,7 +234,8 @@ function Conditions({
           ) : (
             <>
               <span className="font-medium">{priceCondition(key, locale)}</span>
-              {(key !== 'failedTasksFree' && key !== 'videoInputTokenMinimum') || value !== true ? (
+              {!['failedTasksFree', 'videoInputTokenMinimum', 'referenceFee'].includes(key) ||
+              value !== true ? (
                 <> · {conditionValue(value, locale, key)}</>
               ) : null}
             </>
@@ -435,6 +448,14 @@ function QuoteArticle({
     )
       quoteConditions[key] = value;
   }
+  const meteredConditions = new Set(
+    quote.displayRows
+      .filter(({ rowId }) => rowId.startsWith('condition-fee:'))
+      .map(({ usageKey }) => usageKey),
+  );
+  const tariffConditions = Object.fromEntries(
+    Object.entries(quoteConditions).filter(([key]) => !meteredConditions.has(key)),
+  );
   const date = quote.source.checkedAt ?? quote.source.snapshotAt;
   const digest = quote.source.recordSha256 ?? quote.source.sha256 ?? quote.source.upstreamSha;
   const hasRate = quote.displayRows.some(
@@ -478,6 +499,13 @@ function QuoteArticle({
               </p>
             ),
           )}
+          <Conditions
+            values={{
+              contextNote: quote.originalQuote?.contextNote,
+              cacheAvailability: quote.originalQuote?.cache?.reason,
+            }}
+            locale={locale}
+          />
           {[...sections.entries()].map(([key, rows]) => (
             <RateTable
               key={key}
@@ -554,10 +582,10 @@ function QuoteArticle({
           </div>
           {children}
           {quote.originalQuote?.description && <p>{quote.originalQuote.description}</p>}
-          {Object.keys(quoteConditions).length > 0 && (
+          {Object.keys(tariffConditions).length > 0 && (
             <div className="space-y-1">
               <h4 className="font-medium">{msg(locale, 'conditions')}</h4>
-              <Conditions values={quoteConditions} locale={locale} />
+              <Conditions values={tariffConditions} locale={locale} />
             </div>
           )}
           <details className="text-muted-foreground">

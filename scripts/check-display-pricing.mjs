@@ -236,11 +236,11 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
     assert.match(await repeat.locator('[data-pricing-row="cost:input"]').innerText(), /32000/);
   } else if (modelId === 'gemini-3.8-flash') {
     const labels = {
-      en: ['Effective from', 'Valid through', 'Announced rate', 'Cache read'],
+      en: ['Effective from', 'Valid through', 'Announced rates', 'Cache read'],
       zh: ['生效时间', '有效期截至', '已公布费率', '缓存读取'],
       ja: ['適用開始', '有効期限', '発表済み料金', 'キャッシュ読み取り'],
     };
-    for (const [index, key] of ['starts', 'through', 'announcedPrice', 'cache_read'].entries()) {
+    for (const [index, key] of ['starts', 'through', 'announcedPrices', 'cache_read'].entries()) {
       const node = selected.locator(`[data-condition="${key}"]`).first();
       assert.equal(await node.locator('span').first().innerText(), labels[locale][index]);
     }
@@ -609,6 +609,114 @@ export async function checkPricingReviewFindings({
     assert.ok(await note.isVisible());
     assert.match(await note.innerText(), /Only1K is supported;2K\/4K explicitly unsupported/);
   });
+  await verify('Gemini Standard reference has exclusive input bands', async () => {
+    await visit('google', 'gemini-3.1-pro-preview');
+    const reference = page.locator('article[data-quote-id^="reviewed-reference:"]').filter({
+      has: page.getByRole('heading', { name: 'Gemini Developer API / paid Standard', exact: true }),
+    });
+    const upper = { en: 'up to 200000', zh: '不超过 200000', ja: '200000 以下' };
+    const lower = { en: 'from 200001', zh: '从 200001 起', ja: '200001 以上' };
+    for (const [usage, low, high] of [
+      ['input', '14', '28'],
+      ['output', '84', '126'],
+      ['cache_read', '1.4', '2.8'],
+    ]) {
+      const standard = row(reference, `raw:${usage}`);
+      const above = row(reference, `raw:tier-0:${usage}`);
+      assert.equal(await standard.getAttribute('data-cny-amount'), low);
+      assert.equal(await above.getAttribute('data-cny-amount'), high);
+      const lowCondition = await standard.locator('[data-tier-condition]').innerText();
+      const highCondition = await above.locator('[data-tier-condition]').innerText();
+      assert.match(lowCondition, /\b200000\b/);
+      assert.match(highCondition, /\b200001\b/);
+      assert.ok(lowCondition.toLowerCase().includes(upper[locale]), lowCondition);
+      assert.ok(highCondition.toLowerCase().includes(lower[locale]), highCondition);
+    }
+    assert.equal(await reference.locator('[data-pricing-row^="fees:"]').count(), 0);
+  });
+  await verify('DeepSeek peak and off-peak conditions match their rates', async () => {
+    await visit('deepseek', 'deepseek-flash');
+    const reference = page.locator('[data-quote-id="upstream:deepseek:deepseek-flash:CNY"]');
+    const offPeak = row(reference, 'cost:input');
+    const peak = row(reference, 'cost:schedule:windows:0:input');
+    const labels = {
+      en: { off: 'outside the listed peak times', peak: 'Peak', holiday: 'Off-peak rate' },
+      zh: { off: '所列高峰时段之外', peak: '高峰', holiday: '适用非高峰价' },
+      ja: { off: '記載のピーク時間帯以外', peak: 'ピーク', holiday: 'オフピーク料金' },
+    }[locale];
+    assert.equal(await offPeak.getAttribute('data-cny-amount'), '1');
+    assert.equal(await peak.getAttribute('data-cny-amount'), '2');
+    assert.ok(
+      (await offPeak.locator('[data-condition="fallback"]').innerText()).includes(labels.off),
+    );
+    assert.equal(await peak.locator('[data-condition="fallback"]').count(), 0);
+    assert.ok((await peak.locator('[data-condition="name"]').innerText()).includes(labels.peak));
+    assert.match(
+      await peak.locator('[data-condition="hours"]').innerText(),
+      /09:00-12:00.*14:00-18:00/,
+    );
+    assert.match(await peak.locator('[data-condition="timezone"]').innerText(), /Asia\/Shanghai/);
+    assert.ok(
+      (await reference.locator('[data-condition="chineseLegalHolidays"]').innerText()).includes(
+        labels.holiday,
+      ),
+    );
+  });
+  await verify('MiniMax reference tiers do not borrow a model endpoint', async () => {
+    await visit('minimax-cn', 'MiniMax-M3');
+    for (const [tier, amount] of [
+      ['Standard', '2.1'],
+      ['Priority', '3.15'],
+    ]) {
+      const quote = page.locator('article[data-quote-id^="reviewed-reference:"]').filter({
+        has: page.getByRole('heading', { name: tier, exact: true }),
+      });
+      assert.equal(await row(quote, 'raw-fees:0:input').getAttribute('data-cny-amount'), amount);
+      assert.doesNotMatch(await quote.innerText(), /api\.minimax\.cn\/anthropic\/v1/);
+    }
+  });
+  await verify('Gemini cache storage rates remain outside the native expression', async () => {
+    await visit('google', 'gemini-3.1-pro-preview');
+    const selected = page.locator('[data-syncable="true"]');
+    const fee = row(selected, 'condition-fee:explicitCacheStorage');
+    assert.equal(await fee.getAttribute('data-unit'), 'per_million_tokens_per_hour');
+    assert.equal(await fee.getAttribute('data-source-currency'), 'USD');
+    assert.match(await fee.getByRole('cell').nth(0).innerText(), /\$4\.5\b/);
+    assert.equal(await fee.getByRole('cell').nth(1).innerText(), '¥31.5');
+    assert.ok(await fee.locator('[data-condition="referenceFee"]').isVisible());
+    assert.match(await selected.innerText(), /https:\/\/generativelanguage\.googleapis\.com/);
+
+    await visit('google', 'gemini-3.8-flash');
+    const flash = page.locator('[data-syncable="true"]');
+    const currentFee = row(flash, 'condition-fee:explicitCacheStorage');
+    const announcedFee = row(flash, 'condition-fee:explicitCacheStorage:next');
+    assert.equal(await currentFee.getAttribute('data-cny-amount'), '3.5');
+    assert.match(
+      await currentFee.locator('[data-condition="validThrough"]').innerText(),
+      /December 31, 2026/,
+    );
+    assert.equal(await announcedFee.getAttribute('data-cny-amount'), '7');
+    assert.match(
+      await announcedFee.locator('[data-condition="effectiveAt"]').innerText(),
+      /January 1, 2027/,
+    );
+  });
+  await verify(
+    'Gemini image context and cache limits remain visible with audit closed',
+    async () => {
+      await visit('google', 'gemini-3-pro-image');
+      const quote = page
+        .locator('[data-pricing-row="image-input-equivalent"]')
+        .locator('xpath=ancestor::article');
+      assert.equal(await quote.locator('details').nth(1).getAttribute('open'), null);
+      const context = quote.locator('[data-condition="contextNote"]');
+      const cache = quote.locator('[data-condition="cacheAvailability"]');
+      assert.ok(await context.isVisible());
+      assert.match(await context.innerText(), /65,536.*>200K.*unreachable/);
+      assert.ok(await cache.isVisible());
+      assert.match(await cache.innerText(), /Context caching not supported/);
+    },
+  );
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 10, passed: true };
+  return { findings: 15, passed: true };
 }

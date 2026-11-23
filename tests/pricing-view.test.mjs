@@ -38,6 +38,15 @@ function rawReconciliationInputs() {
   };
 }
 
+const localizedCatalogs = (read) => ({
+  en: read('api/all.json'),
+  zh: read('api/i18n/zh/all.json'),
+  ja: read('api/i18n/ja/all.json'),
+});
+
+const modelQuotes = (catalog, provider, model) =>
+  catalog[provider].models[model].pricing_view.groups.flatMap(({ quotes }) => quotes);
+
 test('reviewed Flex references retain exact source content and an exact display location', (t) => {
   const read = buildCandidate(t);
   const official = JSON.parse(readFileSync('data/cny/official-catalog.json', 'utf8'));
@@ -1055,6 +1064,115 @@ test('candidateCost deduplicates only fees with matching amount, currency, unit 
     ['candidate-cost:output', 12, 'USD', 'per_million_tokens', {}],
     ['candidate-cost:output_image', 120, 'USD', 'per_million_tokens', {}],
   ]);
+});
+
+test('raw rates survive equal itemized amounts with different currency, unit or conditions', (t) => {
+  const model = 'gemini-3.1-pro-preview';
+  const edit = (official) => {
+    const reference = official.excludedQuotes.find(
+      (quote) => quote.officialModel === model && quote.raw?.tiers?.length,
+    );
+    const highFee = (usage) => reference.fees.find((fee) => fee.name === usage && fee.condition);
+    highFee('input').currency = 'EUR';
+    highFee('output').condition = 'Entire request prompt >300000 input tokens.';
+    highFee('cache_read').unit = 'per_thousand_tokens';
+  };
+  const read = buildCandidate(t, edit);
+  const catalogs = localizedCatalogs(read);
+  for (const catalog of Object.values(catalogs)) {
+    const quote = modelQuotes(catalog, 'google', model).find((q) => q.originalQuote?.raw?.tiers);
+    const high = quote.displayRows.filter(({ rowId }) => rowId.startsWith('raw:tier-0:'));
+    assert.deepEqual(
+      high.map(({ usageKey, amount, currency, unit, cnyAmount, conditions }) => [
+        usageKey,
+        amount,
+        currency,
+        unit,
+        cnyAmount,
+        conditions.above,
+      ]),
+      [
+        ['input', 4, 'USD', 'per_million_tokens', 28, 200000],
+        ['output', 18, 'USD', 'per_million_tokens', 126, 200000],
+        ['cache_read', 0.4, 'USD', 'per_million_tokens', 2.8, 200000],
+      ],
+    );
+    const fees = quote.displayRows.filter(({ rowId }) => rowId.startsWith('fees:'));
+    assert.deepEqual(
+      fees.map(({ usageKey, currency, unit, conditions }) => [
+        usageKey,
+        currency,
+        unit,
+        conditions.condition,
+      ]),
+      [
+        ['input', 'EUR', 'per_million_tokens', 'Entire request prompt >200000 input tokens.'],
+        ['output', 'USD', 'per_million_tokens', 'Entire request prompt >300000 input tokens.'],
+        ['cache_read', 'USD', 'per_thousand_tokens', 'Entire request prompt >200000 input tokens.'],
+      ],
+    );
+    quote.displayRows = quote.displayRows.filter(({ rowId }) => rowId !== 'raw:tier-0:input');
+  }
+  const inputs = rawReconciliationInputs();
+  edit(inputs.official);
+  const result = reconcileDisplayCoverage({
+    ...inputs,
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+    catalogs,
+  });
+  assert.ok(
+    result.failures.some((failure) => failure.modelId === model && failure.field === 'displayRows'),
+  );
+});
+
+test('independent audit rejects altered native identity, cache TTL and example amount', (t) => {
+  const read = buildCandidate(t);
+  const inputs = {
+    ...rawReconciliationInputs(),
+    coverage: read('coverage.json'),
+    displayCoverage: read('display-coverage.json'),
+  };
+  const cases = [
+    [
+      'anthropic',
+      'claude-haiku-5-5',
+      'nativeKey',
+      (quote) => {
+        quote.nativeKey = 'wrong-native-identity';
+      },
+    ],
+    [
+      'anthropic',
+      'claude-haiku-5-5',
+      'displayFeeTerms',
+      (quote) => {
+        delete quote.displayFeeTerms;
+      },
+    ],
+    [
+      'alibaba-cn',
+      'wan3.0-video',
+      'displayExamples',
+      (quote) => {
+        quote.displayExamples[0].amount = 999;
+      },
+    ],
+  ];
+  for (const [provider, model, field, mutate] of cases) {
+    const catalogs = localizedCatalogs(read);
+    for (const catalog of Object.values(catalogs)) {
+      mutate(modelQuotes(catalog, provider, model).find(({ selected }) => selected));
+    }
+    const result = reconcileDisplayCoverage({ ...inputs, catalogs });
+    assert.ok(
+      result.failures.some(
+        (failure) =>
+          failure.providerId === provider && failure.modelId === model && failure.field === field,
+      ),
+      `Expected independent reconciliation to reject changed ${field}`,
+    );
+  }
 });
 
 test('zero-rate summaries stay unavailable across the fixed catalog', (t) => {
