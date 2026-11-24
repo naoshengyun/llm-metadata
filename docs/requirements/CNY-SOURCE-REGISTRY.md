@@ -145,4 +145,4 @@ OpenAI 已将 `gpt-image-1-mini` 标为废弃，并列出 2026-12-01 停用日�
 
 用户确认“应该调成显式缓存。同时 newapi 计费最终走哪条路由传参数决定。”本次以北京 `qwen3.8-flash` 的完整 explicit 价目取代此前 implicit 默认：输入 0.8、输出 2.7、读取 0.1 不变，新增显式创建 1.25 CNY/百万 Token，TTL 300 秒及命中刷新条件保留。两模式前三项相同，普通/隐式请求 `cc=0` 不变，显式创建按实际用量补费。
 
-另外九个完整 explicit 候选的读取价不同；当前一个原生键一条表达式，`cc=0` 无法区分显式纯命中与隐式命中，因此本轮仅披露候选和计量缺口，不将隐式命中按更低 explicit 读取价计费，也不宣称自动分路已完成。`qwen-max`、`qwen3.8-omni-flash`、`qwen-plus-character` 缺完整证据不猜值，原四个 explicit 选择及其它地区/端点不变。逐键价格、协议用量和最小跨仓方案见 [Qwen 缓存选价与实际计量边界](QWEN-CACHE-MODE.md) 及 [ADR 0007](../adr/0007-qwen-explicit-cache-baseline.md)。
+另外九个完整 explicit 候选的读取价不同。统一 explicit 对客基准在技术上可行且不需要 New API 核心改动，但其读取单价变化尚待用户最终确认，因此本轮保持 implicit；只有要求逐请求精确匹配 implicit/explicit 两种官方费率时，才需要可信 cache mode 分路。`qwen-max`、`qwen3.8-omni-flash`、`qwen-plus-character` 缺完整证据不猜值，原四个 explicit 选择及其它地区/端点不变。逐键价格、协议用量和适用边界见 [Qwen 缓存选价与实际计量边界](QWEN-CACHE-MODE.md) 及 [ADR 0007](../adr/0007-qwen-explicit-cache-baseline.md)。

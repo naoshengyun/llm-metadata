@@ -1,6 +1,6 @@
 # Qwen 缓存选价与实际计量边界
 
-2026-11-24，用户确认：“应该调成显式缓存。同时 newapi 计费最终走哪条路由传参数决定。”本次决定取代此前北京 `qwen3.8-flash` 的 implicit 默认选择，但不能把不同读取价目的隐式请求一律按更低 explicit 读取价计费。
+2026-11-24，用户确认：“应该调成显式缓存。同时 newapi 计费最终走哪条路由传参数决定。”本次决定取代此前北京 `qwen3.8-flash` 的 implicit 默认选择。其余九个型号采用统一 explicit 对客基准在技术上可行，但会改变隐式命中的对客读取单价，仍需用户最终确认；只有要求逐请求精确匹配 implicit/explicit 两种官方费率时，才需要可信 cache mode 分路。
 
 ## 当前实施范围
 
@@ -10,7 +10,7 @@
 
 ## 九个待审候选：逐键原价披露
 
-单位均为 CNY/百万 Token，顺序为基础档/后续档。输入、输出和阶梯阈值不变；这些报价完整且可编译，但当前仍选 implicit，**尚不是满足自动分路要求的已完成实施**。
+单位均为 CNY/百万 Token，顺序为基础档/后续档。输入、输出和阶梯阈值不变；这些报价完整且可编译，但当前仍选 implicit。统一 explicit 对客基准不需要 New API 核心改动，读取单价变化尚待用户最终确认；逐请求精确匹配两种费率的分路是另一项需求，不是统一基准的前提。
 
 | 原生键 | 当前 implicit 读 | 待审 explicit 读 | 待审 explicit 写（5 分钟） |
 | --- | --- | --- | --- |
@@ -24,7 +24,7 @@
 | `qwen3.7-plus` | 0.4 / 1.2 | 0.2 / 0.6 | 2.5 / 7.5 |
 | `qwen3.8-max` | 1.5 | 1 | 15 |
 
-前八个型号 explicit 读为 implicit 的一半；`qwen3.8-max` 是 1.5→1，不使用通用倍率推导。直接把上述九键改为 explicit 会降低隐式纯命中的对客价格，因此本轮不执行该替换。
+前八个型号 explicit 读为 implicit 的一半；`qwen3.8-max` 是 1.5→1，不使用通用倍率推导。若用户最终确认统一 explicit 对客基准，可直接替换选价，同时披露隐式命中的价格变化；本轮未获得这项统一基准确认，因此不执行替换。只有要求每个请求都精确匹配其实际 implicit/explicit 费率时，才必须解决 mode 分路。
 
 ## 请求参数与实际 usage
 
@@ -36,6 +36,6 @@
 | Responses | `x-dashscope-session-cache: enable`；默认 disable | `ApplyResponsesUsage` 归一 input/details，流式终结事件复用同一路径 | header 可描述请求意图，不等于所有模型最终采用的计费模式 |
 | Anthropic 兼容 | system/messages content 的 `cache_control` | `input_tokens` 已排除读写，read/create 分别归一，不重复扣除 | 非直通型号可能经 Chat 转换，不能只按客户端协议猜上游语义 |
 
-固定 New API `f2aa91232ed3e5878a614762ace6736a2b74257f` 与本机 `48f9df96ea7c68eae04a0f3687869f232f48929f` 的相关归一化一致。每个原生模型键仍只有一条表达式，`TokenParams` 没有可信的 implicit/explicit mode；`cc=0` 同时适用于显式纯命中和隐式命中。最小跨仓方案是在路由/协议归一层产生并保留可信 `cache_mode`，随 BillingSnapshot/表达式传入，或明确限制这些原生键只接受显式流量并拒绝隐式请求。不得从 cc 反推 mode，也不得新增别名规避该缺口。
+固定 New API `f2aa91232ed3e5878a614762ace6736a2b74257f` 与本机 `48f9df96ea7c68eae04a0f3687869f232f48929f` 的相关归一化一致。每个原生模型键仍只有一条表达式，`TokenParams` 没有可信的 implicit/explicit mode；`cc=0` 同时适用于显式纯命中和隐式命中。统一 explicit 对客基准只需用户确认价格变化，不需要 New API 核心改动。只有要求逐请求精确匹配两种费率时，才需要在路由/协议归一层产生并保留可信 `cache_mode`，随 BillingSnapshot/表达式传入，或明确限制这些原生键只接受显式流量并拒绝隐式请求。不得从 cc 反推 mode，也不得新增别名规避该缺口。
 
-离线 fixture 验证普通、创建、纯命中、部分命中、流式三协议、缺失创建字段及阶梯边界；没有线上实例写入、供应商付费调用或真实账单核验，不能据此宣称生产计费已验收。
+离线 fixture 使用固定源码归档中的真实 `OpenaiHandler/OaiStreamHandler`、`OaiResponsesHandler/OaiResponsesStreamHandler`、`ClaudeHandler/ClaudeStreamHandler`，把构造的原始 JSON/SSE 经真实适配器、流式 handler 和归一化后送入计费表达式，覆盖普通、创建、纯命中、部分命中、创建别名/缺失及非流式/流式一致性。构造用例不是实际生产回执；没有线上实例写入、供应商付费调用或真实账单核验，不能据此宣称生产计费已验收。

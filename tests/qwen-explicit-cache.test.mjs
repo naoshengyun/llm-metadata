@@ -88,7 +88,7 @@ test('only Beijing qwen3.8-flash changes to the complete explicit tariff', (t) =
   assert.equal(after('selection.json')[model], explicitId);
 });
 
-test('nine different-read-rate explicit tariffs remain review candidates, not mode-routed completions', (t) => {
+test('nine different-read-rate explicit tariffs remain candidates pending baseline price confirmation', (t) => {
   const read = build(t, () => {});
   const coverage = read('coverage.json');
   const expected = {
@@ -129,7 +129,7 @@ test('nine different-read-rate explicit tariffs remain review candidates, not mo
     const candidate = coverage.quotes.find((quote) => quote.quoteId === explicit.id);
     assert.equal(candidate.status, 'ready', modelId + ' explicit candidate compiles');
     assert.equal(candidate.selected, false, modelId + ' is not selected');
-    assert.equal(candidate.syncable, false, modelId + ' is not presented as routed');
+    assert.equal(candidate.syncable, false, modelId + ' is not selected pending price confirmation');
     assert.deepEqual(rates(candidate.cnyCost, 'cache_write'), amounts.write, modelId + ' compiled write');
   }
   for (const modelId of ['qwen3.5-flash', 'qwen3.5-plus', 'qwen3.6-flash', 'qwen3.6-plus'])
