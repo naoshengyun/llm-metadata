@@ -66,9 +66,9 @@ test('site sealing refuses to replace an already published fixed URL', (t) => {
   const path = join('versions', 'f'.repeat(64), 'ratio_config.json');
   for (const root of [site, previous]) {
     mkdirSync(join(root, 'versions', 'f'.repeat(64)), { recursive: true });
-    writeFileSync(join(root, 'current.json'), '{}');
+    writeFileSync(join(root, 'current.json'), '{"complete":false}');
   }
-  writeFileSync(join(site, 'site-manifest.json'), '{"files":{}}');
+  writeFileSync(join(site, 'site-manifest.json'), '{"complete":false,"files":{}}');
   writeFileSync(join(site, path), 'rewritten');
   writeFileSync(join(previous, path), 'published');
 

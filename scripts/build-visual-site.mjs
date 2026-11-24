@@ -179,6 +179,7 @@ const identity = unified
     };
 put('site-manifest.json', {
   ...identity,
+  complete: false,
   files: Object.fromEntries(
     walk(out)
       .filter((p) => p !== 'site-manifest.json')

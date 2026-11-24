@@ -172,7 +172,7 @@ jobs:
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
         with:
           artifact_name: ${{ needs.build.outputs.pages_artifact }}
-  verify-publication:
+  verify-candidate:
     if: always() && github.repository == 'naoshengyun/llm-metadata'
     needs: [build, deploy]
     runs-on: ubuntu-24.04
@@ -210,14 +210,14 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: Verify the Pages inventory, page, pointer, and all fixed and stable files
+      - name: Verify the incomplete candidate inventory, page, pointer, and every file
         id: http-verification
         env:
           SITE_HASH: ${{ needs.build.outputs.site_hash }}
         run: |
           set -euo pipefail
           for attempt in {1..10}; do
-            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH")"; then
+            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT")"; then
               printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
               printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
               echo "result=verified" >> "$GITHUB_OUTPUT"
@@ -230,17 +230,191 @@ jobs:
       - continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: cny-pages-verified-${{ github.run_id }}-${{ github.run_attempt }}
+          name: cny-pages-candidate-verified-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/verified-release.json
           if-no-files-found: error
           retention-days: 90
-      - name: Record the verified public inventory on the exact source commit
+      - name: Record the candidate public inventory on the exact source commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           site_hash="$(jq -er '.siteManifestSha256 | select(test("^[0-9a-f]{64}$"))' "$RUNNER_TEMP/verified-release.json")"
           test "$(jq -er .sourceSha "$RUNNER_TEMP/verified-release.json")" = "$GITHUB_SHA"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success -f context=cny-pages/candidate-verified -f description="$site_hash" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT"
+  promote:
+    if: >-
+      always() && needs.build.result == 'success' &&
+      needs.verify-candidate.result == 'success' &&
+      needs.verify-candidate.outputs.public_readback == 'verified'
+    needs: [build, deploy, verify-candidate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      pointer_hash: ${{ steps.completion.outputs.pointer_hash }}
+      site_hash: ${{ steps.completion.outputs.site_hash }}
+      receipt_hash: ${{ steps.completion.outputs.receipt_hash }}
+      pages_artifact: ${{ steps.completion.outputs.pages_artifact }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.build.outputs.pages_artifact }}
+          path: ${{ runner.temp }}/initial-artifact
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: cny-pages-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/build-evidence
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: cny-pages-candidate-verified-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate-proof
+      - name: Reject stale or concurrent promotion and bind the completion receipt
+        id: completion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INITIAL_POINTER_HASH: ${{ needs.build.outputs.pointer_hash }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/naoshengyun" --jq .object.sha)" = "$GITHUB_SHA"
+          node scripts/cny-pages-release.mjs guard-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$INITIAL_POINTER_HASH"
+          mkdir "$RUNNER_TEMP/promoted-site"
+          tar -xf "$RUNNER_TEMP/initial-artifact/artifact.tar" -C "$RUNNER_TEMP/promoted-site"
+          node scripts/cny-pages-release.mjs promote \
+            "$RUNNER_TEMP/promoted-site" \
+            "$RUNNER_TEMP/build-evidence/publication-receipt.json" \
+            "$RUNNER_TEMP/candidate-proof/verified-release.json" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/completion-receipt.json"
+          jq -r '"site_hash=\(.siteManifestSha256)", "pointer_hash=\(.pointerSha256)", "receipt_hash=\(.completionReceiptSha256)"' \
+            "$RUNNER_TEMP/completion-receipt.json" >> "$GITHUB_OUTPUT"
+          printf 'pages_artifact=github-pages-promoted-%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          tar --directory "$RUNNER_TEMP/promoted-site" -cf "$RUNNER_TEMP/promoted-artifact.tar" .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.completion.outputs.pages_artifact }}
+          path: ${{ runner.temp }}/promoted-artifact.tar
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-completion-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/completion-receipt.json
+            ${{ runner.temp }}/promoted-site/completion-receipt.json
+            ${{ runner.temp }}/promoted-site/site-manifest.json
+            ${{ runner.temp }}/promoted-site/current.json
+          if-no-files-found: error
+          retention-days: 90
+  deploy-promoted:
+    needs: [build, promote]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Recheck the exact source and initial pointer immediately before completion deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INITIAL_POINTER_HASH: ${{ needs.build.outputs.pointer_hash }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/naoshengyun" --jq .object.sha)" = "$GITHUB_SHA"
+          node scripts/cny-pages-release.mjs guard-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$INITIAL_POINTER_HASH"
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          artifact_name: ${{ needs.promote.outputs.pages_artifact }}
+  verify-publication:
+    if: always() && github.repository == 'naoshengyun/llm-metadata'
+    needs: [build, deploy, verify-candidate, promote, deploy-promoted]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      statuses: write
+    outputs:
+      public_readback: ${{ steps.http-verification.outputs.result }}
+    steps:
+      - name: Check for a completion receipt and an attempted second deployment
+        env:
+          PROMOTE_RESULT: ${{ needs.promote.result }}
+          DEPLOY_RESULT: ${{ needs.deploy-promoted.result }}
+          SITE_HASH: ${{ needs.promote.outputs.site_hash }}
+        run: |
+          set -euo pipefail
+          if [ "$PROMOTE_RESULT" != success ] || ! [[ "$SITE_HASH" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "No verified completion artifact for $GITHUB_SHA (promote=$PROMOTE_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          case "$DEPLOY_RESULT" in
+            success|failure)
+              echo "Checking the completed public artifact for $GITHUB_SHA (deploy=$DEPLOY_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "Completion unconfirmed for $GITHUB_SHA (deploy=$DEPLOY_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+              ;;
+          esac
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Verify the completed pointer, receipt, inventory, page, and every file
+        id: http-verification
+        env:
+          SITE_HASH: ${{ needs.promote.outputs.site_hash }}
+        run: |
+          set -euo pipefail
+          for attempt in {1..10}; do
+            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-complete "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT")"; then
+              printf 'Verified completed public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+              printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
+              echo "result=verified" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 45
+          done
+          echo "Completion unconfirmed for $GITHUB_SHA. Public read-back never matched the exact completed artifact." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+      - continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-verified-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/verified-release.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Record the final verified public inventory on the exact source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          site_hash="$(jq -er '.siteManifestSha256 | select(test("^[0-9a-f]{64}$"))' "$RUNNER_TEMP/verified-release.json")"
+          test "$(jq -er .sourceSha "$RUNNER_TEMP/verified-release.json")" = "$GITHUB_SHA"
+          test "$(jq -er .complete "$RUNNER_TEMP/verified-release.json")" = true
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=success -f context=cny-pages/verified -f description="$site_hash" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT"
@@ -250,7 +424,7 @@ jobs:
       (needs.deploy.result == 'success' || needs.deploy.result == 'failure') &&
       needs.verify-publication.result == 'failure' &&
       needs.verify-publication.outputs.public_readback != 'verified'
-    needs: [build, deploy, verify-publication]
+    needs: [build, deploy, verify-candidate, promote, deploy-promoted, verify-publication]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     permissions:
@@ -264,6 +438,7 @@ jobs:
       PRIOR_SITE_HASH: ${{ needs.build.outputs.prior_site_hash }}
       PRIOR_POINTER_HASH: ${{ needs.build.outputs.prior_pointer_hash }}
       FAILED_POINTER_HASH: ${{ needs.build.outputs.pointer_hash }}
+      PROMOTED_POINTER_HASH: ${{ needs.promote.outputs.pointer_hash }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -283,7 +458,7 @@ jobs:
           mkdir "$RUNNER_TEMP/recover-site"
           tar -xf "$RUNNER_TEMP/restore/artifact.tar" -C "$RUNNER_TEMP/recover-site"
           node scripts/cny-pages-release.mjs verify-local "$RUNNER_TEMP/recover-site" "$PRIOR_SHA" "$PRIOR_SITE_HASH"
-          state="$(node scripts/cny-pages-release.mjs guard-restore "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH" "$PRIOR_POINTER_HASH" "$FAILED_POINTER_HASH")"
+          state="$(node scripts/cny-pages-release.mjs guard-restore "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH" "$PRIOR_POINTER_HASH" "$FAILED_POINTER_HASH" "$PROMOTED_POINTER_HASH")"
           printf 'state=%s\n' "$state" >> "$GITHUB_OUTPUT"
           if [ "$state" = already-verified ]; then
             echo "The previous Pages release still verifies. No recovery deployment was needed." >> "$GITHUB_STEP_SUMMARY"
