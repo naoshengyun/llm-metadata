@@ -728,6 +728,7 @@ export async function checkPricingReviewFindings({
       assert.equal(await card.locator('[data-pricing-row]').count(), 0);
       assert.equal(await card.locator('[data-price-source]').count(), 0);
       for (const [key, value] of Object.entries(expected.conditions)) {
+        if (key === 'baseQuoteId') continue;
         const condition = card.locator(`[data-condition="${key}"]`);
         assert.equal(await condition.count(), 1, `${expected.id} ${key}`);
         assert.equal(await condition.getAttribute('data-condition-value'), JSON.stringify(value));
@@ -745,7 +746,43 @@ export async function checkPricingReviewFindings({
         await card.locator('[data-condition="officialMultiplier"]').innerText(),
         new RegExp(expected.completionWindow === '2h' ? '30' : '40'),
       );
-      assert.equal(await card.locator('[data-condition="baseQuoteId"]').getAttribute('data-condition-value'), JSON.stringify(expected.baseQuoteId));
+      assert.equal(await card.locator('[data-condition="baseQuoteId"]').count(), 0);
+      const commonText = await card.locator('[data-common-conditions]').innerText();
+      assert.ok(!commonText.includes(expected.baseQuoteId), `${expected.id} leaks its internal base ID`);
+      const baseReference = card.locator('[data-base-quote-reference]');
+      assert.equal(await baseReference.count(), 1, expected.id);
+      assert.match(
+        await baseReference.innerText(),
+        {
+          en: /Standard base quote/,
+          zh: /Standard 基础价目/,
+          ja: /Standard 基準料金/,
+        }[locale],
+      );
+      const baseLink = baseReference.getByRole('link', {
+        name: 'Standard · global · https://api.openai.com/v1',
+        exact: true,
+      });
+      assert.equal(await baseLink.count(), 1, expected.id);
+      const href = await baseLink.getAttribute('href');
+      assert.ok(href?.startsWith('#'), `${expected.id} base link ${href}`);
+      const target = page.locator(href);
+      assert.equal(await target.getAttribute('data-quote-id'), expected.baseQuoteId);
+      assert.equal(await target.getAttribute('data-syncable'), 'true');
+      assert.equal(await target.getAttribute('data-service-name'), 'Standard');
+      assert.match(
+        await target.locator('[data-price-list]').innerText(),
+        /OpenAI API \/ Standard \/ global/,
+      );
+      await baseLink.click();
+      assert.equal(
+        await page.evaluate(() => document.activeElement?.getAttribute('data-quote-id')),
+        expected.baseQuoteId,
+      );
+      await card.locator('[data-price-audit] > summary').click();
+      const audit = await card.locator('[data-price-audit]').innerText();
+      assert.ok(audit.includes(`"baseQuoteId": "${expected.baseQuoteId}"`), expected.id);
+      assert.ok(audit.includes('"baseCost"'), expected.id);
       await assertNoPageOverflow(page);
     }
     await page.reload({ waitUntil: 'domcontentloaded' });

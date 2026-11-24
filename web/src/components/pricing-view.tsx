@@ -741,6 +741,7 @@ function RateTable({
 }
 
 const rowOnlyConditionKeys = new Set([
+  'baseQuoteId',
   'cacheHitRenewsTtl',
   'cacheTtl',
   'cacheWriteTtlSeconds',
@@ -766,11 +767,13 @@ function QuoteArticle({
   entry,
   anchorId,
   scopeId,
+  baseQuoteAnchorId,
   children,
 }: {
   entry: QuoteEntry;
   anchorId: string;
   scopeId: string;
+  baseQuoteAnchorId?: string;
   children?: ReactNode;
 }) {
   const { quote, groupId, rows: entryRows, serviceName } = entry;
@@ -833,6 +836,10 @@ function QuoteArticle({
       quoteConditions[key] = value;
   }
   const tariffConditions = quoteConditions;
+  const baseQuoteId = quote.originalQuote?.baseQuoteId;
+  const baseQuoteReference = ['Standard', region(quote), entry.endpoint]
+    .filter(Boolean)
+    .join(' · ');
   const date = quote.source.checkedAt ?? quote.source.snapshotAt;
   const digest = quote.source.recordSha256 ?? quote.source.sha256 ?? quote.source.upstreamSha;
   const hasRate = entryRows.some(({ amount, sourceValue }) => amount !== null || !!sourceValue);
@@ -846,7 +853,8 @@ function QuoteArticle({
     quote.originalQuote?.contextNote ||
       quote.originalQuote?.cache?.reason ||
       quote.originalQuote?.description ||
-      Object.keys(tariffConditions).length,
+      Object.keys(tariffConditions).length ||
+      baseQuoteId,
   );
   return (
     <article
@@ -889,6 +897,28 @@ function QuoteArticle({
               )}
               {Object.keys(tariffConditions).length > 0 && (
                 <Conditions values={tariffConditions} locale={locale} />
+              )}
+              {baseQuoteId && (
+                <p data-base-quote-reference>
+                  <span className="font-medium">{priceCondition('baseQuoteId', locale)}</span>
+                  {' · '}
+                  {baseQuoteAnchorId ? (
+                    <a
+                      className="underline underline-offset-2"
+                      href={`#${baseQuoteAnchorId}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        const target = document.getElementById(baseQuoteAnchorId);
+                        target?.scrollIntoView({ block: 'start' });
+                        target?.focus({ preventScroll: true });
+                      }}
+                    >
+                      {baseQuoteReference}
+                    </a>
+                  ) : (
+                    baseQuoteReference
+                  )}
+                </p>
               )}
             </div>
           )}
@@ -1078,6 +1108,7 @@ export function PricingViewQuotes({
         a.entries[0].quote.quoteId.localeCompare(b.entries[0].quote.quoteId, 'en'),
     );
   const viewAnchor = `pricing-${anchorPart(view.providerId)}-${anchorPart(view.modelId)}`;
+  const quoteAnchors = new Map<string, string>();
   const content = (
     <div className="grid min-w-0 gap-5">
       {check && <OfficialCheckNotice view={check} />}
@@ -1102,6 +1133,10 @@ export function PricingViewQuotes({
           const name = navigationName(entry);
           serviceCounts.set(name, (serviceCounts.get(name) ?? 0) + 1);
         }
+        scopeEntries.forEach((entry, entryIndex) => {
+          if (!quoteAnchors.has(entry.quote.quoteId))
+            quoteAnchors.set(entry.quote.quoteId, `${scopeId}-service-${entryIndex + 1}`);
+        });
         return (
           <section
             key={scopeId}
@@ -1156,6 +1191,7 @@ export function PricingViewQuotes({
                   entry={entry}
                   scopeId={scopeId}
                   anchorId={`${scopeId}-service-${entryIndex + 1}`}
+                  baseQuoteAnchorId={quoteAnchors.get(entry.quote.originalQuote?.baseQuoteId ?? '')}
                 >
                   {check?.results && (
                     <QuoteOfficialCheck
