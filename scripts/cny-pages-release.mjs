@@ -238,10 +238,12 @@ async function verify(readPath, source, expectedHash) {
   };
 }
 
-async function verifyCandidate(readPath, source, expectedHash) {
+async function verifyCandidate(readPath, source, expectedHash, runId, runAttempt) {
+  assert.match(runId, /^[1-9][0-9]*$/, 'Candidate proof runId');
+  assert.match(runAttempt, /^[1-9][0-9]*$/, 'Candidate proof runAttempt');
   const result = await verify(readPath, source, expectedHash);
   assert.equal(result.complete, false, 'Candidate verification requires complete=false');
-  return result;
+  return { ...result, runId, runAttempt };
 }
 
 async function verifyComplete(readPath, source, expectedHash, runId, runAttempt) {
@@ -258,10 +260,15 @@ async function promote(site, sealedReceiptPath, publicProofPath, runId, runAttem
   const sealedBytes = readFileSync(sealedReceiptPath);
   const sealed = decode(sealedBytes);
   const publicProof = decode(readFileSync(publicProofPath));
+  assert.equal(publicProof.complete, false, 'Initial public proof complete');
+  assert.equal(publicProof.runId, runId, 'Initial public proof runId');
+  assert.equal(publicProof.runAttempt, runAttempt, 'Initial public proof runAttempt');
   const initial = await verifyCandidate(
     (path) => read(site, path),
     sealed.sourceSha,
     sealed.siteManifestSha256,
+    runId,
+    runAttempt,
   );
   for (const field of ['sourceSha', 'releaseId', 'siteManifestSha256', 'pointerSha256']) {
     assert.equal(publicProof[field], initial[field], 'Initial public proof ' + field);
@@ -377,7 +384,7 @@ else if (command === 'guard') {
   const readPath = command === 'verify-local' ? (path) => read(location, path) : (path) => remote(location, path);
   const result =
     command === 'verify-candidate'
-      ? await verifyCandidate(readPath, source, siteHash)
+      ? await verifyCandidate(readPath, source, siteHash, runId, runAttempt)
       : command === 'verify-complete'
         ? await verifyComplete(readPath, source, siteHash, runId, runAttempt)
         : await verify(readPath, source, siteHash);

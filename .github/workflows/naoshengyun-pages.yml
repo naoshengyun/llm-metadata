@@ -217,7 +217,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in {1..10}; do
-            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH")"; then
+            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT")"; then
               printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
               printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
               echo "result=verified" >> "$GITHUB_OUTPUT"

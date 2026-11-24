@@ -48,7 +48,7 @@ LC_ALL=C comm -23 <(LC_ALL=C sort -u <<< "$required") <(LC_ALL=C sort -u <<< "$a
 gh run view <run-id> --repo naoshengyun/llm-metadata \
   --json headSha,event,conclusion,jobs,url
 node scripts/cny-pages-release.mjs verify-candidate \
-  https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <initial-site-manifest-sha256>
+  https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <initial-site-manifest-sha256> <run-id> <attempt>
 node scripts/cny-pages-release.mjs verify-complete \
   https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <final-site-manifest-sha256> <run-id> <attempt>
 ```

@@ -240,8 +240,13 @@ test('two-phase promotion binds the exact candidate and changes only three mutab
     server.origin,
     staged.candidate.sourceSha,
     staged.sealed.siteManifestSha256,
+    '12345',
+    '2',
   );
-  assert.equal(JSON.parse(proof.stdout).complete, false);
+  const candidateProof = JSON.parse(proof.stdout);
+  assert.equal(candidateProof.complete, false);
+  assert.equal(candidateProof.runId, '12345');
+  assert.equal(candidateProof.runAttempt, '2');
   await assert.rejects(
     run(
       'verify-complete',
@@ -315,7 +320,7 @@ test('two-phase promotion binds the exact candidate and changes only three mutab
     /Completion run attempt/,
   );
   await assert.rejects(
-    run('verify-candidate', server.origin, staged.candidate.sourceSha, promoted.siteManifestSha256),
+    run('verify-candidate', server.origin, staged.candidate.sourceSha, promoted.siteManifestSha256, '12345', '2'),
     /requires complete=false/,
   );
   server.update({
@@ -347,6 +352,8 @@ test('a changed immutable historical manifest blocks promotion before any root w
         server.origin,
         staged.candidate.sourceSha,
         staged.sealed.siteManifestSha256,
+        '123',
+        '1',
       )
     ).stdout,
   );
@@ -358,6 +365,47 @@ test('a changed immutable historical manifest blocks promotion before any root w
     /manifest.json (byte length|hash)/,
   );
   assert.deepEqual(rootFiles(staged.site), before);
+});
+
+test('candidate proof completion and run identity are mandatory before any promotion write', async (t) => {
+  for (const [name, mutate] of [
+    ['missing complete', (proof) => delete proof.complete],
+    ['complete true', (proof) => { proof.complete = true; }],
+    ['cross-run proof', (proof) => { proof.runId = '111'; proof.runAttempt = '1'; }],
+    ['cross-attempt proof', (proof) => { proof.runId = '222'; proof.runAttempt = '1'; }],
+    ['missing run ID', (proof) => { delete proof.runId; }],
+    ['missing run attempt', (proof) => { proof.runId = '222'; delete proof.runAttempt; }],
+    ['numeric run ID', (proof) => { proof.runId = 222; proof.runAttempt = '2'; }],
+    ['numeric run attempt', (proof) => { proof.runId = '222'; proof.runAttempt = 2; }],
+  ]) {
+    await t.test(name, async (t) => {
+      const staged = await sealedCandidate(t);
+      const server = await serve(t, diskFiles(staged.site));
+      const proof = JSON.parse(
+        (
+          await run(
+            'verify-candidate',
+            server.origin,
+            staged.candidate.sourceSha,
+            staged.sealed.siteManifestSha256,
+            '111',
+            '1',
+          )
+        ).stdout,
+      );
+      proof.runId = '222';
+      proof.runAttempt = '2';
+      mutate(proof);
+      const proofPath = join(staged.dir, 'proof.json');
+      writeFileSync(proofPath, JSON.stringify(proof));
+      const before = diskFiles(staged.site);
+      await assert.rejects(
+        run('promote', staged.site, staged.sealedPath, proofPath, '222', '2'),
+        /proof complete|proof runId|proof runAttempt/,
+      );
+      assert.deepEqual(diskFiles(staged.site), before, 'rejection must not partially write any file');
+    });
+  }
 });
 
 test('premature true and mismatched public or sealed receipts cannot promote', async (t) => {
@@ -384,6 +432,8 @@ test('premature true and mismatched public or sealed receipts cannot promote', a
         server.origin,
         staged.candidate.sourceSha,
         staged.sealed.siteManifestSha256,
+        '123',
+        '1',
       )
     ).stdout,
   );
@@ -496,7 +546,7 @@ test('legacy false or missing complete pointers remain compatible but are not fi
     );
     if (missing)
       await assert.rejects(
-        run('verify-candidate', server.origin, candidate.sourceSha, candidate.manifestHash),
+        run('verify-candidate', server.origin, candidate.sourceSha, candidate.manifestHash, '1', '1'),
         /requires complete=false/,
       );
   }
@@ -512,6 +562,10 @@ test('workflow separates candidate proof from final verified status and keeps pi
     'only final verified releases can become publication predecessors',
   );
   assert.match(workflow, /needs: \[build, deploy, verify-candidate, promote, deploy-promoted\]/);
+  assert.match(
+    workflow,
+    /verify-candidate "\$PAGES_ORIGIN" "\$GITHUB_SHA" "\$SITE_HASH" "\$GITHUB_RUN_ID" "\$GITHUB_RUN_ATTEMPT"/,
+  );
   assert.equal((workflow.match(/guard-candidate/g) ?? []).length, 2);
   const allowed = new Set([
     'actions/checkout@11d5960a326750d5838078e36cf38b85af677262',
