@@ -453,14 +453,9 @@ async function exactRepresentativePrices(page, locale, providerId, modelId, view
     }
     await card.locator('[data-condition="failedTasksFree"]').waitFor();
   } else if (modelId === 'glm-4.7') {
-    const upstream = view.groups
-      .flatMap(({ quotes }) => quotes)
-      .find(({ sourceRecordId }) => sourceRecordId.startsWith('upstream:'));
-    const repeat = quoteAt(page, upstream.quoteId);
-    const cache = repeat.locator('[data-pricing-row="cost:cache_write"]');
-    await cache.waitFor();
-    assert.equal(await cache.locator('[data-tier-condition]').count(), 0);
-    assert.match(await bandText(repeat.locator('[data-pricing-row="cost:input"]')), /32000/);
+    assert.equal(await quoteAt(page, 'upstream:zhipuai:glm-4.7:CNY').count(), 0);
+    assert.equal(await selected.locator('[data-pricing-row="cost:cache_write"]').count(), 0);
+    assert.match(await bandText(selected.locator('[data-pricing-row="cost:input"]')), /31999/);
   } else if (modelId === 'gemini-3.8-flash') {
     const labels = {
       en: ['Effective from', 'Valid through', 'Announced rates', 'Cache read'],
@@ -695,98 +690,43 @@ export async function checkPricingReviewFindings({
     );
   });
 
-  await verify('Standard background windows retain conditions without guessed meter rates', async () => {
+  await verify('User-hidden Standard background windows leave no cards, summaries or navigation', async () => {
     const titles = {
-      en: { '2h': 'Background completion · 2 hours', '8h': 'Background completion · 8 hours' },
-      zh: { '2h': '后台完成窗口 · 2 小时', '8h': '后台完成窗口 · 8 小时' },
-      ja: { '2h': 'バックグラウンド完了期間・2 時間', '8h': 'バックグラウンド完了期間・8 時間' },
-    }[locale];
-    const derivation = {
-      en: /Not shown/,
-      zh: /不显示推导价/,
-      ja: /算出料金は未表示/,
-    }[locale];
-    const explanation = {
-      en: /No derived prices are shown/,
-      zh: /不显示推导价/,
-      ja: /算出料金は表示せず/,
+      en: /Background completion/,
+      zh: /后台完成窗口/,
+      ja: /バックグラウンド完了期間/,
     }[locale];
     for (const expected of openAiBackgroundRows()) {
       await visit('openai', expected.model);
-      const card = quoteAt(page, `reviewed-reference:${expected.id}`);
-      assert.equal(await card.count(), 1, expected.id);
-      assert.equal(await card.getAttribute('data-service-name'), 'Standard');
-      assert.equal(await card.getAttribute('data-price-role'), 'background-reference');
-      assert.equal(await card.getAttribute('data-completion-window'), expected.completionWindow);
-      assert.equal(await card.getAttribute('data-quote-status'), 'incomplete');
-      assert.equal(await card.getAttribute('data-syncable'), 'false');
-      assert.ok(await card.locator('details').first().evaluate((details) => details.open));
-      const summary = await card.locator('summary').first().innerText();
-      assert.match(summary, /Standard/);
-      assert.match(summary, new RegExp(titles[expected.completionWindow]));
-      assert.doesNotMatch(summary, /Flex|Batch/);
-      assert.equal(await card.locator('[data-pricing-row]').count(), 0);
-      assert.equal(await card.locator('[data-price-source]').count(), 0);
-      for (const [key, value] of Object.entries(expected.conditions)) {
-        if (key === 'baseQuoteId') continue;
-        const condition = card.locator(`[data-condition="${key}"]`);
-        assert.equal(await condition.count(), 1, `${expected.id} ${key}`);
-        assert.equal(await condition.getAttribute('data-condition-value'), JSON.stringify(value));
-      }
-      assert.match(
-        await card.locator('[data-condition="rateDerivation"]').innerText(),
-        derivation,
+      assert.equal(await quoteAt(page, `reviewed-reference:${expected.id}`).count(), 0, expected.id);
+      assert.equal(await page.locator('[data-price-role="background-reference"]').count(), 0);
+      assert.equal(await page.locator(`[data-completion-window="${expected.completionWindow}"]`).count(), 0);
+      assert.equal(await page.locator('[data-base-quote-reference]').count(), 0);
+      const selected = quoteAt(page, expected.baseQuoteId);
+      assert.equal(await selected.count(), 1, expected.baseQuoteId);
+      assert.equal(await selected.getAttribute('data-syncable'), 'true');
+      const expectedBase = models('openai', expected.model).pricing_view.groups
+        .flatMap(({ quotes }) => quotes)
+        .find(({ quoteId }) => quoteId === expected.baseQuoteId);
+      const expectedVisibleRows = expectedBase.displayRows.filter(
+        (row) => !row.rowId.includes(':context_over_200k:'),
       );
-      assert.match(
-        await card.locator('[data-condition="cacheReuse"]').innerText(),
-        { en: /cannot reuse cache entries/, zh: /不能复用/, ja: /再利用できません/ }[locale],
-      );
-      assert.match(await card.locator('[data-price-explanation]').innerText(), explanation);
-      assert.match(
-        await card.locator('[data-condition="officialMultiplier"]').innerText(),
-        new RegExp(expected.completionWindow === '2h' ? '30' : '40'),
-      );
-      assert.equal(await card.locator('[data-condition="baseQuoteId"]').count(), 0);
-      const commonText = await card.locator('[data-common-conditions]').innerText();
-      assert.ok(!commonText.includes(expected.baseQuoteId), `${expected.id} leaks its internal base ID`);
-      const baseReference = card.locator('[data-base-quote-reference]');
-      assert.equal(await baseReference.count(), 1, expected.id);
-      assert.match(
-        await baseReference.innerText(),
-        {
-          en: /Standard base quote/,
-          zh: /Standard 基础价目/,
-          ja: /Standard 基準料金/,
-        }[locale],
-      );
-      const baseLink = baseReference.getByRole('link', {
-        name: 'Standard · global · https://api.openai.com/v1',
-        exact: true,
-      });
-      assert.equal(await baseLink.count(), 1, expected.id);
-      const href = await baseLink.getAttribute('href');
-      assert.ok(href?.startsWith('#'), `${expected.id} base link ${href}`);
-      const target = page.locator(href);
-      assert.equal(await target.getAttribute('data-quote-id'), expected.baseQuoteId);
-      assert.equal(await target.getAttribute('data-syncable'), 'true');
-      assert.equal(await target.getAttribute('data-service-name'), 'Standard');
-      assert.match(
-        await target.locator('[data-price-list]').innerText(),
-        /OpenAI API \/ Standard \/ global/,
-      );
-      await baseLink.click();
       assert.equal(
-        await page.evaluate(() => document.activeElement?.getAttribute('data-quote-id')),
-        expected.baseQuoteId,
+        await selected.locator('[data-pricing-row]').count(),
+        expectedVisibleRows.length,
       );
-      await card.locator('[data-price-audit] > summary').click();
-      const audit = await card.locator('[data-price-audit]').innerText();
-      assert.ok(audit.includes(`"baseQuoteId": "${expected.baseQuoteId}"`), expected.id);
-      assert.ok(audit.includes('"baseCost"'), expected.id);
+      const body = await page.locator('body').innerText();
+      assert.ok(!body.includes(expected.id), expected.id);
+      assert.doesNotMatch(body, titles);
+      const emptyScopes = await page.locator('section[data-pricing-scope]').evaluateAll((scopes) =>
+        scopes.filter((scope) => !scope.querySelector('article[data-quote-id]')).map((scope) => scope.id),
+      );
+      assert.deepEqual(emptyScopes, []);
       await assertNoPageOverflow(page);
     }
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('[data-quote-id]').first().waitFor();
+    assert.equal(await page.locator('[data-price-role="background-reference"]').count(), 0);
     assert.ok(
       await page
         .locator('[data-quote-id] > details')
@@ -794,37 +734,19 @@ export async function checkPricingReviewFindings({
     );
   });
 
-  await verify('Upstream catalog references stay separate with stable rows and explicit TTL gaps', async () => {
+  await verify('Unselected upstream references disappear while selected upstream primary prices remain', async () => {
     await visit('openai', 'gpt-6.1-sol');
-    const upstreamView = models('openai', 'gpt-6.1-sol').pricing_view.groups
-      .flatMap(({ quotes }) => quotes)
-      .find(({ quoteId }) => quoteId.startsWith('upstream:'));
-    const upstream = quoteAt(page, upstreamView.quoteId);
-    const upstreamScope = upstream.locator('xpath=ancestor::section[@data-pricing-scope][1]');
-    assert.equal(await upstreamScope.getAttribute('data-reference-kind'), 'upstream');
-    assert.match(
-      await upstreamScope.locator('[data-scope-title]').innerText(),
+    assert.equal(await page.locator('[data-quote-id^="upstream:"]').count(), 0);
+    assert.equal(await page.locator('[data-reference-kind="upstream"]').count(), 0);
+    assert.doesNotMatch(
+      await page.locator('body').innerText(),
       { en: /Upstream catalog reference/, zh: /上游目录参考价/, ja: /上流カタログ参考料金/ }[locale],
     );
-    const summary = await upstream.locator('summary').first().innerText();
-    assert.doesNotMatch(summary, /fixed upstream primary or original CNY sheet/);
-    assert.equal(await upstream.locator('[data-price-list]').count(), 0);
-    await upstream.locator('[data-price-audit] > summary').click();
-    assert.match(
-      await upstream.locator('[data-price-audit]').innerText(),
-      /fixed upstream primary or original CNY sheet/,
-    );
-    assert.match(
-      summary,
-      { en: /Upstream catalog record/, zh: /上游目录记录/, ja: /上流カタログ記録/ }[locale],
-    );
-    const selectedScope = await page.locator('[data-syncable="true"]').getAttribute('data-pricing-scope');
-    assert.notEqual(await upstream.getAttribute('data-pricing-scope'), selectedScope);
     const positions = await page.locator('section[data-reference-kind]').evaluateAll((scopes) =>
       scopes.map((scope) => scope.dataset.referenceKind),
     );
-    assert.deepEqual(positions, ['official', 'upstream']);
-    for (const band of await upstream.locator('[data-rate-band]').all()) {
+    assert.deepEqual(positions, ['official']);
+    for (const band of await page.locator('[data-rate-band]').all()) {
       const order = await band.locator('[data-pricing-row]').evaluateAll((rows) =>
         rows.map((row) => row.dataset.pricingRow.split(':').at(-1)),
       );
@@ -832,11 +754,34 @@ export async function checkPricingReviewFindings({
       const core = order.filter((id) => ranks[id]);
       assert.deepEqual(core, [...core].sort((a, b) => ranks[a] - ranks[b]), core.join(', '));
     }
-    for (const label of await upstream.locator('[data-pricing-row$=":cache_write"] th').allTextContents())
-      assert.match(
-        label,
-        { en: /TTL undocumented in source/, zh: /源记录未注明缓存有效期/, ja: /元資料にキャッシュ TTL の記載なし/ }[locale],
-      );
+    for (const label of await page.locator('[data-pricing-row$=":cache_write"] th').allTextContents())
+      assert.match(label, new RegExp('30\\s*' + { en: 'min', zh: '分钟', ja: '分' }[locale]));
+
+    await visit('openai', 'gpt-5.4');
+    const selected = quoteAt(page, 'upstream:openai:gpt-5.4:USD');
+    assert.equal(await selected.count(), 1);
+    assert.equal(await selected.getAttribute('data-syncable'), 'true');
+    assert.equal(await selected.locator('[data-pricing-row]').count(), 6);
+    const selectedScope = selected.locator('xpath=ancestor::section[@data-pricing-scope][1]');
+    assert.equal(await selectedScope.getAttribute('data-reference-kind'), 'official');
+    assert.match(
+      await selected.locator('summary h3').innerText(),
+      { en: /Current selected tariff/, zh: /当前选中价目/, ja: /選択中の料金/ }[locale],
+    );
+    assert.equal(await page.locator('[data-reference-kind="upstream"]').count(), 0);
+    assert.equal(await selected.locator('[data-price-list]').count(), 0);
+    await selected.locator('[data-price-audit] > summary').click();
+    assert.match(
+      await selected.locator('[data-price-audit]').innerText(),
+      /fixed upstream primary or original CNY sheet/,
+    );
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await selected.waitFor();
+    assert.equal(await selected.getAttribute('data-syncable'), 'true');
+    const emptyScopes = await page.locator('section[data-pricing-scope]').evaluateAll((scopes) =>
+      scopes.filter((scope) => !scope.querySelector('article[data-quote-id]')).map((scope) => scope.id),
+    );
+    assert.deepEqual(emptyScopes, []);
     await assertNoPageOverflow(page);
   });
 
@@ -874,25 +819,24 @@ export async function checkPricingReviewFindings({
   await verify(
     'Price explanations are readable and technical originals stay in audit details',
     async () => {
+      await visit('alibaba-cn', 'qvq-max');
+      assert.equal(await page.locator('article[data-quote-id]').count(), 0);
+      assert.doesNotMatch(await page.locator('body').innerText(), /missing-original-CNY/);
+      await visit('inception', 'mercury-2');
+      assert.equal(await page.locator('article[data-quote-id]').count(), 0);
+      assert.doesNotMatch(
+        await page.locator('body').innerText(),
+        /approved-deferred-evidence:complete-tariff-requires-source-currency/,
+      );
       const cases = [
         [
-          'alibaba-cn',
-          'qvq-max',
-          'missing-original-CNY',
+          'openai',
+          'gpt-6.1-sol',
+          'Different service tier',
           {
-            en: 'Official CNY pricing is not yet verified.',
-            zh: '尚未核实官方人民币原价。',
-            ja: '公式の人民元料金は未確認です。',
-          },
-        ],
-        [
-          'inception',
-          'mercury-2',
-          'approved-deferred-evidence:complete-tariff-requires-source-currency',
-          {
-            en: 'Source currency will be verified before planned integration.',
-            zh: '源币种待确认，将在计划接入前核查。',
-            ja: '導入予定時に元の通貨を確認します。',
+            en: 'This service tier is reference only and must be selected separately. Regional and caching conditions still apply.',
+            zh: '此服务档仅供参考，需单独选定；仍须遵循区域和缓存条件。',
+            ja: 'このサービス階層は参考情報で、別途選択が必要です。リージョンとキャッシュ条件も適用されます。',
           },
         ],
         [
@@ -1112,7 +1056,10 @@ export async function checkPricingReviewFindings({
     }
 
     await visit('alibaba', 'qwen3-coder-flash');
-    const multi = quoteAt(page, 'upstream:alibaba:qwen3-coder-flash:USD');
+    const multi = quoteAt(
+      page,
+      'dashscope--qwen3-coder-flash--sg-international-online-original-explicit',
+    );
     assert.equal(await multi.locator('[data-rate-band]').count(), 4);
     for (const [id, bound] of [
       ['cost:input', /32000/],
@@ -1124,18 +1071,24 @@ export async function checkPricingReviewFindings({
     await assertNoPageOverflow(page);
 
     await visit('alibaba', 'qwen3.5-plus');
-    const partial = quoteAt(page, 'upstream:alibaba:qwen3.5-plus:USD');
+    const partial = quoteAt(
+      page,
+      'dashscope--qwen3.5-plus--sg-international-online-original-explicit',
+    );
     const lowBand = row(partial, 'cost:input').locator('xpath=ancestor::*[@data-rate-band][1]');
     const highBand = row(partial, 'cost:tier-0:input').locator(
       'xpath=ancestor::*[@data-rate-band][1]',
     );
-    const reasoningBand = row(partial, 'cost:reasoning').locator(
-      'xpath=ancestor::*[@data-rate-band][1]',
-    );
-    assert.equal(await highBand.locator('[data-pricing-row]').count(), 2);
-    assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await lowBand.getAttribute('data-rate-band'));
-    assert.equal(await reasoningBand.locator('[data-tier-condition]').count(), 0);
-    assert.notEqual(await reasoningBand.getAttribute('data-rate-band'), await highBand.getAttribute('data-rate-band'));
+    assert.equal(await highBand.locator('[data-pricing-row]').count(), 4);
+    assert.notEqual(await highBand.getAttribute('data-rate-band'), await lowBand.getAttribute('data-rate-band'));
+    assert.equal(await row(partial, 'cost:reasoning').count(), 0);
+    for (const usage of ['cache_read', 'cache_write'])
+      assert.equal(
+        await row(partial, `cost:tier-0:${usage}`)
+          .locator('xpath=ancestor::*[@data-rate-band][1]')
+          .getAttribute('data-rate-band'),
+        await highBand.getAttribute('data-rate-band'),
+      );
     await assertNoPageOverflow(page);
   });
 
@@ -1276,18 +1229,18 @@ export async function checkPricingReviewFindings({
       'unavailable',
     );
   });
-  await verify('Perplexity token billing unit', async () => {
+  await verify('Perplexity unselected upstream reference leaves no empty pricing region', async () => {
     await visit('perplexity', 'sonar-deep-research');
-    for (const [key, amount] of [
-      ['input', '14'],
-      ['output', '56'],
-      ['reasoning', '21'],
-    ]) {
-      const charge = page.locator(`[data-pricing-row="cost:${key}"]`);
-      assert.equal(await charge.getAttribute('data-cny-amount'), amount);
-      assert.equal(await charge.getAttribute('data-unit'), 'per_million_tokens');
-      assert.doesNotMatch(await charge.locator('th').innerText(), /—/);
-    }
+    assert.equal(await page.locator('article[data-quote-id]').count(), 0);
+    assert.equal(await page.locator('section[data-pricing-scope]').count(), 0);
+    assert.equal(await page.locator('[data-quote-id="upstream:perplexity:sonar-deep-research:USD"]').count(), 0);
+    assert.equal(
+      await page
+        .locator('[data-pricing-provider="perplexity"][data-pricing-model="sonar-deep-research"]')
+        .getAttribute('data-pricing-summary'),
+      'unavailable',
+    );
+    await assertNoPageOverflow(page);
   });
   await verify('Gemini per-image equivalents, resolution and token counts', async () => {
     for (const [model, expected] of [
@@ -1416,33 +1369,17 @@ export async function checkPricingReviewFindings({
     }
     assert.equal(await reference.locator('[data-pricing-row^="fees:"]').count(), 0);
   });
-  await verify('DeepSeek peak and off-peak conditions match their rates', async () => {
+  await verify('Unselected DeepSeek upstream reference leaves no empty pricing region', async () => {
     await visit('deepseek', 'deepseek-flash');
-    const reference = page.locator('[data-quote-id="upstream:deepseek:deepseek-flash:CNY"]');
-    const offPeak = row(reference, 'cost:input');
-    const peak = row(reference, 'cost:schedule:windows:0:input');
-    const labels = {
-      en: { off: 'outside the listed peak times', peak: 'Peak', holiday: 'Off-peak rate' },
-      zh: { off: '所列高峰时段之外', peak: '高峰', holiday: '适用非高峰价' },
-      ja: { off: '記載のピーク時間帯以外', peak: 'ピーク', holiday: 'オフピーク料金' },
-    }[locale];
-    assert.equal(await offPeak.getAttribute('data-cny-amount'), '1');
-    assert.equal(await peak.getAttribute('data-cny-amount'), '2');
-    assert.ok(
-      (await offPeak.locator('[data-condition="fallback"]').innerText()).includes(labels.off),
+    assert.equal(await page.locator('article[data-quote-id]').count(), 0);
+    assert.equal(await page.locator('[data-quote-id="upstream:deepseek:deepseek-flash:CNY"]').count(), 0);
+    assert.equal(await page.locator('section[data-pricing-scope]').count(), 0);
+    assert.equal(await page.locator('[data-reference-kind="upstream"]').count(), 0);
+    assert.doesNotMatch(
+      await page.locator('body').innerText(),
+      /fixed upstream primary or original CNY sheet/,
     );
-    assert.equal(await peak.locator('[data-condition="fallback"]').count(), 0);
-    assert.ok((await peak.locator('[data-condition="name"]').innerText()).includes(labels.peak));
-    assert.match(
-      await peak.locator('[data-condition="hours"]').innerText(),
-      /09:00-12:00.*14:00-18:00/,
-    );
-    assert.match(await peak.locator('[data-condition="timezone"]').innerText(), /Asia\/Shanghai/);
-    assert.ok(
-      (await reference.locator('[data-condition="chineseLegalHolidays"]').innerText()).includes(
-        labels.holiday,
-      ),
-    );
+    await assertNoPageOverflow(page);
   });
   await verify('MiniMax tariffs do not borrow a model endpoint', async () => {
     await visit('minimax-cn', 'MiniMax-M3');
@@ -1531,6 +1468,27 @@ export async function checkPricingReviewFindings({
       /Used Step 5 Preview through the pay-as-you-go API before the effective time/,
     );
   });
+  const allViewQuotes = Object.values(catalog).flatMap((provider) =>
+    Object.values(provider.models).flatMap((model) =>
+      model.pricing_view.groups.flatMap((group) => group.quotes),
+    ),
+  );
+  assert.equal(
+    allViewQuotes.filter((quote) => quote.originalQuote?.priceRole === 'background-reference').length,
+    0,
+  );
+  assert.deepEqual(
+    allViewQuotes
+      .filter(
+        (quote) => quote.quoteId.startsWith('upstream:') && (!quote.selected || !quote.syncable),
+      )
+      .map((quote) => quote.quoteId),
+    [],
+  );
+  assert.equal(
+    allViewQuotes.filter((quote) => quote.quoteId.startsWith('upstream:') && quote.selected).length,
+    67,
+  );
   assert.deepEqual(findings, [], findings.join('\n'));
   return { findings: 25, passed: true };
 }

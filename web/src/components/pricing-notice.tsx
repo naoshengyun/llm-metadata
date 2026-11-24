@@ -1,5 +1,6 @@
 import type { Model } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { localizePrice, priceLabels } from '@/lib/pricing-display-labels';
 const statusLabels: Record<string, [string, string, string]> = {
   'not-offered': [
     'Not offered by Naoshengyun',
@@ -33,37 +34,41 @@ export function PricingNotice({ model }: { model: Model }) {
   if (!p) return null;
   const zh = locale === 'zh',
     ja = locale === 'ja';
-  const status =
-    statusLabels[p.status]?.[zh ? 1 : ja ? 2 : 0] ??
-    (p.status === 'missing'
-      ? zh
-        ? p.reason === 'missing-original-CNY'
-          ? '缺少原始 CNY 价格；未导出'
-          : '缺少上游源价格；未导出'
-        : ja
-          ? p.reason === 'missing-original-CNY'
-            ? '元の CNY 価格なし・未出力'
-            : '上流価格なし・未出力'
-          : p.reason === 'missing-original-CNY'
-            ? 'Original CNY price unavailable; not exported'
-            : 'Upstream source price unavailable; not exported'
-      : p.status === 'unsupported'
+  const emptyView = model.pricing_view?.summary.kind === 'unavailable';
+  const genericUnavailable =
+    emptyView && !['not-offered', 'deprecated', 'subscription'].includes(p.status);
+  const status = genericUnavailable
+    ? localizePrice(priceLabels.unavailable, locale)
+    : (statusLabels[p.status]?.[zh ? 1 : ja ? 2 : 0] ??
+      (p.status === 'missing'
         ? zh
-          ? '价格仅供资料；原生计费暂不支持'
+          ? p.reason === 'missing-original-CNY'
+            ? '缺少原始 CNY 价格；未导出'
+            : '缺少上游源价格；未导出'
           : ja
-            ? '参考価格・ネイティブ課金未対応'
-            : 'Price information only; native billing unsupported'
-        : p.exported
+            ? p.reason === 'missing-original-CNY'
+              ? '元の CNY 価格なし・未出力'
+              : '上流価格なし・未出力'
+            : p.reason === 'missing-original-CNY'
+              ? 'Original CNY price unavailable; not exported'
+              : 'Upstream source price unavailable; not exported'
+        : p.status === 'unsupported'
           ? zh
-            ? 'CNY 基础价 · 已纳入价格 API'
+            ? '价格仅供资料；原生计费暂不支持'
             : ja
-              ? 'CNY 基準価格・API 対象'
-              : 'CNY base price · included in API'
-          : zh
-            ? '区域资料价；API 使用国内/已选端点'
-            : ja
-              ? '地域別参考価格・API は選択端点を使用'
-              : 'Regional price information; API uses selected endpoint');
+              ? '参考価格・ネイティブ課金未対応'
+              : 'Price information only; native billing unsupported'
+          : p.exported
+            ? zh
+              ? 'CNY 基础价 · 已纳入价格 API'
+              : ja
+                ? 'CNY 基準価格・API 対象'
+                : 'CNY base price · included in API'
+            : zh
+              ? '区域资料价；API 使用国内/已选端点'
+              : ja
+                ? '地域別参考価格・API は選択端点を使用'
+                : 'Regional price information; API uses selected endpoint'));
   return (
     <p
       className="text-muted-foreground my-2 text-xs break-words whitespace-normal"
@@ -73,7 +78,7 @@ export function PricingNotice({ model }: { model: Model }) {
       {p.exported && p.sourceCurrency && p.sourceCurrency !== 'CNY'
         ? ` · ${p.sourceCurrency} → CNY`
         : ''}
-      {p.reason && !['not-offered', 'subscription', 'deprecated'].includes(p.status)
+      {p.reason && !emptyView && !['not-offered', 'subscription', 'deprecated'].includes(p.status)
         ? ` · ${p.reason}`
         : ''}
     </p>

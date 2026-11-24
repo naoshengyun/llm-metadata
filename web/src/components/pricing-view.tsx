@@ -200,10 +200,13 @@ type QuoteScope = {
 
 function entryDisplayName(entry: QuoteEntry, locale: Locale) {
   const upstream = isUpstreamQuote(entry.quote);
-  const base =
-    upstream && entry.serviceName === entry.quote.priceList
-      ? msg(locale, 'upstreamRecord')
-      : entry.serviceName;
+  const base = upstream
+    ? entry.quote.selected
+      ? msg(locale, 'selectedTariff')
+      : entry.serviceName === entry.quote.priceList
+        ? msg(locale, 'upstreamRecord')
+        : entry.serviceName
+    : entry.serviceName;
   const role = entry.quote.originalQuote?.priceRole;
   const roleLabel =
     role === 'official-list'
@@ -1084,7 +1087,8 @@ export function PricingViewQuotes({
       endpointScopes = new Map<string, QuoteScope>();
       scopeMap.set(qualifier, endpointScopes);
     }
-    const referenceKind = isUpstreamQuote(entry.quote) ? 'upstream' : 'official';
+    const referenceKind =
+      isUpstreamQuote(entry.quote) && !entry.quote.selected ? 'upstream' : 'official';
     const scopeKey = `${referenceKind}\0${entry.endpoint}`;
     let scope = endpointScopes.get(scopeKey);
     if (!scope) {

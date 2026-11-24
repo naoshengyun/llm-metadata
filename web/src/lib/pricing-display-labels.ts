@@ -26,6 +26,7 @@ export const priceLabels = {
   endpoint: ['Endpoint', '端点', 'エンドポイント'],
   digest: ['Evidence identifier', '证据标识', '証拠識別子'],
   selected: ['Current selection · sync candidate', '当前选价 · 同步候选', '現在の選択・同期候補'],
+  selectedTariff: ['Current selected tariff', '当前选中价目', '選択中の料金'],
   commonConditions: [
     'Applies to every tier in this tariff',
     '适用于本档全部阶梯',
