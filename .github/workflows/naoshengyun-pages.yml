@@ -216,17 +216,25 @@ jobs:
           SITE_HASH: ${{ needs.build.outputs.site_hash }}
         run: |
           set -euo pipefail
-          for attempt in {1..10}; do
-            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT")"; then
-              printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
-              printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
-              echo "result=verified" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            sleep 45
-          done
+          if receipt="$(node scripts/cny-pages-verify-with-retry.mjs verify-candidate "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" --log="$RUNNER_TEMP/candidate-verification")"; then
+            printf 'Verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
+            echo "result=verified" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "Publication unconfirmed for $GITHUB_SHA. Public read-back never matched the exact artifact." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+      - if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-candidate-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate-verification/attempts.ndjson
+            ${{ runner.temp }}/candidate-verification/attempt-*.stdout.log
+            ${{ runner.temp }}/candidate-verification/attempt-*.stderr.log
+          if-no-files-found: warn
+          retention-days: 90
       - continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -389,17 +397,25 @@ jobs:
           SITE_HASH: ${{ needs.promote.outputs.site_hash }}
         run: |
           set -euo pipefail
-          for attempt in {1..10}; do
-            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify-complete "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT")"; then
-              printf 'Verified completed public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
-              printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
-              echo "result=verified" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            sleep 45
-          done
+          if receipt="$(node scripts/cny-pages-verify-with-retry.mjs verify-complete "$PAGES_ORIGIN" "$GITHUB_SHA" "$SITE_HASH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" --log="$RUNNER_TEMP/final-verification")"; then
+            printf 'Verified completed public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' "$receipt" > "$RUNNER_TEMP/verified-release.json"
+            echo "result=verified" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "Completion unconfirmed for $GITHUB_SHA. Public read-back never matched the exact completed artifact." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+      - if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-final-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/final-verification/attempts.ndjson
+            ${{ runner.temp }}/final-verification/attempt-*.stdout.log
+            ${{ runner.temp }}/final-verification/attempt-*.stderr.log
+          if-no-files-found: warn
+          retention-days: 90
       - continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -472,14 +488,22 @@ jobs:
         if: steps.recovery.outputs.state == 'restore'
         run: |
           set -euo pipefail
-          for attempt in {1..10}; do
-            if receipt="$(timeout 60s node scripts/cny-pages-release.mjs verify "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH")"; then
-              printf 'Restored and verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            sleep 45
-          done
+          if receipt="$(node scripts/cny-pages-verify-with-retry.mjs verify "$PAGES_ORIGIN" "$PRIOR_SHA" "$PRIOR_SITE_HASH" --log="$RUNNER_TEMP/recovery-verification")"; then
+            printf 'Restored and verified public release: `%s`\n' "$receipt" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           exit 1
+      - if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cny-pages-recovery-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/recovery-verification/attempts.ndjson
+            ${{ runner.temp }}/recovery-verification/attempt-*.stdout.log
+            ${{ runner.temp }}/recovery-verification/attempt-*.stderr.log
+          if-no-files-found: warn
+          retention-days: 90
       - name: Record unresolved public recovery
         if: failure()
         run: echo "Public recovery failed or was blocked. Use the verified recovery artifact and diagnostics from this run." >> "$GITHUB_STEP_SUMMARY"

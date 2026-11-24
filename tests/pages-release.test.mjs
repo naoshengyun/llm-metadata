@@ -12,6 +12,8 @@ const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (value) => JSON.stringify(value) + '\n';
 const run = (...args) =>
   promisify(execFile)(process.execPath, ['scripts/cny-pages-release.mjs', ...args]);
+const runRetry = (...args) =>
+  promisify(execFile)(process.execPath, ['scripts/cny-pages-verify-with-retry.mjs', ...args]);
 
 function release(marker) {
   const sourceSha = marker.repeat(40);
@@ -550,6 +552,116 @@ test('legacy false or missing complete pointers remain compatible but are not fi
         /requires complete=false/,
       );
   }
+});
+
+test('verification retry records slow timeouts and passes the same valid inventory with a sufficient budget', async (t) => {
+  const candidate = release('b');
+  const server = createServer(({ url }, response) => {
+    const path = new URL(url, 'http://localhost').pathname.slice(1);
+    setTimeout(() => response.writeHead(candidate.files[path] === undefined ? 404 : 200).end(candidate.files[path]), 50);
+  });
+  t.after(() => server.close());
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port + '/';
+  const dir = mkdtempSync(join(tmpdir(), 'pages-retry-slow-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const args = [
+    'verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1',
+    '--attempts=2', '--attempt-timeout-ms=100', '--sleep-ms=0', '--log=' + join(dir, 'slow'),
+  ];
+  await assert.rejects(runRetry(...args), /Verification failed after 2 attempts/);
+  const attempts = readFileSync(join(dir, 'slow', 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(attempts.length, 2);
+  for (const [index, attempt] of attempts.entries()) {
+    assert.equal(attempt.attempt, index + 1);
+    assert.equal(attempt.exitCode, null);
+    assert.equal(attempt.signal, 'SIGTERM');
+    assert.equal(attempt.timedOut, true);
+    assert.ok(attempt.durationMs >= 90);
+    assert.ok(attempt.progress);
+    assert.ok(attempt.lastDiagnostic);
+    assert.ok(readFileSync(join(dir, 'slow', `attempt-${index + 1}.stderr.log`), 'utf8').length > 0);
+  }
+  const direct = await run('verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1');
+  assert.equal(JSON.parse(direct.stdout).complete, false);
+  const verified = await runRetry(
+    'verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1',
+    '--attempts=1', '--attempt-timeout-ms=2000', '--sleep-ms=0', '--log=' + join(dir, 'valid'),
+  );
+  assert.equal(JSON.parse(verified.stdout).complete, false);
+});
+
+test('verification retry recovers from CDN inconsistency but exhausts on a real hash mismatch', async (t) => {
+  const candidate = release('b');
+  const previous = release('a');
+  let currentReads = 0;
+  let corrupt = false;
+  const server = createServer(({ url }, response) => {
+    const path = new URL(url, 'http://localhost').pathname.slice(1);
+    let body = candidate.files[path];
+    if (path === 'current.json' && ++currentReads === 1) body = previous.files[path];
+    if (path === 'app/js/site.js' && corrupt) body = 'corrupt';
+    response.writeHead(body === undefined ? 404 : 200).end(body);
+  });
+  t.after(() => server.close());
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port + '/';
+  const dir = mkdtempSync(join(tmpdir(), 'pages-retry-mismatch-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const recovered = await runRetry(
+    'verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1',
+    '--attempts=2', '--attempt-timeout-ms=2000', '--sleep-ms=0', '--log=' + join(dir, 'recovered'),
+  );
+  assert.equal(JSON.parse(recovered.stdout).complete, false);
+  const recoveryAttempts = readFileSync(join(dir, 'recovered', 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.deepEqual(recoveryAttempts.map((attempt) => attempt.exitCode), [1, 0]);
+  assert.match(recoveryAttempts[0].lastDiagnostic, /current.json|preceding deployment/);
+  corrupt = true;
+  await assert.rejects(
+    runRetry(
+      'verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1',
+      '--attempts=2', '--attempt-timeout-ms=2000', '--sleep-ms=0', '--log=' + join(dir, 'corrupt'),
+    ),
+    /Verification failed after 2 attempts/,
+  );
+  const corruptAttempts = readFileSync(join(dir, 'corrupt', 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.deepEqual(corruptAttempts.map((attempt) => attempt.exitCode), [1, 1]);
+  assert.match(corruptAttempts.at(-1).lastDiagnostic, /site.js/);
+  assert.equal(corruptAttempts.at(-1).timedOut, false);
+});
+
+test('remote verification retries HTTP 429 and still verifies the exact bytes', async (t) => {
+  const candidate = release('b');
+  let attempts = 0;
+  const server = createServer(({ url }, response) => {
+    const path = new URL(url, 'http://localhost').pathname.slice(1);
+    if (path === 'app/js/site.js' && ++attempts < 3) {
+      response.writeHead(429, { 'Retry-After': '0' }).end();
+      return;
+    }
+    response.writeHead(candidate.files[path] === undefined ? 404 : 200).end(candidate.files[path]);
+  });
+  t.after(() => server.close());
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port + '/';
+  const result = await run('verify-candidate', origin, candidate.sourceSha, candidate.manifestHash, '123', '1');
+  assert.equal(JSON.parse(result.stdout).complete, false);
+  assert.equal(attempts, 3);
+});
+
+test('workflow retry budgets fit job deadlines and upload per-attempt diagnostics', () => {
+  const workflow = readFileSync('.github/workflows/naoshengyun-pages.yml', 'utf8');
+  const retry = readFileSync('scripts/cny-pages-verify-with-retry.mjs', 'utf8');
+  assert.match(retry, /DEFAULT_ATTEMPTS = 5/);
+  assert.match(retry, /DEFAULT_ATTEMPT_TIMEOUT_MS = 120_000/);
+  assert.match(retry, /DEFAULT_SLEEP_MS = 45_000/);
+  const retryBudgetMs = 5 * 120_000 + 4 * 45_000;
+  assert.equal(retryBudgetMs, 780_000);
+  assert.ok(retryBudgetMs < 20 * 60_000, 'candidate/final retry budget fits 20-minute jobs');
+  assert.ok(retryBudgetMs < 40 * 60_000, 'recovery retry budget fits its 40-minute job');
+  assert.equal((workflow.match(/cny-pages-verify-with-retry\.mjs/g) ?? []).length, 3);
+  assert.equal((workflow.match(/attempts\.ndjson/g) ?? []).length, 3);
+  assert.doesNotMatch(workflow, /timeout 60s/);
 });
 
 test('workflow separates candidate proof from final verified status and keeps pinned Actions', () => {
