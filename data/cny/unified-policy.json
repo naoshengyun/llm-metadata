@@ -805,6 +805,28 @@
       "reason": "Native audio usage has no separate audio-cache read meter for the official tariff"
     }
   },
+  "weeklyScheduleExceptions": {
+    "deepseek-flash": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "reason": "user-approved-weekday-schedule-ignores-chinese-legal-holidays-and-adjusted-workdays"
+    },
+    "deepseek-v4-flash": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "reason": "user-approved-weekday-schedule-ignores-chinese-legal-holidays-and-adjusted-workdays"
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "reason": "user-approved-weekday-schedule-ignores-chinese-legal-holidays-and-adjusted-workdays"
+    },
+    "deepseek-v4-pro": {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "reason": "user-approved-weekday-schedule-ignores-chinese-legal-holidays-and-adjusted-workdays"
+    }
+  },
   "ineligibleUpstream": {
     "sarvam-105b": {
       "providerId": "sarvam",

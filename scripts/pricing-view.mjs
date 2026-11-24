@@ -7,6 +7,7 @@ import {
   PRICE_KEYS,
 } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
+import { weeklyScheduleException } from './weekly-schedule-exceptions.mjs';
 import { cacheTermsByRecord } from './pricing-display-evidence.mjs';
 import {
   expectedDisplayRows,
@@ -1101,6 +1102,8 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
       const exclusion = policy.nativeCapabilityExclusions?.[modelId];
       const incapable =
         exclusion?.providerId === providerId && exclusion.endpoint === (provider.api ?? null);
+      const exception = weeklyScheduleException(policy, modelId, providerId, provider.api ?? null, price);
+      const unsupported = incapable && !exception;
       const corrected = correction?.providerId === providerId;
       const domestic = domesticProviders.has(providerId) || provider.currency === 'CNY';
       const sourceCurrency = corrected
@@ -1115,11 +1118,11 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
           ? 'deferred'
           : corrected || price.reason?.startsWith('unsupported-source-currency:')
             ? 'excluded'
-            : incapable
+            : unsupported
               ? 'unsupported'
               : price.status;
       let reason = price.reason ?? null;
-      if (incapable) reason = exclusion.reason;
+      if (incapable) reason = exception?.reason ?? exclusion.reason;
       if (corrected) reason = correction.reason;
       if (evidence) reason = 'approved-deferred-evidence:complete-tariff-requires-' + evidence;
       if (deferred) reason = 'approved-deferred-model';
@@ -1179,7 +1182,7 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
           : corrected || deferred || evidence
             ? undefined
             : price.cost,
-        conditions: incapable ? exclusion.conditions : undefined,
+        conditions: incapable ? (exception?.conditions ?? exclusion.conditions) : undefined,
         upstreamReportedCost: model.cost ?? null,
         unit: price.unit,
         billing_expr: status === 'eligible' ? price.expr : undefined,
@@ -1195,12 +1198,16 @@ function upstreamExpectations(upstream, policy, source, selection, official) {
   }
   for (const [modelId, current] of groups) {
     const event = policy.lifecycle[modelId]?.at(-1);
+    const exclusion = policy.nativeCapabilityExclusions?.[modelId];
+    const exception = exclusion
+      ? weeklyScheduleException(policy, modelId, exclusion.providerId, exclusion.endpoint)
+      : null;
     const excluded =
       selection[modelId] ||
       policy.notOfferedModels?.includes(modelId) ||
       event?.state === 'withdrawn' ||
       policy.ineligibleUpstream[modelId] ||
-      policy.nativeCapabilityExclusions?.[modelId] ||
+      (exclusion && !exception) ||
       (modelId === 'doubao-seedance-2-5-260628' && !selection[modelId]);
     if (excluded) continue;
     const explicit = policy.upstreamSelection[modelId];
@@ -1331,7 +1338,10 @@ function expectedModelDisposition(
     };
   }
   const exclusion = policy.nativeCapabilityExclusions?.[modelId];
-  if (exclusion) return { status: 'unsupported', reason: exclusion.reason };
+  const exception = exclusion
+    ? weeklyScheduleException(policy, modelId, exclusion.providerId, exclusion.endpoint)
+    : null;
+  if (exclusion && !exception) return { status: 'unsupported', reason: exclusion.reason };
   if (selected) return { status: 'selected', reason: null };
   if (status !== 'eligible') return { status, reason };
   if (officialChoice && officialChoice.outputKind !== 'tool-reference')

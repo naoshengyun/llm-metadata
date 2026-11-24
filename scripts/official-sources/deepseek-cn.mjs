@@ -7,6 +7,9 @@ import {
   tables,
   tariff,
 } from './lib/domestic-tables.mjs';
+import {
+  WEEKLY_SCHEDULE_EXCEPTION_REASON,
+} from '../weekly-schedule-exceptions.mjs';
 
 const models = [
   'deepseek-flash',
@@ -24,8 +27,7 @@ const targets = models.map((model) => ({
     `upstream:deepseek:${model}:CNY`,
     'domestic-peak-off-peak',
   ),
-  referenceOnlyReason:
-    'Native weekly schedules cannot express mainland China legal-holiday off-peak pricing',
+  weeklyScheduleException: WEEKLY_SCHEDULE_EXCEPTION_REASON,
 }));
 
 function rowsAfter(table, label) {

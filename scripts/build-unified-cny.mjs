@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonical, generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders, sha } from './upstream-cny.mjs';
+import { weeklyScheduleException } from './weekly-schedule-exceptions.mjs';
 import { makeSnapshot } from './upstream-snapshot.mjs';
 import { verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
 import {
@@ -217,6 +218,8 @@ function upstreamRows(providers, policy, source) {
       const exclusion = policy.nativeCapabilityExclusions?.[modelId];
       const incapable =
         exclusion?.providerId === providerId && exclusion.endpoint === (provider.api ?? null);
+      const exception = weeklyScheduleException(policy, modelId, providerId, provider.api ?? null, price);
+      const unsupported = incapable && !exception;
       const corrected = correction?.providerId === providerId;
       const domestic = domesticProviders.has(providerId) || provider.currency === 'CNY';
       if (
@@ -247,7 +250,7 @@ function upstreamRows(providers, policy, source) {
         ? 'deferred'
         : corrected || price.reason?.startsWith('unsupported-source-currency:')
           ? 'excluded'
-          : incapable
+          : unsupported
             ? 'unsupported'
             : price.status;
       const reason = deferred
@@ -257,7 +260,7 @@ function upstreamRows(providers, policy, source) {
           : corrected
             ? correction.reason
             : incapable
-              ? exclusion.reason
+              ? (exception?.reason ?? exclusion.reason)
               : (price.reason ?? null);
       const amount = originalPrice(model, sourceCurrency);
       const upstreamPrice = {
@@ -278,7 +281,7 @@ function upstreamRows(providers, policy, source) {
             : incapable
               ? exclusion.sourcePrice
               : amount,
-        ...(incapable && { conditions: exclusion.conditions }),
+        ...(incapable && { conditions: exception?.conditions ?? exclusion.conditions }),
         upstreamReportedCost: model.cost ?? null,
         sourceUnit: incapable
           ? exclusion.sourceUnit
@@ -622,7 +625,21 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
       continue;
     }
     const exclusion = policy.nativeCapabilityExclusions?.[modelId];
-    if (exclusion) {
+    const exception = exclusion
+      ? weeklyScheduleException(policy, modelId, exclusion.providerId, exclusion.endpoint)
+      : null;
+    if (exception) {
+      const identity = current.find(
+        (row) =>
+          row.providerId === exclusion.providerId &&
+          row.upstreamPrice?.endpoint === exclusion.endpoint &&
+          row.upstreamPrice?.status === 'eligible' &&
+          row.upstreamPrice?.conditions?.scheduleApplicability ===
+            exception.conditions.scheduleApplicability,
+      );
+      if (!identity) throw Error('Weekly schedule exception identity changed: ' + modelId);
+    }
+    if (exclusion && !exception) {
       const identity = current.find(
         (row) =>
           row.providerId === exclusion.providerId &&
