@@ -40,6 +40,8 @@ npm run cny:official:check -- /tmp/cny-unified /tmp/cny-official-recheck /tmp/cn
 
 `targets` 可用 `referenceOnlyReason` 标明已成功提取、但完整收费条件超出现有原生计费能力的价目。这些结果以 `unsupported` 报告。未到正式生效时间的新价以 `future-effective` 报告，附原价和有效时间，候选中没有替代表达式。
 
+DeepSeek 四个具名目标使用 `weeklyScheduleException` 记录用户批准的周历偏差。解析和比较仍只使用官网原始 CNY、UTC/Asia-Shanghai 对应周历及节假日证据；业务适用条件不混入官方 chargingConditions 差异。官网金额或条件真实变化继续独立报告，批准的忽略节假日/调休规则本身不视为变价或撤价。
+
 ## 每日核价和人工审核
 
 [#46](https://github.com/naoshengyun/llm-metadata/issues/46) 在业务分支每天北京时间 09:47 核对固定公网版本。Actions 的手动入口支持同一运行方式和 `observe_only`。观察模式会记录结果及构建证据。公网指针尚未指向当前业务提交时，运行等待后续再触发，以免混用报价版本和源码。

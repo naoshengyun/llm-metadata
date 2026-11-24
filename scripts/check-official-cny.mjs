@@ -357,11 +357,21 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt, lifecycle)
   const { quote } = entry;
   if (!parsed) throw Error('Exact official price row is missing');
   if (parsed.error) throw Error(parsed.error);
+  const beforeConditions = Object.fromEntries(
+    Object.entries(
+      quote.originalQuote?.conditions ??
+        (target.weeklyScheduleException ? quote.conditions : undefined) ??
+        target.baselineConditions ??
+        {},
+    ).filter(
+      ([key]) => !target.weeklyScheduleException || key !== 'scheduleApplicability',
+    ),
+  );
   const before = {
     identity,
     sourcePrice: quote.sourcePrice ?? null,
     sourceUnit: quote.sourceUnit ?? null,
-    conditions: quote.originalQuote?.conditions ?? target.baselineConditions ?? {},
+    conditions: beforeConditions,
     ...(quote.originalQuote?.effectiveAt && { effectiveAt: quote.originalQuote.effectiveAt }),
   };
   if (!equal(parsed.identity, identity)) {
@@ -438,7 +448,8 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt, lifecycle)
     };
   }
   const referenceReason = target.referenceOnlyReason;
-  if (referenceReason) {
+  const weeklyException = target.weeklyScheduleException;
+  if (referenceReason || weeklyException) {
     const amounts = priceComponents(parsed.sourcePrice).amounts;
     if (
       !Object.keys(amounts).length ||
@@ -496,6 +507,7 @@ function evaluate(entry, registration, parsed, evidence, attemptedAt, lifecycle)
           ? 'future-effective'
           : 'changed',
     ...(referenceReason && { reason: referenceReason }),
+    ...(weeklyException && { reason: weeklyException }),
     observed,
     difference,
     candidate,

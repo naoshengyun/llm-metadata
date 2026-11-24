@@ -1369,17 +1369,57 @@ export async function checkPricingReviewFindings({
     }
     assert.equal(await reference.locator('[data-pricing-row^="fees:"]').count(), 0);
   });
-  await verify('Unselected DeepSeek upstream reference leaves no empty pricing region', async () => {
-    await visit('deepseek', 'deepseek-flash');
-    assert.equal(await page.locator('article[data-quote-id]').count(), 0);
-    assert.equal(await page.locator('[data-quote-id="upstream:deepseek:deepseek-flash:CNY"]').count(), 0);
-    assert.equal(await page.locator('section[data-pricing-scope]').count(), 0);
-    assert.equal(await page.locator('[data-reference-kind="upstream"]').count(), 0);
-    assert.doesNotMatch(
-      await page.locator('body').innerText(),
-      /fixed upstream primary or original CNY sheet/,
-    );
-    await assertNoPageOverflow(page);
+  await verify('Approved DeepSeek weekly exceptions keep exact CNY rates and visible applicability', async () => {
+    const rates = (pro) => ({
+      input: pro ? 4.5 : 1,
+      output: pro ? 13.5 : 4,
+      cache_read: pro ? 0.15 : 0.02,
+      peakInput: pro ? 9 : 2,
+      peakOutput: pro ? 27 : 8,
+      peakCache: pro ? 0.3 : 0.04,
+    });
+    for (const model of ['deepseek-flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp', 'deepseek-v4-pro']) {
+      await visit('deepseek', model);
+      const expected = rates(model === 'deepseek-v4-pro');
+      const card = quoteAt(page, `upstream:deepseek:${model}:CNY`);
+      assert.equal(await card.count(), 1, model);
+      assert.equal(await card.getAttribute('data-syncable'), 'true');
+      assert.match(
+        await card.locator('summary h3').innerText(),
+        { en: /Current selected tariff/, zh: /当前选中价目/, ja: /選択中の料金/ }[locale],
+      );
+      for (const [usage, low, high] of [
+        ['input', expected.input, expected.peakInput],
+        ['output', expected.output, expected.peakOutput],
+        ['cache_read', expected.cache_read, expected.peakCache],
+      ]) {
+        const ordinary = row(card, `cost:${usage}`);
+        const peak = row(card, `cost:schedule:windows:0:${usage}`);
+        assert.equal(await ordinary.getAttribute('data-source-amount'), String(low), model + ' ' + usage);
+        assert.equal(await ordinary.getAttribute('data-cny-amount'), String(low), model + ' ' + usage);
+        assert.equal(await ordinary.getAttribute('data-source-currency'), 'CNY');
+        assert.equal(await peak.getAttribute('data-source-amount'), String(high), model + ' peak ' + usage);
+        assert.equal(await peak.getAttribute('data-cny-amount'), String(high), model + ' peak ' + usage);
+        assert.equal(await peak.getAttribute('data-source-currency'), 'CNY');
+      }
+      assert.match(
+        await card.locator('[data-condition="scheduleApplicability"]').innerText(),
+        {
+          en: /ignores Chinese statutory holidays and adjusted workdays|Chinese statutory holidays and adjusted workdays are ignored/,
+          zh: /忽略中国法定节假日和调休/,
+          ja: /法定休日・振替勤務は考慮しない/,
+        }[locale],
+      );
+      assert.match(
+        await card.locator('[data-condition="chineseLegalHolidays"]').innerText(),
+        { en: /Off-peak rate/, zh: /非高峰价/, ja: /オフピーク料金/ }[locale],
+      );
+      assert.match(await card.innerText(), /09:00-12:00/);
+      assert.match(await card.innerText(), /14:00-18:00/);
+      assert.match(await card.innerText(), /Asia\/Shanghai/);
+      assert.equal(await page.locator('[data-reference-kind="upstream"]').count(), 0);
+      await assertNoPageOverflow(page);
+    }
   });
   await verify('MiniMax tariffs do not borrow a model endpoint', async () => {
     await visit('minimax-cn', 'MiniMax-M3');
@@ -1487,7 +1527,7 @@ export async function checkPricingReviewFindings({
   );
   assert.equal(
     allViewQuotes.filter((quote) => quote.quoteId.startsWith('upstream:') && quote.selected).length,
-    67,
+    71,
   );
   assert.deepEqual(findings, [], findings.join('\n'));
   return { findings: 25, passed: true };

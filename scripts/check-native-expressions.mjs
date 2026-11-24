@@ -1,19 +1,29 @@
 #!/usr/bin/env node
 // Offline public-parser check against the exact official commit; never starts a gateway.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { generateCny } from '../.cache/cny-build/cny/generate.js';
 import { compileTask } from '../.cache/cny-build/cny/media.js';
 const COMMIT = 'f2aa91232ed3e5878a614762ace6736a2b74257f';
-const { values } = parseArgs({ options: { 'new-api': { type: 'string' }, go: { type: 'string', default: 'go' } } });
-if (!values['new-api']) throw new Error('Usage: node scripts/check-native-expressions.mjs --new-api /local/new-api [--go /exact/go]');
+const { values } = parseArgs({ options: { 'new-api': { type: 'string' }, go: { type: 'string', default: 'go' }, candidate: { type: 'string' } } });
+if (!values['new-api']) throw new Error('Usage: node scripts/check-native-expressions.mjs --new-api /local/new-api [--candidate /local/candidate] [--go /exact/go]');
 const directory = mkdtempSync(join(tmpdir(), 'cny-rc50-parser-'));
 const archive = join(directory, 'rc50.tar');
 execFileSync('git', ['-C', resolve(values['new-api']), 'archive', COMMIT, '--output', archive]);
 execFileSync('tar', ['-xf', archive, '-C', directory]);
+const runPath = join(directory, 'pkg/billingexpr/run.go');
+const originalRun = readFileSync(runPath, 'utf8');
+if ((originalRun.match(/time\.Now\(\)/g) ?? []).length !== 3)
+  throw new Error('Pinned native clock shape changed');
+writeFileSync(
+  runPath,
+  originalRun
+    .replace('func timeInZone(tz string) time.Time {', 'var CnyNow = time.Now\n\nfunc timeInZone(tz string) time.Time {')
+    .replaceAll('time.Now()', 'CnyNow()'),
+);
 const cost = { input: 3, output: 15, input_image: 5, output_image: 40, cache_read_image: 1, cache_write: 4, cache_write_1h: 6, tiers: [{ tier: { size: 200000 }, input: 6, output: 30, input_image: 10 }] };
 function expression(cost, required = ['input', 'output']) {
   const result = generateCny({ upstream: {}, records: [{ id: 'fixture', provider: 'foreign', model: 'fixture', priceList: 'synthetic-parser-fixture', origin: 'foreign', currency: 'USD', source: { url: 'https://example.invalid/synthetic', checkedAt: '2026-11-16' }, required, cost }], selection: { fixture: 'fixture' } });
@@ -37,6 +47,46 @@ const vectors = [
   { name: 'token-quota-one', expression: expression({input: 3, output: 15}), tokens: {P: 1000}, expected: 21000, groupRatio: 1, expectedQuota: 10500 },
   { name: 'token-quota-point-eight', expression: expression({input: 3, output: 15}), tokens: {P: 1000}, expected: 21000, groupRatio: 0.8, expectedQuota: 8400 },
 ];
+const weeklyCases = [
+  { name: 'monday-before-0900', at: '2026-11-23T08:59:00+08:00', peak: false },
+  { name: 'monday-at-0900', at: '2026-11-23T09:00:00+08:00', peak: true },
+  { name: 'monday-before-1200', at: '2026-11-23T11:59:00+08:00', peak: true },
+  { name: 'monday-at-1200', at: '2026-11-23T12:00:00+08:00', peak: false },
+  { name: 'monday-before-1400', at: '2026-11-23T13:59:00+08:00', peak: false },
+  { name: 'monday-at-1400', at: '2026-11-23T14:00:00+08:00', peak: true },
+  { name: 'monday-before-1800', at: '2026-11-23T17:59:00+08:00', peak: true },
+  { name: 'monday-at-1800', at: '2026-11-23T18:00:00+08:00', peak: false },
+  { name: 'ordinary-saturday', at: '2026-11-21T10:00:00+08:00', peak: false },
+  { name: 'holiday-weekday-ignored', at: '2026-01-01T10:00:00+08:00', peak: true },
+  { name: 'adjusted-workday-sunday-ignored', at: '2025-09-28T10:00:00+08:00', peak: false },
+  { name: 'equivalent-utc-window', at: '2026-11-23T01:00:00Z', peak: true },
+];
+let weeklyVectorCount = 0;
+if (values.candidate) {
+  const config = JSON.parse(readFileSync(join(resolve(values.candidate), 'api/newapi/ratio_config.json'), 'utf8'));
+  const models = {
+    'deepseek-flash': { off: 5.02, peak: 10.04 },
+    'deepseek-v4-flash': { off: 5.02, peak: 10.04 },
+    'deepseek-v4-flash-vision-exp': { off: 5.02, peak: 10.04 },
+    'deepseek-v4-pro': { off: 18.15, peak: 36.3 },
+  };
+  for (const [model, rates] of Object.entries(models)) {
+    const expression = config.data?.billing_expr?.[model];
+    if (typeof expression !== 'string' || !expression.includes('weekday("UTC")'))
+      throw new Error('Missing native weekly expression: ' + model);
+    for (const item of weeklyCases) {
+      vectors.push({
+        name: model + ':' + item.name,
+        expression,
+        at: item.at,
+        tokens: { P: 1, C: 1, CR: 1 },
+        expected: item.peak ? rates.peak : rates.off,
+        tier: item.peak ? 'peak' : 'off_peak',
+      });
+      weeklyVectorCount++;
+    }
+  }
+}
 mkdirSync(join(directory, 'cmd/cny-expression-check'), { recursive: true });
 writeFileSync(join(directory, 'vectors.json'), JSON.stringify(vectors));
 writeFileSync(join(directory, 'cmd/cny-expression-check/main.go'), `package main
@@ -45,11 +95,13 @@ import (
  "fmt"
  "math"
  "os"
+ "time"
  b "github.com/QuantumNous/new-api/pkg/billingexpr"
 )
 type vector struct {
  Name string
  Expression string
+ At string
  Tokens b.TokenParams
  ImageCount *int
  Usage map[string]any
@@ -64,6 +116,11 @@ func main() {
  var vectors []vector; if err := json.Unmarshal(data, &vectors); err != nil { panic(err) }
  results := make([]map[string]any,0,len(vectors))
  for _, v := range vectors {
+  b.CnyNow = time.Now
+  if v.At != "" {
+   at, err := time.Parse(time.RFC3339, v.At); if err != nil { panic(err) }
+   b.CnyNow = func() time.Time { return at }
+  }
   req := b.RequestInput{Usage:v.Usage,ImageCount:v.ImageCount}
   var amount float64; var trace b.TraceResult; var err error
   if v.Usage != nil || v.ImageCount != nil { amount,trace,err = b.RunExprWithRequest(v.Expression,v.Tokens,req) } else { amount,trace,err = b.RunExpr(v.Expression,v.Tokens) }
@@ -71,6 +128,7 @@ func main() {
   if math.Abs(amount-v.Expected) > 0.000000001 { panic(fmt.Sprintf("%s: got %v want %v",v.Name,amount,v.Expected)) }
   if v.Tier != "" && trace.MatchedTier != v.Tier { panic(fmt.Sprintf("%s: got tier %s want %s",v.Name,trace.MatchedTier,v.Tier)) }
   result := map[string]any{"name":v.Name,"amount":amount,"matchedTier":trace.MatchedTier}
+  if v.At != "" { result["at"] = v.At }
   if v.ExpectedQuota != nil {
    quota,err := b.ComputeTieredQuotaWithRequest(&b.BillingSnapshot{ExprString:v.Expression,ExprHash:b.ExprHashString(v.Expression),GroupRatio:v.GroupRatio,QuotaPerUnit:500000,ExprVersion:1,TaskUsageBilling:v.Task},v.Tokens,req)
    if err != nil || quota.ActualQuotaAfterGroup != *v.ExpectedQuota { panic(fmt.Sprintf("%s quota: %+v %v",v.Name,quota,err)) }
@@ -83,7 +141,7 @@ func main() {
 `);
 try {
   const output = execFileSync(values.go, ['run', './cmd/cny-expression-check'], { cwd: directory, encoding: 'utf8', env: { ...process.env, GOCACHE: join(tmpdir(), 'cny-go-build-cache') }, timeout: 120000 });
-  process.stdout.write(JSON.stringify({ kind: 'offline-official-parser', commit: COMMIT, directory, status: 'passed', results: JSON.parse(output), nativeInstance: false }) + '\n');
+  process.stdout.write(JSON.stringify({ kind: 'offline-official-parser', commit: COMMIT, directory, status: 'passed', weeklyScheduleCases: weeklyVectorCount, results: JSON.parse(output), nativeInstance: false }) + '\n');
 } catch (error) {
   process.stderr.write(JSON.stringify({ kind: 'offline-official-parser', commit: COMMIT, directory, status: 'failed-or-unavailable', nativeInstance: false, error: error.message }) + '\n');
   process.exitCode = 1;
