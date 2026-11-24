@@ -43,12 +43,35 @@ function expressionFor(model, mode) {
 assert.equal(expressionFor('qwen3.8-flash', 'explicit').expression, flashExpression);
 
 const vectors = [];
-const scenarios = {
-  ordinary: { prompt: 1000, read: 0, write: 0, completion: 100, explicit: false },
-  creation: { prompt: 1500, read: 0, write: 1200, completion: 100, explicit: true },
-  'pure-hit': { prompt: 1200, read: 1200, write: 0, completion: 100, explicit: true },
-  'partial-hit': { prompt: 1510, read: 1200, write: 300, completion: 100, explicit: true },
-};
+const reviewModels = [
+  'qwen-doc-turbo',
+  'qwen-flash',
+  'qwen-plus',
+  'qwen3-coder-flash',
+  'qwen3-vl-plus',
+  'qwen3.7-flash',
+  'qwen3.7-max',
+  'qwen3.7-plus',
+  'qwen3.8-max',
+];
+const scenarioNames = ['ordinary', 'creation', 'pure-hit', 'partial-hit'];
+function scenarioFor(name, prompt) {
+  const common = { prompt, completion: 100, explicit: name !== 'ordinary' };
+  if (name === 'ordinary') return { ...common, read: 0, write: 0 };
+  if (name === 'creation') return { ...common, read: 0, write: Math.floor(prompt * 0.8) };
+  if (name === 'pure-hit') return { ...common, read: prompt, write: 0 };
+  if (name === 'partial-hit')
+    return { ...common, read: Math.floor(prompt * 0.6), write: Math.floor(prompt * 0.2) };
+  throw new Error('Unknown scenario: ' + name);
+}
+function tierRows(record) {
+  return record.cost.tiers
+    ? [
+        { cost: record.cost, len: record.cost.tiers[0].tier.size },
+        ...record.cost.tiers.map((tier) => ({ cost: tier, len: tier.tier.size + 1 })),
+      ]
+    : [{ cost: record.cost, len: 6000 }];
+}
 const probe = {
   chat: 'param("messages.0.content.0.cache_control.type") == "ephemeral" ? 1 : 0',
   responses: 'header("x-dashscope-session-cache") == "enable" ? 1 : 0',
@@ -72,7 +95,7 @@ function requestIdentity(protocol, explicit) {
     headers: {},
   };
 }
-function payloadFor(protocol, scenario, event) {
+function payloadFor(protocol, model, scenario, event) {
   const stream = event === 'stream-final';
   if (protocol === 'anthropic') {
     const usage = {
@@ -86,7 +109,7 @@ function payloadFor(protocol, scenario, event) {
         id: 'msg_qwen_fixture',
         type: 'message',
         role: 'assistant',
-        model: 'qwen3.8-flash',
+        model,
         content: [{ type: 'text', text: 'ok' }],
         stop_reason: 'end_turn',
         usage,
@@ -98,7 +121,7 @@ function payloadFor(protocol, scenario, event) {
           id: 'msg_qwen_fixture',
           type: 'message',
           role: 'assistant',
-          model: 'qwen3.8-flash',
+          model,
           content: [],
           usage: { ...usage, output_tokens: 0 },
         },
@@ -120,7 +143,7 @@ function payloadFor(protocol, scenario, event) {
   if (protocol === 'responses') {
     const response = {
       id: 'resp_qwen_fixture',
-      model: 'qwen3.8-flash',
+      model,
       status: 'completed',
       output: [],
       usage: {
@@ -145,7 +168,7 @@ function payloadFor(protocol, scenario, event) {
       id: 'chat_qwen_fixture',
       object: 'chat.completion',
       created: 1,
-      model: 'qwen3.8-flash',
+      model,
       choices: [
         { index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' },
       ],
@@ -155,7 +178,7 @@ function payloadFor(protocol, scenario, event) {
     id: 'chat_qwen_fixture',
     object: 'chat.completion.chunk',
     created: 1,
-    model: 'qwen3.8-flash',
+    model,
     choices: [{ index: 0, delta: { role: 'assistant', content: 'ok' } }],
   };
   const last = {
@@ -165,16 +188,20 @@ function payloadFor(protocol, scenario, event) {
   };
   return `data: ${JSON.stringify(first)}\n\ndata: ${JSON.stringify(last)}\n\ndata: [DONE]\n\n`;
 }
-function addUsageVector(protocol, name, scenario, event) {
+function addUsageVector(protocol, model, item, row, name, scenario, event) {
+  const minimum = item.record.conditions.cacheMinimumInputTokens;
+  assert.ok(scenario.read === 0 || scenario.read >= minimum, `${model} ${name} read meets ${minimum} minimum`);
+  assert.ok(scenario.write === 0 || scenario.write >= minimum, `${model} ${name} write meets ${minimum} minimum`);
   const identity = requestIdentity(protocol, scenario.explicit);
   const p = scenario.prompt - scenario.read - scenario.write;
   vectors.push({
-    name: `${protocol}:${event}:${name}`,
+    name: `${model}:${protocol}:${event}:${name}:${scenario.prompt}`,
+    model,
     protocol,
     event,
-    expression: flashExpression,
+    expression: item.expression,
     modeProbe: probe[protocol],
-    payload: payloadFor(protocol, scenario, event),
+    payload: payloadFor(protocol, model, scenario, event),
     requestBody: identity.body,
     headers: identity.headers,
     expected: {
@@ -183,60 +210,39 @@ function addUsageVector(protocol, name, scenario, event) {
       CR: scenario.read,
       CC: scenario.write,
       Len: scenario.prompt,
-      amount: p * 0.8 + scenario.read * 0.1 + scenario.write * 1.25 + scenario.completion * 2.7,
+      amount:
+        p * row.cost.input +
+        scenario.read * row.cost.cache_read +
+        scenario.write * row.cost.cache_write +
+        scenario.completion * row.cost.output,
       modeProbe: scenario.explicit ? 1 : 0,
     },
   });
 }
-for (const protocol of ['chat', 'responses', 'anthropic']) {
-  for (const [name, scenario] of Object.entries(scenarios)) {
-    addUsageVector(protocol, name, scenario, 'final');
-    addUsageVector(protocol, name, scenario, 'stream-final');
-  }
-  addUsageVector(
-    protocol,
-    'missing-creation-not-inferred',
-    { prompt: 1500, read: 0, write: 0, completion: 100, explicit: true },
-    'final',
-  );
-}
-
-const reviewModels = [
-  'qwen-doc-turbo',
-  'qwen-flash',
-  'qwen-plus',
-  'qwen3-coder-flash',
-  'qwen3-vl-plus',
-  'qwen3.7-flash',
-  'qwen3.7-max',
-  'qwen3.7-plus',
-  'qwen3.8-max',
-];
 for (const model of reviewModels) {
   const implicit = expressionFor(model, 'implicit');
   const explicit = expressionFor(model, 'explicit');
-  const rows = explicit.record.cost.tiers
-    ? [
-        { cost: explicit.record.cost, len: explicit.record.cost.tiers[0].tier.size },
-        ...explicit.record.cost.tiers.map((tier) => ({ cost: tier, len: tier.tier.size + 1 })),
-      ]
-    : [{ cost: explicit.record.cost, len: 1000 }];
-  for (const [index, row] of rows.entries()) {
-    const params = { P: 1000, C: 0, CR: 100, CC: 100, Len: row.len };
-    vectors.push({
-      name: `candidate-tier:${model}:${index}:${row.len}`,
-      protocol: 'direct',
-      event: 'tier-boundary',
-      expression: explicit.expression,
-      direct: params,
-      expected: {
-        ...params,
-        amount:
-          params.P * row.cost.input +
-          params.CR * row.cost.cache_read +
-          params.CC * row.cost.cache_write,
-      },
-    });
+  assert.equal(ratio.data.billing_expr[model], explicit.expression, model + ' selected explicit expression');
+  const rows = tierRows(explicit.record);
+  for (const row of rows) {
+    for (const protocol of ['chat', 'responses', 'anthropic']) {
+      for (const name of scenarioNames) {
+        const scenario = scenarioFor(name, row.len);
+        addUsageVector(protocol, model, explicit, row, name, scenario, 'final');
+        addUsageVector(protocol, model, explicit, row, name, scenario, 'stream-final');
+      }
+    }
+  }
+  for (const protocol of ['chat', 'responses', 'anthropic']) {
+    addUsageVector(
+      protocol,
+      model,
+      explicit,
+      rows[0],
+      'missing-creation-not-inferred',
+      { prompt: 1500, read: 0, write: 0, completion: 100, explicit: true },
+      'final',
+    );
   }
   const params = { P: 0, C: 0, CR: 1200, CC: 0, Len: 1200 };
   for (const [mode, item] of [
@@ -294,6 +300,7 @@ type expected struct {
 }
 type vector struct {
  Name string
+ Model string
  Protocol string
  Event string
  Expression string
@@ -315,12 +322,12 @@ func handlerUsage(v vector) (*dto.Usage,string,error) {
  if v.Protocol=="responses" { format=relaytypes.RelayFormatOpenAIResponses }
  if v.Protocol=="anthropic" { format=relaytypes.RelayFormatClaude }
  info:=&relaycommon.RelayInfo{
-  OriginModelName:"qwen3.8-flash",
+  OriginModelName:v.Model,
   IsStream:v.Event=="stream-final",
   DisablePing:true,
   StartTime:time.Now(),
   RelayFormat:format,
-  ChannelMeta:&relaycommon.ChannelMeta{UpstreamModelName:"qwen3.8-flash"},
+  ChannelMeta:&relaycommon.ChannelMeta{UpstreamModelName:v.Model},
  }
  info.SetEstimatePromptTokens(int(v.Expected.Len))
  contentType:="application/json"
@@ -360,7 +367,7 @@ func main() {
   req:=b.RequestInput{Body:v.RequestBody,Headers:v.Headers}
   amount,trace,err:=b.RunExprWithRequest(v.Expression,params,req);if err!=nil{panic(fmt.Sprintf("%s: %v",v.Name,err))}
   if !closeEnough(amount,v.Expected.Amount){panic(fmt.Sprintf("%s amount: got %v want %v",v.Name,amount,v.Expected.Amount))}
-  result:=map[string]any{"name":v.Name,"protocol":v.Protocol,"event":v.Event,"handler":handler,"amount":amount,"matchedTier":trace.MatchedTier,"params":params}
+  result:=map[string]any{"name":v.Name,"model":v.Model,"protocol":v.Protocol,"event":v.Event,"handler":handler,"amount":amount,"matchedTier":trace.MatchedTier,"params":params}
   if v.Expected.ModeProbe!=nil {
    probe,_,err:=b.RunExprWithRequest(v.ModeProbe,params,req);if err!=nil{panic(fmt.Sprintf("%s probe: %v",v.Name,err))}
    if !closeEnough(probe,*v.Expected.ModeProbe){panic(fmt.Sprintf("%s mode probe: got %v want %v",v.Name,probe,*v.Expected.ModeProbe))}
@@ -385,24 +392,44 @@ try {
     .find((line) => line.startsWith('[{') && line.includes('"name"'));
   assert.ok(jsonLine, 'Native harness must emit one JSON result array: ' + output.slice(-2000));
   const results = JSON.parse(jsonLine);
-  for (const protocol of ['chat', 'responses', 'anthropic']) {
-    const creation = results.find((row) => row.name === `${protocol}:final:creation`);
-    assert.equal(creation.params.CC, 1200, protocol + ' creation must not be omitted');
-    assert.equal(creation.amount, 2010, protocol + ' creation amount');
-    const partial = results.find((row) => row.name === `${protocol}:final:partial-hit`);
-    assert.equal(partial.params.CC, 300, protocol + ' aliases use max, not sum');
-    assert.equal(partial.params.P, 10, protocol + ' creation/read do not double-count input');
-    assert.equal(partial.amount, 773, protocol + ' partial amount');
-    assert.notEqual(partial.amount, 1973, protocol + ' rejects double-counted input');
-    const missing = results.find((row) => row.name === `${protocol}:final:missing-creation-not-inferred`);
-    assert.equal(missing.params.CC, 0, protocol + ' missing creation stays zero');
-    assert.equal(missing.amount, 1470, protocol + ' missing creation is not inferred');
-    for (const scenario of Object.keys(scenarios)) {
-      const sync = results.find((row) => row.name === `${protocol}:final:${scenario}`);
-      const stream = results.find((row) => row.name === `${protocol}:stream-final:${scenario}`);
-      assert.deepEqual(stream.params, sync.params, `${protocol} ${scenario} stream params`);
-      assert.equal(stream.amount, sync.amount, `${protocol} ${scenario} stream amount`);
-      assert.notEqual(sync.handler, stream.handler, `${protocol} ${scenario} uses both real handlers`);
+  for (const model of reviewModels) {
+    const explicit = expressionFor(model, 'explicit');
+    const rows = tierRows(explicit.record);
+    for (const row of rows) {
+      for (const protocol of ['chat', 'responses', 'anthropic']) {
+        for (const name of scenarioNames) {
+          const scenario = scenarioFor(name, row.len);
+          const sync = results.find(
+            (result) => result.name === `${model}:${protocol}:final:${name}:${row.len}`,
+          );
+          const stream = results.find(
+            (result) => result.name === `${model}:${protocol}:stream-final:${name}:${row.len}`,
+          );
+          assert.ok(sync && stream, `${model} ${protocol} ${name} ${row.len} real handler results`);
+          assert.equal(sync.params.P + sync.params.CR + sync.params.CC, row.len, model + ' exclusive input components');
+          assert.equal(sync.params.CC, scenario.write, model + ' creation aliases use max, not sum');
+          assert.deepEqual(stream.params, sync.params, `${model} ${protocol} ${name} stream params`);
+          assert.equal(stream.amount, sync.amount, `${model} ${protocol} ${name} stream amount`);
+          assert.notEqual(sync.handler, stream.handler, `${model} ${protocol} ${name} uses both real handlers`);
+          if (name === 'partial-hit') {
+            const doubleCharged =
+              row.len * row.cost.input +
+              scenario.read * row.cost.cache_read +
+              scenario.write * row.cost.cache_write +
+              scenario.completion * row.cost.output;
+            assert.ok(sync.amount < doubleCharged, model + ' rejects duplicate ordinary input charging');
+          }
+        }
+        const missing = results.find(
+          (result) => result.name === `${model}:${protocol}:final:missing-creation-not-inferred:1500`,
+        );
+        assert.equal(missing.params.CC, 0, model + ' missing creation stays zero');
+        assert.equal(
+          missing.amount,
+          1500 * rows[0].cost.input + 100 * rows[0].cost.output,
+          model + ' missing creation is not inferred',
+        );
+      }
     }
   }
   for (const model of reviewModels) {
@@ -417,8 +444,9 @@ try {
       commit: COMMIT,
       status: 'passed',
       totalCases: results.length,
-      protocolUsageCases: 27,
-      wireHandlerCases: 27,
+      protocolUsageCases: results.filter((row) => row.protocol !== 'direct').length,
+      wireHandlerCases: results.filter((row) => row.protocol !== 'direct').length,
+      selectedExplicitModels: reviewModels,
       realHandlers: [
         'openai.OpenaiHandler',
         'openai.OaiStreamHandler',
@@ -428,13 +456,18 @@ try {
         'claude.ClaudeStreamHandler',
       ],
       fixturesAreProductionReceipts: false,
+      officialCacheMinimumEnforced: true,
+      cacheMinimumInputTokens: 1024,
       negativeGuards: [
         'missing creation is not inferred',
         'creation aliases use max rather than sum',
         'creation/read tokens are not double-counted as ordinary input',
         'sync and stream handlers return identical normalized usage and amounts',
       ],
-      tierBoundaryCases: results.filter((row) => row.event === 'tier-boundary').length,
+      tierBoundaryCases: reviewModels.reduce(
+        (total, model) => total + tierRows(expressionFor(model, 'explicit').record).length,
+        0,
+      ),
       ambiguousPureHitPairs: reviewModels.length,
       automaticCacheModeRouting: false,
       modeBoundary:

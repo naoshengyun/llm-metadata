@@ -5,12 +5,23 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-const model = 'qwen3.8-flash';
-const implicitId = `dashscope--${model}--cn-beijing-online-original-implicit`;
-const explicitId = `dashscope--${model}--cn-beijing-online-original-explicit`;
+const flash = 'qwen3.8-flash';
+const approvedModels = [
+  'qwen-doc-turbo',
+  'qwen-flash',
+  'qwen-plus',
+  'qwen3-coder-flash',
+  'qwen3-vl-plus',
+  'qwen3.7-flash',
+  'qwen3.7-max',
+  'qwen3.7-plus',
+  'qwen3.8-max',
+];
 const selectionDocument = JSON.parse(readFileSync('data/cny/proposed-selection.json', 'utf8'));
 const official = JSON.parse(readFileSync('data/cny/official-catalog.json', 'utf8'));
 const policy = JSON.parse(readFileSync('data/cny/unified-policy.json', 'utf8'));
+const quoteId = (modelId, mode) =>
+  `dashscope--${modelId}--cn-beijing-online-original-${mode}`;
 
 function build(t, edit, previous) {
   const directory = mkdtempSync(join(tmpdir(), 'qwen-explicit-cache-'));
@@ -34,10 +45,7 @@ function build(t, edit, previous) {
   return read;
 }
 
-const record = (modelId, mode) =>
-  official.records.find(
-    (quote) => quote.id === `dashscope--${modelId}--cn-beijing-online-original-${mode}`,
-  );
+const record = (modelId, mode) => official.records.find((quote) => quote.id === quoteId(modelId, mode));
 const rates = (cost, key) =>
   cost.tiers ? [cost[key], ...cost.tiers.map((tier) => tier[key])] : [cost[key]];
 const tiers = (cost) =>
@@ -47,9 +55,21 @@ const tiers = (cost) =>
     cache_read: cost.cache_read,
   };
 
-test('only Beijing qwen3.8-flash changes to the complete explicit tariff', (t) => {
+const expected = {
+  'qwen-doc-turbo': { implicitRead: [0.12], read: [0.06], write: [0.75] },
+  'qwen-flash': { implicitRead: [0.03, 0.12, 0.24], read: [0.015, 0.06, 0.12], write: [0.1875, 0.75, 1.5] },
+  'qwen-plus': { implicitRead: [0.16, 0.48, 0.96], read: [0.08, 0.24, 0.48], write: [1, 3, 6] },
+  'qwen3-coder-flash': { implicitRead: [0.2, 0.3, 0.5, 1], read: [0.1, 0.15, 0.25, 0.5], write: [1.25, 1.875, 3.125, 6.25] },
+  'qwen3-vl-plus': { implicitRead: [0.2, 0.3, 0.6], read: [0.1, 0.15, 0.3], write: [1.25, 1.875, 3.75] },
+  'qwen3.7-flash': { implicitRead: [0.04, 0.12, 0.24], read: [0.02, 0.06, 0.12], write: [0.25, 0.75, 1.5] },
+  'qwen3.7-max': { implicitRead: [2.4], read: [1.2], write: [15] },
+  'qwen3.7-plus': { implicitRead: [0.4, 1.2], read: [0.2, 0.6], write: [2.5, 7.5] },
+  'qwen3.8-max': { implicitRead: [1.5], read: [1], write: [15] },
+};
+
+test('exactly nine approved Beijing native keys change to their complete explicit tariffs', (t) => {
   const before = build(t, (selection) => {
-    selection.selection[model] = implicitId;
+    for (const modelId of approvedModels) selection.selection[modelId] = quoteId(modelId, 'implicit');
   });
   const after = build(t, () => {}, before.directory);
   const oldConfig = before('api/newapi/ratio_config.json').data;
@@ -57,51 +77,40 @@ test('only Beijing qwen3.8-flash changes to the complete explicit tariff', (t) =
   assert.equal(Object.keys(oldConfig.billing_expr).length, 210);
   assert.equal(Object.keys(newConfig.billing_expr).length, 210);
   for (const key of Object.keys(oldConfig.billing_expr)) {
-    if (key === model) continue;
-    assert.equal(newConfig.billing_expr[key], oldConfig.billing_expr[key], key);
-    assert.equal(newConfig.billing_mode[key], oldConfig.billing_mode[key], key);
+    if (approvedModels.includes(key)) continue;
+    assert.equal(newConfig.billing_expr[key], oldConfig.billing_expr[key], key + ' expression');
+    assert.equal(newConfig.billing_mode[key], oldConfig.billing_mode[key], key + ' mode');
+  }
+  for (const modelId of approvedModels) {
+    assert.equal(newConfig.billing_mode[modelId], oldConfig.billing_mode[modelId], modelId + ' mode');
+    assert.match(newConfig.billing_expr[modelId], /\bcc \*/, modelId + ' cache-write expression');
   }
   assert.equal(
-    newConfig.billing_expr[model],
+    newConfig.billing_expr[flash],
     'tier("standard", p * 0.8 + cr * 0.1 + cc * 1.25 + c * 2.7)',
+    'the previously approved Flash expression remains unchanged',
   );
-  assert.equal(newConfig.billing_mode[model], oldConfig.billing_mode[model]);
   const diff = after('price-diff.json').changes;
-  assert.equal(diff.length, 1);
-  assert.equal(diff[0].nativeKey, model);
-  assert.equal(diff[0].type, 'changed');
-  assert.equal(diff[0].before.quoteId, implicitId);
-  assert.equal(diff[0].after.quoteId, explicitId);
-  assert.deepEqual(diff[0].after.sourcePrice, {
-    input: 0.8,
-    output: 2.7,
-    cache_read: 0.1,
-    cache_write: 1.25,
-  });
-  assert.deepEqual(diff[0].after.conditions, {
-    region: 'China mainland, Beijing',
-    cacheMode: 'explicit',
-    cacheMinimumInputTokens: 1024,
-    cacheWriteTtlSeconds: 300,
-    cacheHitRenewsTtl: true,
-  });
-  assert.equal(after('selection.json')[model], explicitId);
+  assert.equal(diff.length, 9);
+  assert.deepEqual(new Set(diff.map((change) => change.nativeKey)), new Set(approvedModels));
+  for (const change of diff) {
+    assert.equal(change.type, 'changed');
+    assert.equal(change.before.quoteId, quoteId(change.nativeKey, 'implicit'));
+    assert.equal(change.after.quoteId, quoteId(change.nativeKey, 'explicit'));
+    assert.deepEqual(change.after.sourcePrice, record(change.nativeKey, 'explicit').cost);
+    assert.deepEqual(change.after.conditions, record(change.nativeKey, 'explicit').conditions);
+    assert.equal(change.after.conditions.region, 'China mainland, Beijing');
+    assert.equal(change.after.conditions.cacheMode, 'explicit');
+    assert.equal(change.after.conditions.cacheMinimumInputTokens, 1024);
+    assert.equal(change.after.conditions.cacheWriteTtlSeconds, 300);
+    assert.equal(change.after.conditions.cacheHitRenewsTtl, true);
+  }
+  assert.equal(after('selection.json')[flash], quoteId(flash, 'explicit'));
 });
 
-test('nine different-read-rate explicit tariffs remain candidates pending baseline price confirmation', (t) => {
+test('all nine approved explicit selections preserve official tiers, CNY evidence and TTL', (t) => {
   const read = build(t, () => {});
   const coverage = read('coverage.json');
-  const expected = {
-    'qwen-doc-turbo': { implicitRead: [0.12], read: [0.06], write: [0.75] },
-    'qwen-flash': { implicitRead: [0.03, 0.12, 0.24], read: [0.015, 0.06, 0.12], write: [0.1875, 0.75, 1.5] },
-    'qwen-plus': { implicitRead: [0.16, 0.48, 0.96], read: [0.08, 0.24, 0.48], write: [1, 3, 6] },
-    'qwen3-coder-flash': { implicitRead: [0.2, 0.3, 0.5, 1], read: [0.1, 0.15, 0.25, 0.5], write: [1.25, 1.875, 3.125, 6.25] },
-    'qwen3-vl-plus': { implicitRead: [0.2, 0.3, 0.6], read: [0.1, 0.15, 0.3], write: [1.25, 1.875, 3.75] },
-    'qwen3.7-flash': { implicitRead: [0.04, 0.12, 0.24], read: [0.02, 0.06, 0.12], write: [0.25, 0.75, 1.5] },
-    'qwen3.7-max': { implicitRead: [2.4], read: [1.2], write: [15] },
-    'qwen3.7-plus': { implicitRead: [0.4, 1.2], read: [0.2, 0.6], write: [2.5, 7.5] },
-    'qwen3.8-max': { implicitRead: [1.5], read: [1], write: [15] },
-  };
   for (const [modelId, amounts] of Object.entries(expected)) {
     const implicit = record(modelId, 'implicit');
     const explicit = record(modelId, 'explicit');
@@ -120,50 +129,55 @@ test('nine different-read-rate explicit tariffs remain candidates pending baseli
     }
     assert.deepEqual(rates(explicit.cost, 'cache_read'), amounts.read, modelId + ' explicit read');
     assert.deepEqual(rates(explicit.cost, 'cache_write'), amounts.write, modelId + ' explicit write');
-    assert.deepEqual(
-      rates(implicit.cost, 'cache_read'),
-      amounts.implicitRead,
-      modelId + ' implicit read differs and must not be silently undercharged',
+    assert.deepEqual(rates(implicit.cost, 'cache_read'), amounts.implicitRead, modelId + ' audit read');
+    assert.equal(read('selection.json')[modelId], explicit.id, modelId + ' approved explicit selection');
+    assert.ok(
+      !selectionDocument.notProposed.some((quote) => quote.id === explicit.id),
+      modelId + ' selected quote must not remain notProposed',
     );
-    assert.equal(read('selection.json')[modelId], implicit.id, modelId + ' remains implicit');
-    const candidate = coverage.quotes.find((quote) => quote.quoteId === explicit.id);
-    assert.equal(candidate.status, 'ready', modelId + ' explicit candidate compiles');
-    assert.equal(candidate.selected, false, modelId + ' is not selected');
-    assert.equal(candidate.syncable, false, modelId + ' is not selected pending price confirmation');
-    assert.deepEqual(rates(candidate.cnyCost, 'cache_write'), amounts.write, modelId + ' compiled write');
+    const selected = coverage.quotes.find((quote) => quote.quoteId === explicit.id);
+    assert.equal(selected.status, 'ready', modelId + ' explicit selection compiles');
+    assert.equal(selected.selected, true, modelId + ' is selected');
+    assert.equal(selected.syncable, true, modelId + ' is the synchronization candidate');
+    assert.deepEqual(rates(selected.cnyCost, 'cache_write'), amounts.write, modelId + ' compiled write');
+    const audit = coverage.quotes.find((quote) => quote.quoteId === implicit.id);
+    assert.equal(audit.selected, false, modelId + ' implicit evidence is not selected');
+    assert.equal(audit.syncable, false, modelId + ' implicit evidence is not a second candidate');
   }
   for (const modelId of ['qwen3.5-flash', 'qwen3.5-plus', 'qwen3.6-flash', 'qwen3.6-plus'])
-    assert.match(read('selection.json')[modelId], /-explicit$/, modelId + ' existing explicit selection');
+    assert.equal(read('selection.json')[modelId], quoteId(modelId, 'explicit'), modelId + ' existing explicit');
   for (const modelId of ['qwen-max', 'qwen3.8-omni-flash', 'qwen-plus-character']) {
-    assert.match(read('selection.json')[modelId], /-implicit$/, modelId + ' incomplete evidence stays implicit');
+    assert.equal(read('selection.json')[modelId], quoteId(modelId, 'implicit'), modelId + ' incomplete evidence');
     assert.equal(record(modelId, 'explicit'), undefined, modelId + ' must not invent explicit prices');
   }
 });
 
-test('Flash explicit selection preserves CNY evidence and five-minute TTL in all locales', (t) => {
+test('all approved explicit tariffs expose complete selected evidence in every locale', (t) => {
   const read = build(t, () => {});
   for (const path of ['api/all.json', 'api/i18n/zh/all.json', 'api/i18n/ja/all.json']) {
     const catalog = read(path);
-    const quote = catalog['alibaba-cn'].models[model].pricing_view.groups
-      .flatMap((group) => group.quotes)
-      .find((row) => row.selected);
-    assert.equal(quote.quoteId, explicitId, path);
-    assert.equal(quote.syncable, true, path);
-    assert.equal(quote.sourceCurrency, 'CNY', path);
-    assert.deepEqual(quote.sourcePrice, record(model, 'explicit').cost, path);
-    assert.equal(quote.originalQuote.conditions.cacheMode, 'explicit', path);
-    assert.equal(quote.originalQuote.conditions.cacheMinimumInputTokens, 1024, path);
-    assert.equal(quote.originalQuote.conditions.cacheWriteTtlSeconds, 300, path);
-    assert.equal(quote.originalQuote.conditions.cacheHitRenewsTtl, true, path);
-    assert.equal(
-      quote.displayRows.find((row) => row.usageKey === 'cache_write').amount,
-      1.25,
-      path,
-    );
-    assert.equal(
-      quote.displayFeeTerms.find((term) => term.usageKey === 'cache_write').retentionMinutes,
-      5,
-      path,
-    );
+    for (const modelId of [flash, ...approvedModels]) {
+      const view = catalog['alibaba-cn'].models[modelId].pricing_view;
+      const quote = view.groups.flatMap((group) => group.quotes).find((row) => row.selected);
+      assert.equal(view.selectedQuoteId, quoteId(modelId, 'explicit'), path + ' ' + modelId);
+      assert.equal(quote.quoteId, quoteId(modelId, 'explicit'), path + ' ' + modelId);
+      assert.equal(quote.syncable, true, path + ' ' + modelId);
+      assert.equal(quote.sourceCurrency, 'CNY', path + ' ' + modelId);
+      assert.deepEqual(quote.sourcePrice, record(modelId, 'explicit').cost, path + ' ' + modelId);
+      assert.equal(quote.originalQuote.conditions.cacheMode, 'explicit', path + ' ' + modelId);
+      assert.equal(quote.originalQuote.conditions.cacheMinimumInputTokens, 1024, path + ' ' + modelId);
+      assert.equal(quote.originalQuote.conditions.cacheWriteTtlSeconds, 300, path + ' ' + modelId);
+      assert.equal(quote.originalQuote.conditions.cacheHitRenewsTtl, true, path + ' ' + modelId);
+      assert.equal(
+        quote.displayFeeTerms.find((term) => term.usageKey === 'cache_write').retentionMinutes,
+        5,
+        path + ' ' + modelId,
+      );
+      const implicit = view.groups.flatMap((group) => group.quotes).find((row) => row.quoteId === quoteId(modelId, 'implicit'));
+      if (implicit) {
+        assert.equal(implicit.selected, false, path + ' ' + modelId + ' implicit is audit only');
+        assert.equal(implicit.syncable, false, path + ' ' + modelId + ' implicit is not default');
+      }
+    }
   }
 });

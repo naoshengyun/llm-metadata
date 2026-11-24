@@ -1,6 +1,6 @@
 {
   "status": "candidate-only; requires separate price-list/target/application approval",
-  "rationale": "Exact official IDs only; synchronous Standard/global original USD or domestic original CNY/Beijing cache list where stated. Direct Images raster only. Beijing qwen3.8-flash uses the complete explicit-cache list because its input/output/read rates match the implicit list and explicit creation adds 1.25 CNY/million tokens. The other nine different-read-rate candidates remain implicit pending the user's final confirmation of a unified explicit customer-facing baseline. Trusted cache-mode routing is required only for exact per-request matching of implicit versus explicit rates. Batch, duplicate protocol lists and retired Hunyuan list remain in raw catalog but are not default candidates. No real account/channel/alias/group mapping is written.",
+  "rationale": "Exact official IDs only; synchronous Standard/global original USD or domestic original CNY/Beijing cache list where stated. Direct Images raster only. On 2026-11-25 the user approved unified explicit-cache customer display and billing for the nine complete Beijing tariffs: qwen-doc-turbo, qwen-flash, qwen-plus, qwen3-coder-flash, qwen3-vl-plus, qwen3.7-flash, qwen3.7-max, qwen3.7-plus and qwen3.8-max. Together with qwen3.8-flash and the existing qwen3.5/3.6 flash/plus selections, these use complete explicit CNY prices and conditions as one customer-facing baseline, not per-request matching of upstream implicit versus explicit costs. Models without complete explicit evidence and other regions/endpoints remain unchanged. Batch, duplicate protocol lists and retired Hunyuan list remain in raw catalog but are not default candidates. No real account/channel/alias/group mapping is written.",
   "selection": {
     "gemini-3-pro-image": "us-google-gemini-3-pro-image-developer-standard",
     "gemini-3.1-flash-image": "us-google-gemini-3.1-flash-image-developer-standard",
@@ -65,9 +65,9 @@
     "glm-5.3": "cn-zhipu-glm-5.3-standard",
     "glm-5.3-flash": "cn-zhipu-glm-5.3-flash-standard",
     "glm-5.2": "cn-zhipu-glm-5.2-standard",
-    "qwen3.7-max": "dashscope--qwen3.7-max--cn-beijing-online-original-implicit",
-    "qwen3.7-plus": "dashscope--qwen3.7-plus--cn-beijing-online-original-implicit",
-    "qwen3.7-flash": "dashscope--qwen3.7-flash--cn-beijing-online-original-implicit",
+    "qwen3.7-max": "dashscope--qwen3.7-max--cn-beijing-online-original-explicit",
+    "qwen3.7-plus": "dashscope--qwen3.7-plus--cn-beijing-online-original-explicit",
+    "qwen3.7-flash": "dashscope--qwen3.7-flash--cn-beijing-online-original-explicit",
     "doubao-seed-2-1-pro-260628": "volcengine--doubao-seed-2-1-pro-260628--cn-beijing-online-regular-implicit-original",
     "doubao-seed-2-1-turbo-260628": "volcengine--doubao-seed-2-1-turbo-260628--cn-beijing-online-regular-implicit-original",
     "doubao-seed-2-0-pro-260215": "volcengine--doubao-seed-2-0-pro-260215--cn-beijing-online-regular-implicit-original",
@@ -109,11 +109,11 @@
     "MiniMax-H3": "cn-minimax-MiniMax-H3-video",
     "glm-4.7": "cn-zhipu-glm-4.7-standard",
     "glm-4.5-air": "cn-zhipu-glm-4.5-air-standard",
-    "qwen-doc-turbo": "dashscope--qwen-doc-turbo--cn-beijing-online-original-implicit",
-    "qwen-flash": "dashscope--qwen-flash--cn-beijing-online-original-implicit",
+    "qwen-doc-turbo": "dashscope--qwen-doc-turbo--cn-beijing-online-original-explicit",
+    "qwen-flash": "dashscope--qwen-flash--cn-beijing-online-original-explicit",
     "qwen-max": "dashscope--qwen-max--cn-beijing-online-original-implicit",
-    "qwen3-coder-flash": "dashscope--qwen3-coder-flash--cn-beijing-online-original-implicit",
-    "qwen3-vl-plus": "dashscope--qwen3-vl-plus--cn-beijing-online-original-implicit",
+    "qwen3-coder-flash": "dashscope--qwen3-coder-flash--cn-beijing-online-original-explicit",
+    "qwen3-vl-plus": "dashscope--qwen3-vl-plus--cn-beijing-online-original-explicit",
     "qwen3.5-flash": "dashscope--qwen3.5-flash--cn-beijing-online-original-explicit",
     "qwen3.5-plus": "dashscope--qwen3.5-plus--cn-beijing-online-original-explicit",
     "qwen3.6-flash": "dashscope--qwen3.6-flash--cn-beijing-online-original-explicit",
@@ -128,9 +128,9 @@
     "siliconflow/deepseek-v3.1-terminus": "dashscope--siliconflow-deepseek-v3.1-terminus--cn-beijing-online-original-token",
     "siliconflow/deepseek-v3.2": "dashscope--siliconflow-deepseek-v3.2--cn-beijing-online-original-token",
     "tongyi-intent-detect-v3": "dashscope--tongyi-intent-detect-v3--cn-beijing-online-original-token",
-    "qwen-plus": "dashscope--qwen-plus--cn-beijing-online-original-implicit",
+    "qwen-plus": "dashscope--qwen-plus--cn-beijing-online-original-explicit",
     "qwen3.8-flash": "dashscope--qwen3.8-flash--cn-beijing-online-original-explicit",
-    "qwen3.8-max": "dashscope--qwen3.8-max--cn-beijing-online-original-implicit",
+    "qwen3.8-max": "dashscope--qwen3.8-max--cn-beijing-online-original-explicit",
     "qwen3.8-omni-flash": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit",
     "qwen-plus-character": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit",
     "wan2.7-i2v": "dashscope--wan2.7-i2v--cn-beijing-task-online-original",
@@ -157,23 +157,11 @@
       "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
     },
     {
-      "id": "dashscope--qwen3.7-max--cn-beijing-online-original-explicit",
-      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
-    },
-    {
       "id": "dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-implicit",
       "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
     },
     {
       "id": "dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-explicit",
-      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
-    },
-    {
-      "id": "dashscope--qwen3.7-plus--cn-beijing-online-original-explicit",
-      "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
-    },
-    {
-      "id": "dashscope--qwen3.7-flash--cn-beijing-online-original-explicit",
       "reason": "Alternative batch/protocol/cache list or historical tariff retained, not proposed as default."
     },
     {
