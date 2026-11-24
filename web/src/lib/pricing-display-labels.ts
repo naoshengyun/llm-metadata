@@ -33,6 +33,7 @@ export const priceLabels = {
     'この料金の全階層に適用',
   ],
   serviceNavigation: ['Tariff sections', '服务档定位', '料金セクション'],
+  cacheModeAudit: ['Cache mode audit', '缓存模式审计', 'キャッシュモード監査'],
   otherTariff: ['Other tariff', '其他价目', 'その他の料金'],
   upstreamReference: ['Upstream catalog reference', '上游目录参考价', '上流カタログ参考料金'],
   upstreamRecord: ['Upstream catalog record', '上游目录记录', '上流カタログ記録'],

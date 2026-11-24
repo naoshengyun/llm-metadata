@@ -164,7 +164,7 @@ test('subscription and retired providers are omitted from the catalog and offici
     const qwen = catalog['alibaba-cn'].models['qwen3.7-max'].cnyPrice;
     assert.equal(
       qwen.selectedQuoteId,
-      'dashscope--qwen3.7-max--cn-beijing-online-original-implicit',
+      'dashscope--qwen3.7-max--cn-beijing-online-original-explicit',
     );
     const anthropicQuotes = qwen.quotes.filter(
       ({ sourceProviderId }) => sourceProviderId === 'dashscope-anthropic',

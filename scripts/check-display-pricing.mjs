@@ -98,6 +98,10 @@ async function compareVisibleQuotes(page, view, labels, locale) {
   );
   if (expected.length)
     await page.getByRole('heading', { name: labels.heading, exact: true }).waitFor();
+  for (const audit of await page.locator('[data-cache-mode-audit]').all()) {
+    if ((await audit.getAttribute('open')) === null)
+      await audit.locator('summary').first().click();
+  }
   const actual = page.locator('[data-quote-id]');
   const actualQuoteIds = await actual.evaluateAll(
     (entries) => [...new Set(entries.map((entry) => entry.dataset.quoteId))].sort(),
@@ -1369,34 +1373,100 @@ export async function checkPricingReviewFindings({
     }
     assert.equal(await reference.locator('[data-pricing-row^="fees:"]').count(), 0);
   });
-  await verify('Beijing Qwen Flash exposes the selected explicit cache tariff and TTL', async () => {
-    await visit('alibaba-cn', 'qwen3.8-flash');
-    const card = quoteAt(
-      page,
-      'dashscope--qwen3.8-flash--cn-beijing-online-original-explicit',
-    );
-    assert.equal(await card.count(), 1);
-    assert.equal(await card.getAttribute('data-syncable'), 'true');
-    assert.match(await card.locator('summary h3').innerText(), /cn-beijing-online-original-explicit/);
-    for (const [usage, amount] of [
-      ['input', '0.8'],
-      ['output', '2.7'],
-      ['cache_read', '0.1'],
-      ['cache_write', '1.25'],
-    ]) {
-      const rate = row(card, `cost:${usage}`);
-      assert.equal(await rate.getAttribute('data-source-amount'), amount, usage);
-      assert.equal(await rate.getAttribute('data-cny-amount'), amount, usage);
-      assert.equal(await rate.getAttribute('data-source-currency'), 'CNY', usage);
+  await verify('Approved Beijing Qwen models show one explicit tariff and fold implicit evidence into audit', async () => {
+    const tariffs = {
+      'qwen-doc-turbo': ['0.6', '1', '0.06', '0.75'],
+      'qwen-flash': ['0.15', '1.5', '0.015', '0.1875'],
+      'qwen-plus': ['0.8', '2', '0.08', '1'],
+      'qwen3-coder-flash': ['1', '4', '0.1', '1.25'],
+      'qwen3-vl-plus': ['1', '10', '0.1', '1.25'],
+      'qwen3.7-flash': ['0.2', '0.8', '0.02', '0.25'],
+      'qwen3.7-max': ['12', '36', '1.2', '15'],
+      'qwen3.7-plus': ['2', '8', '0.2', '2.5'],
+      'qwen3.8-max': ['12', '36', '1', '15'],
+      'qwen3.8-flash': ['0.8', '2.7', '0.1', '1.25'],
+    };
+    for (const [model, amounts] of Object.entries(tariffs)) {
+      await visit('alibaba-cn', model);
+      const explicitId = `dashscope--${model}--cn-beijing-online-original-explicit`;
+      const implicitId = `dashscope--${model}--cn-beijing-online-original-implicit`;
+      const card = quoteAt(page, explicitId);
+      assert.equal(await card.count(), 1, model);
+      assert.equal(await card.getAttribute('data-syncable'), 'true', model);
+      assert.equal(await card.isVisible(), true, model + ' selected explicit card');
+      assert.match(await card.locator('summary h3').innerText(), /cn-beijing-online-original-explicit/);
+      for (const [usage, amount] of Object.entries(
+        Object.fromEntries(
+          ['input', 'output', 'cache_read', 'cache_write'].map((usage, index) => [usage, amounts[index]]),
+        ),
+      )) {
+        const rate = row(card, `cost:${usage}`);
+        assert.equal(await rate.getAttribute('data-source-amount'), amount, model + ' ' + usage);
+        assert.equal(await rate.getAttribute('data-cny-amount'), amount, model + ' ' + usage);
+        assert.equal(await rate.getAttribute('data-source-currency'), 'CNY', model + ' ' + usage);
+      }
+      assert.match(
+        await card.locator('[data-condition="cacheMode"]').innerText(),
+        { en: /Explicit cache/, zh: /显式缓存/, ja: /明示キャッシュ/ }[locale],
+      );
+      assert.match(await card.locator('[data-condition="cacheMinimumInputTokens"]').innerText(), /1024/);
+      assert.match(await card.locator('[data-condition="cacheWriteTtlSeconds"]').first().innerText(), /300/);
+      assert.match(await card.locator('[data-condition="cacheHitRenewsTtl"]').first().innerText(), /true|Yes|是|はい/i);
+      const implicit = quoteAt(page, implicitId);
+      assert.equal(await implicit.count(), 1, model + ' implicit evidence remains available');
+      assert.equal(await implicit.isVisible(), false, model + ' implicit is not a parallel default');
+      const audit = page.locator('[data-cache-mode-audit]');
+      assert.equal(await audit.count(), 1, model + ' cache audit disclosure');
+      assert.equal(await audit.getAttribute('open'), null, model + ' audit starts collapsed');
+      assert.match(
+        await audit.locator('summary').first().innerText(),
+        { en: /Cache mode audit/, zh: /缓存模式审计/, ja: /キャッシュモード監査/ }[locale],
+      );
+      await audit.locator('summary').first().click();
+      assert.equal(await implicit.isVisible(), true, model + ' implicit evidence opens on demand');
+      assert.match(
+        await implicit.locator('[data-condition="cacheMode"]').innerText(),
+        { en: /Implicit cache/, zh: /隐式缓存/, ja: /暗黙キャッシュ/ }[locale],
+      );
+      await goto(select('alibaba-cn'));
+      await page.getByRole('button', {
+        name: { en: 'Table view', zh: '表格视图', ja: 'テーブル表示' }[locale],
+        exact: true,
+      }).click();
+      const mainRow = page
+        .getByRole('row')
+        .filter({ has: page.locator('[data-pricing-summary]') })
+        .filter({ hasText: model })
+        .first();
+      const mainCells = await mainRow.locator('td').allTextContents();
+      assert.equal(mainCells.length, 7, model + ' main table row ' + JSON.stringify(mainCells));
+      for (const [cellIndex, amount] of [amounts[0], amounts[2], amounts[3], amounts[1]].entries())
+        assert.ok(mainCells[cellIndex + 3].includes('¥' + amount), model + ' main table cell ' + cellIndex);
+      await assertNoPageOverflow(page);
     }
-    assert.match(
-      await card.locator('[data-condition="cacheMode"]').innerText(),
-      { en: /Explicit cache/, zh: /显式缓存/, ja: /明示キャッシュ/ }[locale],
-    );
-    assert.match(await card.locator('[data-condition="cacheMinimumInputTokens"]').innerText(), /1024/);
-    assert.match(await card.locator('[data-condition="cacheWriteTtlSeconds"]').first().innerText(), /300/);
-    assert.match(await card.locator('[data-condition="cacheHitRenewsTtl"]').first().innerText(), /true|Yes|是|はい/i);
-    await assertNoPageOverflow(page);
+    await visit('alibaba', 'qwen-flash');
+    assert.equal(await page.locator('[data-cache-mode-audit]').count(), 0, 'international tariffs stay visible');
+    for (const mode of ['implicit', 'explicit']) {
+      const international = quoteAt(
+        page,
+        `dashscope--qwen-flash--sg-international-online-original-${mode}`,
+      );
+      assert.equal(await international.isVisible(), true, 'international ' + mode + ' remains visible');
+      assert.equal(
+        await international.locator('[data-pricing-row="cost:cache_read"]').getAttribute('data-source-currency'),
+        'USD',
+      );
+    }
+    await visit('alibaba-cn', 'qwen3.7-max');
+    assert.equal(await page.locator('[data-cache-mode-audit]').count(), 1, 'only the selected OpenAI scope folds');
+    for (const mode of ['implicit', 'explicit']) {
+      const anthropic = quoteAt(
+        page,
+        `dashscope-anthropic--qwen3.7-max--cn-beijing-online-original-${mode}`,
+      );
+      assert.equal(await anthropic.isVisible(), true, 'Anthropic endpoint ' + mode + ' remains visible');
+      assert.ok((await anthropic.getAttribute('data-pricing-scope')).length > 0);
+    }
   });
   await verify('Approved DeepSeek weekly exceptions keep exact CNY rates and visible applicability', async () => {
     const rates = (pro) => ({

@@ -174,6 +174,12 @@ function priceListScopeQualifier(quote: DisplayPriceQuote) {
   const explicit = region(quote);
   return explicit || priceListIdentity(quote).qualifier;
 }
+function cacheMode(quote: DisplayPriceQuote) {
+  const conditions = quote.originalQuote?.conditions ?? quote.conditions;
+  return conditions && typeof conditions === 'object' && 'cacheMode' in conditions
+    ? String(conditions.cacheMode)
+    : '';
+}
 function serviceOrderName(name: string) {
   const key = serviceTierKey(name);
   return key ? quoteOrder.indexOf(key) : quoteOrder.length;
@@ -1151,8 +1157,15 @@ export function PricingViewQuotes({
           scope.referenceKind === 'upstream'
             ? msg(locale, 'upstreamReference')
             : [provider, scope.qualifier].filter(Boolean).join(' · ');
+        const hasSelectedExplicit = scopeEntries.some(
+          ({ quote }) => quote.selected && cacheMode(quote) === 'explicit',
+        );
+        const cacheAuditEntries = hasSelectedExplicit
+          ? scopeEntries.filter(({ quote }) => !quote.selected && cacheMode(quote) === 'implicit')
+          : [];
+        const primaryEntries = scopeEntries.filter((entry) => !cacheAuditEntries.includes(entry));
         const serviceCounts = new Map<string, number>();
-        for (const entry of scopeEntries) {
+        for (const entry of primaryEntries) {
           const name = navigationName(entry);
           serviceCounts.set(name, (serviceCounts.get(name) ?? 0) + 1);
         }
@@ -1160,6 +1173,26 @@ export function PricingViewQuotes({
           if (!quoteAnchors.has(entry.quote.quoteId))
             quoteAnchors.set(entry.quote.quoteId, `${scopeId}-service-${entryIndex + 1}`);
         });
+        const renderEntry = (entry: QuoteEntry) => {
+          const entryIndex = scopeEntries.indexOf(entry);
+          return (
+            <QuoteArticle
+              key={entry.entryId}
+              entry={entry}
+              scopeId={scopeId}
+              anchorId={`${scopeId}-service-${entryIndex + 1}`}
+              baseQuoteAnchorId={quoteAnchors.get(entry.quote.originalQuote?.baseQuoteId ?? '')}
+            >
+              {check?.results && (
+                <QuoteOfficialCheck
+                  result={check.results.get(
+                    officialCheckKey(view.providerId, view.modelId, entry.quote.quoteId),
+                  )}
+                />
+              )}
+            </QuoteArticle>
+          );
+        };
         return (
           <section
             key={scopeId}
@@ -1176,12 +1209,13 @@ export function PricingViewQuotes({
                 <p className="text-muted-foreground text-xs break-all">{scope.endpoint}</p>
               )}
             </div>
-            {scopeEntries.length > 1 && (
+            {primaryEntries.length > 1 && (
               <nav
                 className="flex flex-wrap gap-x-4 gap-y-1 text-xs"
                 aria-label={msg(locale, 'serviceNavigation')}
               >
-                {scopeEntries.map((entry, entryIndex) => {
+                {primaryEntries.map((entry) => {
+                  const entryIndex = scopeEntries.indexOf(entry);
                   const anchorId = `${scopeId}-service-${entryIndex + 1}`;
                   const navigationLabel = navigationName(entry);
                   const label =
@@ -1207,25 +1241,17 @@ export function PricingViewQuotes({
                 })}
               </nav>
             )}
-            <div className="grid min-w-0 gap-3">
-              {scopeEntries.map((entry, entryIndex) => (
-                <QuoteArticle
-                  key={entry.entryId}
-                  entry={entry}
-                  scopeId={scopeId}
-                  anchorId={`${scopeId}-service-${entryIndex + 1}`}
-                  baseQuoteAnchorId={quoteAnchors.get(entry.quote.originalQuote?.baseQuoteId ?? '')}
-                >
-                  {check?.results && (
-                    <QuoteOfficialCheck
-                      result={check.results.get(
-                        officialCheckKey(view.providerId, view.modelId, entry.quote.quoteId),
-                      )}
-                    />
-                  )}
-                </QuoteArticle>
-              ))}
-            </div>
+            <div className="grid min-w-0 gap-3">{primaryEntries.map(renderEntry)}</div>
+            {cacheAuditEntries.length > 0 && (
+              <details className="min-w-0 rounded-lg border px-3 py-2.5" data-cache-mode-audit>
+                <summary className="cursor-pointer text-xs font-medium">
+                  {msg(locale, 'cacheModeAudit')}
+                </summary>
+                <div className="mt-3 grid min-w-0 gap-3">
+                  {cacheAuditEntries.map(renderEntry)}
+                </div>
+              </details>
+            )}
           </section>
         );
       })}
