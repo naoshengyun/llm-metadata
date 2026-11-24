@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import {
   WEEKLY_SCHEDULE_CONDITION,
   WEEKLY_SCHEDULE_EXCEPTION_REASON,
+  weeklyScheduleException,
 } from '../scripts/weekly-schedule-exceptions.mjs';
 
 const models = ['deepseek-flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp', 'deepseek-v4-pro'];
@@ -75,6 +76,50 @@ test('exact four DeepSeek exceptions bind official CNY evidence to equivalent up
   }
 });
 
+test('runtime authorization is closed to four keys and only the holiday capability gap', () => {
+  const fifth = structuredClone(basePolicy);
+  fifth.weeklyScheduleExceptions['unapproved-fifth-model'] = structuredClone(
+    fifth.weeklyScheduleExceptions['deepseek-flash'],
+  );
+  fifth.nativeCapabilityExclusions['unapproved-fifth-model'] = structuredClone(
+    fifth.nativeCapabilityExclusions['deepseek-flash'],
+  );
+  assert.throws(
+    () => weeklyScheduleException(fifth, 'unapproved-fifth-model', 'deepseek', 'https://api.deepseek.com'),
+    /authorized|exception policy/,
+    'a cloned declaration and exclusion must not authorize a fifth native key',
+  );
+  for (const [name, mutate, expected] of [
+    ['wrong provider', (policy) => { policy.weeklyScheduleExceptions['deepseek-flash'].providerId = 'other'; }, /providerId/],
+    ['wrong endpoint', (policy) => { policy.weeklyScheduleExceptions['deepseek-flash'].endpoint = 'https://example.invalid'; }, /endpoint/],
+    ['additional unsupported condition', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].conditions.unrepresentableMeter = 'audio-cache'; }, /conditions/],
+    ['changed exclusion nature', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].reason = 'Native audio-cache metering is unsupported'; }, /reason/],
+    ['unknown top-level capability', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].unrepresentableMeter = 'audio-cache'; }, /shape|keys/],
+  ]) {
+    const policy = structuredClone(basePolicy);
+    mutate(policy);
+    assert.throws(
+      () => weeklyScheduleException(policy, 'deepseek-flash', 'deepseek', 'https://api.deepseek.com'),
+      expected,
+      name,
+    );
+  }
+
+  const updated = structuredClone(basePolicy);
+  const cost = structuredClone(upstream.deepseek.models['deepseek-flash'].cost.currency_options.CNY);
+  updated.nativeCapabilityExclusions['deepseek-flash'].sourcePrice.input = 1.25;
+  updated.nativeCapabilityExclusions['deepseek-flash'].sourcePrice.schedule.windows[0].input = 2.5;
+  cost.input = 1.25;
+  cost.schedule.windows[0].input = 2.5;
+  assert.ok(
+    weeklyScheduleException(updated, 'deepseek-flash', 'deepseek', 'https://api.deepseek.com', {
+      cost,
+      expr: 'p * 1.25',
+    }),
+    'matching official and upstream price updates must not be blocked by hardcoded amounts',
+  );
+});
+
 test('exactly four keys join synchronization with complete conditions and a complete price diff', (t) => {
   const before = build(t, (policy) => delete policy.weeklyScheduleExceptions);
   const after = build(t, () => {}, before.directory);
@@ -123,6 +168,10 @@ test('weekly exception cannot bypass other exclusions, lifecycle, deferral or se
     ['wrong endpoint', (policy) => { policy.weeklyScheduleExceptions['deepseek-flash'].endpoint = 'https://example.invalid'; }, /exception endpoint/],
     ['wrong official window', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].sourcePrice.schedule.windows[0].hours = ['08:00-12:00']; }, /exception hours/],
     ['unrelated unsupported model', (policy) => { policy.weeklyScheduleExceptions['doubao-seed-2-0-lite-260428'] = { providerId: 'volcengine', endpoint: 'https://ark.cn-beijing.volces.com', reason: WEEKLY_SCHEDULE_EXCEPTION_REASON }; }, /exception|evidence/],
+    ['cloned fifth model', (policy) => { policy.weeklyScheduleExceptions['unapproved-fifth-model'] = structuredClone(policy.weeklyScheduleExceptions['deepseek-flash']); policy.nativeCapabilityExclusions['unapproved-fifth-model'] = structuredClone(policy.nativeCapabilityExclusions['deepseek-flash']); }, /authorized|exception policy/],
+    ['wrong provider', (policy) => { policy.weeklyScheduleExceptions['deepseek-flash'].providerId = 'other'; }, /providerId/],
+    ['additional unsupported condition', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].conditions.unrepresentableMeter = 'audio-cache'; }, /conditions/],
+    ['changed exclusion reason', (policy) => { policy.nativeCapabilityExclusions['deepseek-flash'].reason = 'Native audio-cache metering is unsupported'; }, /reason/],
     ['wrong explicit selection', (policy) => { policy.upstreamSelection['deepseek-flash'] = 'upstream:deepseek:deepseek-v4-pro:CNY'; }, /Explicit upstream price is no longer eligible/],
   ]) {
     assert.throws(() => build(t, edit), expected, name);
