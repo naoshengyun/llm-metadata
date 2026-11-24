@@ -1,6 +1,7 @@
 /** Browser assertions for the reviewed display contract. The caller serves a fixed candidate locally. */
 import assert from 'node:assert/strict';
 import { openAiOfficialRows } from './openai-official-matrix.mjs';
+import { openAiBackgroundRows } from './openai-background-matrix.mjs';
 
 const messages = {
   en: {
@@ -683,6 +684,68 @@ export async function checkPricingReviewFindings({
         assert.equal(await card.locator('[data-condition="promotionThrough"]').count(), 1);
       assert.equal(await card.locator('[data-condition="effectiveAt"]').count(), 0);
       assert.equal(await page.locator('[data-service-name="Flex"]').count(), 0);
+      await assertNoPageOverflow(page);
+    }
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('[data-quote-id]').first().waitFor();
+    assert.ok(
+      await page
+        .locator('[data-quote-id] > details')
+        .evaluateAll((details) => details.every((entry) => entry.open)),
+    );
+  });
+
+  await verify('Standard background windows retain conditions without guessed meter rates', async () => {
+    const titles = {
+      en: { '2h': 'Background completion · 2 hours', '8h': 'Background completion · 8 hours' },
+      zh: { '2h': '后台完成窗口 · 2 小时', '8h': '后台完成窗口 · 8 小时' },
+      ja: { '2h': 'バックグラウンド完了期間・2 時間', '8h': 'バックグラウンド完了期間・8 時間' },
+    }[locale];
+    const derivation = {
+      en: /Not shown/,
+      zh: /不显示推导价/,
+      ja: /算出料金は未表示/,
+    }[locale];
+    const explanation = {
+      en: /No derived prices are shown/,
+      zh: /不显示推导价/,
+      ja: /算出料金は表示せず/,
+    }[locale];
+    for (const expected of openAiBackgroundRows()) {
+      await visit('openai', expected.model);
+      const card = quoteAt(page, `reviewed-reference:${expected.id}`);
+      assert.equal(await card.count(), 1, expected.id);
+      assert.equal(await card.getAttribute('data-service-name'), 'Standard');
+      assert.equal(await card.getAttribute('data-price-role'), 'background-reference');
+      assert.equal(await card.getAttribute('data-completion-window'), expected.completionWindow);
+      assert.equal(await card.getAttribute('data-quote-status'), 'incomplete');
+      assert.equal(await card.getAttribute('data-syncable'), 'false');
+      assert.ok(await card.locator('details').first().evaluate((details) => details.open));
+      const summary = await card.locator('summary').first().innerText();
+      assert.match(summary, /Standard/);
+      assert.match(summary, new RegExp(titles[expected.completionWindow]));
+      assert.doesNotMatch(summary, /Flex|Batch/);
+      assert.equal(await card.locator('[data-pricing-row]').count(), 0);
+      assert.equal(await card.locator('[data-price-source]').count(), 0);
+      for (const [key, value] of Object.entries(expected.conditions)) {
+        const condition = card.locator(`[data-condition="${key}"]`);
+        assert.equal(await condition.count(), 1, `${expected.id} ${key}`);
+        assert.equal(await condition.getAttribute('data-condition-value'), JSON.stringify(value));
+      }
+      assert.match(
+        await card.locator('[data-condition="rateDerivation"]').innerText(),
+        derivation,
+      );
+      assert.match(
+        await card.locator('[data-condition="cacheReuse"]').innerText(),
+        { en: /cannot reuse cache entries/, zh: /不能复用/, ja: /再利用できません/ }[locale],
+      );
+      assert.match(await card.locator('[data-price-explanation]').innerText(), explanation);
+      assert.match(
+        await card.locator('[data-condition="officialMultiplier"]').innerText(),
+        new RegExp(expected.completionWindow === '2h' ? '30' : '40'),
+      );
+      assert.equal(await card.locator('[data-condition="baseQuoteId"]').getAttribute('data-condition-value'), JSON.stringify(expected.baseQuoteId));
       await assertNoPageOverflow(page);
     }
     await page.reload({ waitUntil: 'domcontentloaded' });

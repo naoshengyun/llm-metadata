@@ -210,7 +210,14 @@ function entryDisplayName(entry: QuoteEntry, locale: Locale) {
       ? msg(locale, 'listPrice')
       : role === 'promotion-reference'
         ? msg(locale, 'promotionReference')
-        : '';
+        : role === 'background-reference'
+          ? msg(
+              locale,
+              entry.quote.originalQuote?.completionWindow === '8h'
+                ? 'backgroundWindow8h'
+                : 'backgroundWindow2h',
+            )
+          : '';
   return [base, roleLabel].filter(Boolean).join(' · ');
 }
 
@@ -258,6 +265,85 @@ function quoteEntries(groupId: string, quote: DisplayPriceQuote): QuoteEntry[] {
 
 function conditionValue(value: unknown, locale: Locale, key: string): ReactNode {
   if (value === null || value === undefined) return '—';
+  if (key === 'processing' && value === 'standard') return 'Standard';
+  if (key === 'serviceTier' && value === 'default') return 'default (Standard)';
+  if (key === 'completionWindow' && (value === '2h' || value === '8h'))
+    return value === '2h'
+      ? localizePrice(['2 hours', '2 小时', '2 時間'], locale)
+      : localizePrice(['8 hours', '8 小时', '8 時間'], locale);
+  if (key === 'api' && value === 'responses') return 'Responses API';
+  if (key === 'completionTarget' && value === 'accepted-initial-response')
+    return localizePrice(
+      [
+        'Starts when the API accepts the initial request',
+        '从 API 接受初始请求开始',
+        'API が最初のリクエストを受け付けた時点から',
+      ],
+      locale,
+    );
+  if (key === 'followUpDiscount' && value === 'eligible-requests-including-follow-ups')
+    return localizePrice(
+      [
+        'Every eligible request, including follow-ups',
+        '适用于每个合格请求（含后续请求）',
+        'フォローアップを含むすべての対象リクエストに適用',
+      ],
+      locale,
+    );
+  if (key === 'autoServiceTier' && value === 'only-standard-eligible')
+    return localizePrice(
+      [
+        'Eligible only if the API selects Standard',
+        '仅当 API 选择 Standard 时符合折扣条件',
+        'API が Standard を選択した場合のみ割引対象',
+      ],
+      locale,
+    );
+  if (key === 'rateLimit' && value === 'batch-background-shared')
+    return localizePrice(
+      ['Shared with Batch API jobs', '与 Batch API 任务共享', 'Batch API ジョブと共有'],
+      locale,
+    );
+  if (key === 'inputTokenAccounting' && value === 'at-submission')
+    return localizePrice(['Counted at submission', '提交时计数', '送信時にカウント'], locale);
+  if (key === 'followUpIdentity' && value === 'same-project-model-tier-window-continuation')
+    return localizePrice(
+      [
+        'Same project, model, processing mode, completion window and continuation ID',
+        '同一项目、型号、处理模式、完成窗口和 continuation ID',
+        '同一プロジェクト・モデル・処理モード・完了期間・continuation ID',
+      ],
+      locale,
+    );
+  if (key === 'officialMultiplier' && (value === 0.7 || value === 0.6)) {
+    const discount = value === 0.7 ? 30 : 40;
+    return localizePrice(
+      [
+        `${value} (${discount}% below Standard)`,
+        `${value}（比 Standard 低 ${discount}%）`,
+        `${value}（Standard より ${discount}% 低い）`,
+      ],
+      locale,
+    );
+  }
+  if (key === 'cacheReuse' && value === 'outside-window-disabled')
+    return localizePrice(
+      [
+        'Requests outside discounted windows cannot reuse cache entries created by 2h or 8h background requests',
+        '窗口外的 Standard 请求不能复用由 2 小时或 8 小时后台请求创建的缓存条目',
+        '割引期間外の Standard リクエストでは、2 時間または 8 時間のバックグラウンドリクエストで作成したキャッシュを再利用できません',
+      ],
+      locale,
+    );
+  if (key === 'rateDerivation' && value === 'meter-specific-application-unverified')
+    return localizePrice(
+      [
+        'Not shown · official sources do not itemize applicability to input, output, cache reads, 30m/12h writes, or long-context rates',
+        '不显示推导价 · 官方未逐项说明输入、输出、缓存读取、30 分钟/12 小时缓存写入及高上下文费率是否适用该倍率',
+        '算出料金は未表示・入力・出力・キャッシュ読取・30 分/12 時間のキャッシュ書込・長コンテキスト料金への適用が公式に項目別で示されていません',
+      ],
+      locale,
+    );
   if (
     key === 'minimumUsage' &&
     value ===
@@ -774,6 +860,7 @@ function QuoteArticle({
       data-service-name={serviceName}
       data-service-tier={entry.entryKey}
       data-price-role={quote.originalQuote?.priceRole ?? ''}
+      data-completion-window={quote.originalQuote?.completionWindow ?? ''}
       data-syncable={String(quote.syncable)}
       data-quote-status={quote.status}
     >

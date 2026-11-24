@@ -876,7 +876,7 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
     else if (['not-offered', 'deprecated'].includes(current.status))
       reason = current.status === 'not-offered' ? 'model-not-offered' : 'model-deprecated';
     else if (source.routedRawStandard) reason = 'routed-model-has-no-independent-price';
-    else if (!hasNumericPrice(referenceSourcePrice(source, selected[modelId])))
+    else if (!hasNumericPrice(referenceSourcePrice(source, selected[modelId])) && !source.displayWithoutRates)
       reason = 'source-price-not-provided';
     if (reason) {
       referenceReasons.set(sourceRecordId, reason);
@@ -1358,7 +1358,7 @@ function referenceExclusionReason(source, inCatalog, policy) {
     source.rawFees ??
     source.raw ??
     source.tools;
-  if (!hasNumericPrice(sourcePrice)) return 'source-price-not-provided';
+  if (!hasNumericPrice(sourcePrice) && !source.displayWithoutRates) return 'source-price-not-provided';
   return null;
 }
 
