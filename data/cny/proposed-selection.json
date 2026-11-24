@@ -1,6 +1,6 @@
 {
   "status": "candidate-only; requires separate price-list/target/application approval",
-  "rationale": "Exact official IDs only; synchronous Standard/global original USD or domestic original CNY/Beijing implicit-cache list where stated. Direct Images raster only. Explicit cache, Batch, duplicate protocol lists and retired Hunyuan list remain in raw catalog but are not default candidates. No real account/channel/alias/group mapping is written.",
+  "rationale": "Exact official IDs only; synchronous Standard/global original USD or domestic original CNY/Beijing cache list where stated. Direct Images raster only. Beijing qwen3.8-flash uses the complete explicit-cache list because its input/output/read rates match the implicit list and explicit creation adds 1.25 CNY/million tokens. The other nine different-read-rate candidates remain implicit until a trusted cache-mode route exists. Batch, duplicate protocol lists and retired Hunyuan list remain in raw catalog but are not default candidates. No real account/channel/alias/group mapping is written.",
   "selection": {
     "gemini-3-pro-image": "us-google-gemini-3-pro-image-developer-standard",
     "gemini-3.1-flash-image": "us-google-gemini-3.1-flash-image-developer-standard",
@@ -129,7 +129,7 @@
     "siliconflow/deepseek-v3.2": "dashscope--siliconflow-deepseek-v3.2--cn-beijing-online-original-token",
     "tongyi-intent-detect-v3": "dashscope--tongyi-intent-detect-v3--cn-beijing-online-original-token",
     "qwen-plus": "dashscope--qwen-plus--cn-beijing-online-original-implicit",
-    "qwen3.8-flash": "dashscope--qwen3.8-flash--cn-beijing-online-original-implicit",
+    "qwen3.8-flash": "dashscope--qwen3.8-flash--cn-beijing-online-original-explicit",
     "qwen3.8-max": "dashscope--qwen3.8-max--cn-beijing-online-original-implicit",
     "qwen3.8-omni-flash": "dashscope--qwen3.8-omni-flash--cn-beijing-online-original-implicit",
     "qwen-plus-character": "dashscope--qwen-plus-character--cn-beijing-online-original-implicit",

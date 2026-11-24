@@ -1369,6 +1369,35 @@ export async function checkPricingReviewFindings({
     }
     assert.equal(await reference.locator('[data-pricing-row^="fees:"]').count(), 0);
   });
+  await verify('Beijing Qwen Flash exposes the selected explicit cache tariff and TTL', async () => {
+    await visit('alibaba-cn', 'qwen3.8-flash');
+    const card = quoteAt(
+      page,
+      'dashscope--qwen3.8-flash--cn-beijing-online-original-explicit',
+    );
+    assert.equal(await card.count(), 1);
+    assert.equal(await card.getAttribute('data-syncable'), 'true');
+    assert.match(await card.locator('summary h3').innerText(), /cn-beijing-online-original-explicit/);
+    for (const [usage, amount] of [
+      ['input', '0.8'],
+      ['output', '2.7'],
+      ['cache_read', '0.1'],
+      ['cache_write', '1.25'],
+    ]) {
+      const rate = row(card, `cost:${usage}`);
+      assert.equal(await rate.getAttribute('data-source-amount'), amount, usage);
+      assert.equal(await rate.getAttribute('data-cny-amount'), amount, usage);
+      assert.equal(await rate.getAttribute('data-source-currency'), 'CNY', usage);
+    }
+    assert.match(
+      await card.locator('[data-condition="cacheMode"]').innerText(),
+      { en: /Explicit cache/, zh: /显式缓存/, ja: /明示キャッシュ/ }[locale],
+    );
+    assert.match(await card.locator('[data-condition="cacheMinimumInputTokens"]').innerText(), /1024/);
+    assert.match(await card.locator('[data-condition="cacheWriteTtlSeconds"]').first().innerText(), /300/);
+    assert.match(await card.locator('[data-condition="cacheHitRenewsTtl"]').first().innerText(), /true|Yes|是|はい/i);
+    await assertNoPageOverflow(page);
+  });
   await verify('Approved DeepSeek weekly exceptions keep exact CNY rates and visible applicability', async () => {
     const rates = (pro) => ({
       input: pro ? 4.5 : 1,
@@ -1530,5 +1559,5 @@ export async function checkPricingReviewFindings({
     71,
   );
   assert.deepEqual(findings, [], findings.join('\n'));
-  return { findings: 25, passed: true };
+  return { findings: 26, passed: true };
 }

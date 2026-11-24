@@ -341,6 +341,13 @@ function conditionValue(value: unknown, locale: Locale, key: string): ReactNode 
       ],
       locale,
     );
+  if (key === 'cacheMode' && (value === 'explicit' || value === 'implicit'))
+    return localizePrice(
+      value === 'explicit'
+        ? ['Explicit cache', '显式缓存', '明示キャッシュ']
+        : ['Implicit cache', '隐式缓存', '暗黙キャッシュ'],
+      locale,
+    );
   if (key === 'cacheReuse' && value === 'outside-window-disabled')
     return localizePrice(
       [

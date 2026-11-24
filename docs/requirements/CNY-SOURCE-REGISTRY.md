@@ -140,3 +140,9 @@ OpenAI 已将 `gpt-image-1-mini` 标为废弃，并列出 2026-12-01 停用日�
 ### 2026-11-24 Pages 两阶段完成状态
 
 用户明确选择“两阶段方案”：初始 `complete:false` 部署并经精确公网全量读回后，才能生成完成收据并提升根指针，再进行第二次部署和最终读回。候选验证状态与最终 `cny-pages/verified` 分开，完成收据绑定源码、release、初始证据和 run/attempt；固定 `versions/` 不变且不形成循环哈希。提升前及第二次部署前拒绝过期或并发替换。恢复接受两种已知失败 pointer，拒绝未知 pointer；用户接受短暂可见窗口和非绝对原子恢复边界。旧 `complete:false` 或缺字段指针保持兼容。这里的发布完成不等于目录覆盖完整、实例价格已应用或可售验收，详见 [ADR 0006](../adr/0006-two-phase-cny-pages-completion.md)。
+
+### 2026-11-24 Qwen 显式缓存选择
+
+用户确认“应该调成显式缓存。同时 newapi 计费最终走哪条路由传参数决定。”本次以北京 `qwen3.8-flash` 的完整 explicit 价目取代此前 implicit 默认：输入 0.8、输出 2.7、读取 0.1 不变，新增显式创建 1.25 CNY/百万 Token，TTL 300 秒及命中刷新条件保留。两模式前三项相同，普通/隐式请求 `cc=0` 不变，显式创建按实际用量补费。
+
+另外九个完整 explicit 候选的读取价不同；当前一个原生键一条表达式，`cc=0` 无法区分显式纯命中与隐式命中，因此本轮仅披露候选和计量缺口，不将隐式命中按更低 explicit 读取价计费，也不宣称自动分路已完成。`qwen-max`、`qwen3.8-omni-flash`、`qwen-plus-character` 缺完整证据不猜值，原四个 explicit 选择及其它地区/端点不变。逐键价格、协议用量和最小跨仓方案见 [Qwen 缓存选价与实际计量边界](QWEN-CACHE-MODE.md) 及 [ADR 0007](../adr/0007-qwen-explicit-cache-baseline.md)。
