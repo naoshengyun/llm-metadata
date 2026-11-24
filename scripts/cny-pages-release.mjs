@@ -19,6 +19,11 @@ const validPath = (path) =>
   /^(?:[a-zA-Z0-9_.-]+\/)*[a-zA-Z0-9_.-]+$/.test(path) &&
   !path.split('/').some((part) => part === '.' || part === '..');
 const decode = (bytes) => JSON.parse(bytes);
+const requestTimeoutMs = Number(process.env.CNY_PAGES_REQUEST_TIMEOUT_MS ?? 30_000);
+assert.ok(
+  Number.isSafeInteger(requestTimeoutMs) && requestTimeoutMs >= 1 && requestTimeoutMs <= 30_000,
+  'Invalid Pages request timeout',
+);
 
 async function remote(origin, path) {
   assert.ok(validPath(path), 'Invalid site path: ' + path);
@@ -31,7 +36,7 @@ async function remote(origin, path) {
       response = await fetch(url, {
         cache: 'no-store',
         redirect: 'error',
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(requestTimeoutMs),
       });
     } catch (error) {
       console.error(
@@ -67,7 +72,14 @@ async function remote(origin, path) {
         }),
       );
     assert.ok(response.ok, `HTTP ${response.status} for ${path}`);
-    return Buffer.from(await response.arrayBuffer());
+    try {
+      return Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      console.error(
+        JSON.stringify({ kind: 'cny-pages-verify-error', path, attempt, error: error.message }),
+      );
+      throw error;
+    }
   }
 }
 

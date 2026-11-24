@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -14,6 +15,12 @@ const run = (...args) =>
   promisify(execFile)(process.execPath, ['scripts/cny-pages-release.mjs', ...args]);
 const runRetry = (...args) =>
   promisify(execFile)(process.execPath, ['scripts/cny-pages-verify-with-retry.mjs', ...args]);
+const runRetryWithEnv = (env, ...args) =>
+  promisify(execFile)(
+    process.execPath,
+    ['scripts/cny-pages-verify-with-retry.mjs', ...args],
+    { env: { ...process.env, ...env } },
+  );
 
 function release(marker) {
   const sourceSha = marker.repeat(40);
@@ -59,6 +66,15 @@ function release(marker) {
     manifestHash: sha(files['site-manifest.json']),
     pointerHash: sha(files['current.json']),
   };
+}
+
+async function waitFor(check, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await delay(20);
+  }
+  assert.ok(check(), 'condition was not met before the test deadline');
 }
 
 function writeFiles(root, files) {
@@ -649,18 +665,172 @@ test('remote verification retries HTTP 429 and still verifies the exact bytes', 
   assert.equal(attempts, 3);
 });
 
+test('response-body disconnects and read timeouts retain the failing path', async (t) => {
+  for (const mode of ['disconnect', 'timeout']) {
+    const server = createServer((request, response) => {
+      response.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': '200' });
+      response.write('{');
+      if (mode === 'disconnect') setTimeout(() => response.destroy(), 20);
+    });
+    t.after(() => {
+      server.closeAllConnections();
+      server.close();
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const origin = 'http://127.0.0.1:' + server.address().port + '/';
+    const dir = mkdtempSync(join(tmpdir(), 'pages-body-' + mode + '-'));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    await assert.rejects(
+      runRetryWithEnv(
+        { CNY_PAGES_REQUEST_TIMEOUT_MS: '100' },
+        'verify', origin, 'b'.repeat(40), 'a'.repeat(64),
+        '--attempts=1', '--attempt-timeout-ms=2000', '--sleep-ms=0', '--log=' + dir,
+      ),
+      /Verification failed after 1 attempts/,
+    );
+    const [attempt] = readFileSync(join(dir, 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+    assert.match(attempt.lastDiagnostic, /site-manifest\.json/);
+    assert.match(attempt.lastDiagnostic, mode === 'timeout' ? /timeout/i : /terminated|aborted/i);
+  }
+});
+
+test('wrapper cancellation persists running diagnostics and reaps an unresponsive child', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'pages-wrapper-sigterm-'));
+  const ignore = join(dir, 'ignore-sigterm.cjs');
+  writeFileSync(
+    ignore,
+    "if (process.argv[1]?.endsWith('cny-pages-release.mjs')) process.on('SIGTERM', () => {});\n",
+  );
+  const candidate = release('b');
+  let announceRequest;
+  const requested = new Promise((resolve) => { announceRequest = resolve; });
+  const server = createServer(({ url }, response) => {
+    announceRequest();
+    const path = new URL(url, 'http://localhost').pathname.slice(1);
+    const body = candidate.files[path];
+    setTimeout(() => {
+      if (!response.destroyed) response.writeHead(body === undefined ? 404 : 200).end(body);
+    }, 200);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const log = join(dir, 'diagnostics');
+  const wrapper = spawn(
+    process.execPath,
+    [
+      'scripts/cny-pages-verify-with-retry.mjs', 'verify-candidate',
+      'http://127.0.0.1:' + server.address().port + '/', candidate.sourceSha, candidate.manifestHash, '123', '1',
+      '--attempts=2', '--attempt-timeout-ms=10000', '--kill-grace-ms=50', '--log=' + log,
+    ],
+    {
+      env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --require=${ignore}`.trim() },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  let children = [];
+  t.after(() => {
+    if (wrapper.exitCode === null && wrapper.signalCode === null) wrapper.kill('SIGKILL');
+    for (const pid of children) {
+      try { process.kill(Number(pid), 'SIGKILL'); } catch {}
+    }
+    server.closeAllConnections();
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+  await requested;
+  children = execFileSync('pgrep', ['-P', String(wrapper.pid)], { encoding: 'utf8' }).trim().split('\n');
+  assert.equal(children.length, 1);
+  await waitFor(() => {
+    if (!existsSync(join(log, 'attempt-1.json')) || !existsSync(join(log, 'attempt-1.stderr.log')))
+      return false;
+    const current = JSON.parse(readFileSync(join(log, 'attempt-1.json'), 'utf8'));
+    return current.status === 'running' && current.progress.completed > 0;
+  }, 4000);
+  const running = JSON.parse(readFileSync(join(log, 'attempt-1.json'), 'utf8'));
+  assert.equal(running.status, 'running');
+  assert.ok(running.progress.completed > 0);
+  assert.equal(running.childPid, Number(children[0]));
+  wrapper.kill('SIGTERM');
+  const [exitCode, signal] = await Promise.race([
+    new Promise((resolve) => wrapper.on('close', (...args) => resolve(args))),
+    delay(5000).then(() => { throw new Error('wrapper did not exit after SIGTERM'); }),
+  ]);
+  assert.equal(exitCode, null);
+  assert.equal(signal, 'SIGTERM');
+  await delay(100);
+  for (const pid of children)
+    assert.throws(() => process.kill(Number(pid), 0), { code: 'ESRCH' });
+  const attempts = readFileSync(join(log, 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(attempts.length, 1);
+  assert.equal(attempts[0].interruptedBy, 'SIGTERM');
+  assert.equal(attempts[0].signal, 'SIGKILL');
+  assert.equal(attempts[0].escalated, true);
+  assert.equal(attempts[0].status, 'finished');
+  assert.match(attempts[0].lastDiagnostic, /SIGTERM/);
+  assert.ok(existsSync(join(log, 'attempt-1.stdout.log')));
+  assert.ok(existsSync(join(log, 'attempt-1.stderr.log')));
+});
+
+test('attempt timeouts escalate after a bounded grace period and retain every retry', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'pages-timeout-escalation-'));
+  const ignore = join(dir, 'ignore-sigterm.cjs');
+  writeFileSync(
+    ignore,
+    "if (process.argv[1]?.endsWith('cny-pages-release.mjs')) process.on('SIGTERM', () => {});\n",
+  );
+  const server = createServer((request, response) => {
+    setTimeout(() => {
+      if (!response.destroyed) response.writeHead(200).end('{}');
+    }, 5000);
+  });
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  await assert.rejects(
+    runRetryWithEnv(
+      { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --require=${ignore}`.trim() },
+      'verify', 'http://127.0.0.1:' + server.address().port + '/', 'b'.repeat(40), 'b'.repeat(64),
+      '--attempts=2', '--attempt-timeout-ms=100', '--kill-grace-ms=50', '--sleep-ms=0', '--log=' + dir,
+    ),
+    /Verification failed after 2 attempts/,
+  );
+  const attempts = readFileSync(join(dir, 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(attempts.length, 2);
+  for (const attempt of attempts) {
+    assert.equal(attempt.timedOut, true);
+    assert.equal(attempt.signal, 'SIGKILL');
+    assert.equal(attempt.escalated, true);
+    assert.match(attempt.lastDiagnostic, /exceeded 100ms/);
+    assert.throws(() => process.kill(attempt.childPid, 0), { code: 'ESRCH' });
+  }
+});
+
 test('workflow retry budgets fit job deadlines and upload per-attempt diagnostics', () => {
   const workflow = readFileSync('.github/workflows/naoshengyun-pages.yml', 'utf8');
   const retry = readFileSync('scripts/cny-pages-verify-with-retry.mjs', 'utf8');
-  assert.match(retry, /DEFAULT_ATTEMPTS = 5/);
-  assert.match(retry, /DEFAULT_ATTEMPT_TIMEOUT_MS = 120_000/);
+  assert.match(retry, /DEFAULT_ATTEMPTS = 3/);
+  assert.match(retry, /DEFAULT_ATTEMPT_TIMEOUT_MS = 480_000/);
   assert.match(retry, /DEFAULT_SLEEP_MS = 45_000/);
-  const retryBudgetMs = 5 * 120_000 + 4 * 45_000;
-  assert.equal(retryBudgetMs, 780_000);
-  assert.ok(retryBudgetMs < 20 * 60_000, 'candidate/final retry budget fits 20-minute jobs');
-  assert.ok(retryBudgetMs < 40 * 60_000, 'recovery retry budget fits its 40-minute job');
+  assert.match(retry, /DEFAULT_KILL_GRACE_MS = 5000/);
+  const measuredFiles = 4805;
+  const measuredMs = 249_007;
+  const candidateFiles = 4924;
+  const candidateProjectionMs = measuredMs * candidateFiles / measuredFiles;
+  const growthAndNetworkBudgetMs = candidateProjectionMs * 1.5 * 1.2;
+  assert.ok(growthAndNetworkBudgetMs < 480_000, '480 seconds covers the measured full inventory, 50% growth, and 20% network margin');
+  const retryBudgetMs = 3 * (480_000 + 5000) + 2 * 45_000;
+  assert.equal(retryBudgetMs, 1_545_000);
+  assert.ok(retryBudgetMs + 9 * 60_000 < 35 * 60_000, 'candidate/final retries and setup fit 35-minute jobs');
+  assert.ok(retryBudgetMs + 20 * 60_000 < 50 * 60_000, 'recovery retries, deployment, and setup fit its 50-minute job');
+  const job = (name) => workflow.split('\n  ' + name + ':\n')[1].split(/\n  [a-z][a-z0-9-]*:\n/)[0];
+  assert.match(job('verify-candidate'), /timeout-minutes: 35/);
+  assert.match(job('verify-publication'), /timeout-minutes: 35/);
+  assert.match(job('restore'), /timeout-minutes: 50/);
   assert.equal((workflow.match(/cny-pages-verify-with-retry\.mjs/g) ?? []).length, 3);
   assert.equal((workflow.match(/attempts\.ndjson/g) ?? []).length, 3);
+  assert.equal((workflow.match(/attempt-\*\.json/g) ?? []).length, 3);
   assert.doesNotMatch(workflow, /timeout 60s/);
 });
 

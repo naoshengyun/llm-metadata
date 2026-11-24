@@ -176,7 +176,7 @@ jobs:
     if: always() && github.repository == 'naoshengyun/llm-metadata'
     needs: [build, deploy]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     permissions:
       contents: read
       statuses: write
@@ -231,6 +231,7 @@ jobs:
           name: cny-pages-candidate-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/candidate-verification/attempts.ndjson
+            ${{ runner.temp }}/candidate-verification/attempt-*.json
             ${{ runner.temp }}/candidate-verification/attempt-*.stdout.log
             ${{ runner.temp }}/candidate-verification/attempt-*.stderr.log
           if-no-files-found: warn
@@ -357,7 +358,7 @@ jobs:
     if: always() && github.repository == 'naoshengyun/llm-metadata'
     needs: [build, deploy, verify-candidate, promote, deploy-promoted]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     permissions:
       contents: read
       statuses: write
@@ -412,6 +413,7 @@ jobs:
           name: cny-pages-final-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/final-verification/attempts.ndjson
+            ${{ runner.temp }}/final-verification/attempt-*.json
             ${{ runner.temp }}/final-verification/attempt-*.stdout.log
             ${{ runner.temp }}/final-verification/attempt-*.stderr.log
           if-no-files-found: warn
@@ -442,7 +444,7 @@ jobs:
       needs.verify-publication.outputs.public_readback != 'verified'
     needs: [build, deploy, verify-candidate, promote, deploy-promoted, verify-publication]
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 50
     permissions:
       contents: read
       pages: write
@@ -500,6 +502,7 @@ jobs:
           name: cny-pages-recovery-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/recovery-verification/attempts.ndjson
+            ${{ runner.temp }}/recovery-verification/attempt-*.json
             ${{ runner.temp }}/recovery-verification/attempt-*.stdout.log
             ${{ runner.temp }}/recovery-verification/attempt-*.stderr.log
           if-no-files-found: warn
