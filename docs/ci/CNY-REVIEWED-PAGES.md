@@ -38,16 +38,22 @@ LC_ALL=C comm -23 <(LC_ALL=C sort -u <<< "$required") <(LC_ALL=C sort -u <<< "$a
 
 ## 发布结果
 
-业务分支 push 发布同一提交构建的 Pages 包。构建只读已提交并校验的价格和上游资料，前一已发布快照用于撤价/恢复连续性及固定文件留存。当前业务基线领先于已发布快照时，检验也会基于精确的前一业务提交运行，保留已审核但仍待发布的生命周期和收费条件。提交中的 `asOf` 有明确时区，须已到生效时间。待生效报价可作为资料保留，选中的未来价会阻断检查。构建和部署使用不同权限，只有固定的部署步骤持有 Pages/OIDC 权限。发布前再次核对业务分支和已验证的当前指针。工作流串行执行，过期任务不能提升当前版本。
+业务分支 push 发布同一提交构建的 Pages 包。构建只读已提交并校验的价格和上游资料，前一已发布快照用于撤价/恢复连续性及固定文件留存。当前业务基线领先于已发布快照时，检验也会基于精确的前一业务提交运行，保留已审核但仍待发布的生命周期和收费条件。提交中的 `asOf` 有明确时区，须已到生效时间。待生效报价可作为资料保留，选中的未来价会阻断检查。构建、提升和部署使用不同权限，只有固定的部署步骤持有 Pages/OIDC 权限。发布前再次核对业务分支和已验证的当前指针。工作流串行执行，过期任务不能提升当前版本。
 
-部署后的独立 job 校验公网 `site-manifest.json` 是否与构建收据一致，并读取首页、资源、当前指针、稳定 HTTP JSON、固定版本及已保留文件。仅该 job 的成功结果确认发布。失败或未确认记录在 Actions 概要。已产生成功部署但 CDN 读回未确认时，按原收据重复核对；同一提交不会创建新的候选重发。过期任务保留已有固定文件及最后验证版本。运营仍通过既有流程自行应用价格。
+初始包和根 `current.json` 均为 `complete:false`。初次部署后的独立 job 按初始 `site-manifest.json` 校验首页、资源、当前指针、稳定 HTTP JSON、固定版本及全部保留文件，成功时只记录 `cny-pages/candidate-verified`。提升命令同时核验封版收据和这份公网证明，生成绑定源码、release、初始站点/收据/pointer 哈希及 run ID/attempt 的 `completion-receipt.json`。提升只改根 `current.json`、根 `site-manifest.json` 并添加完成收据，不修改 `versions/` 或原生价格 JSON；收据不记录最终哈希，避免循环依赖。
+
+提升和第二次部署前都重新核对业务分支与初始 pointer。第二次部署后的最终 job 按提升后的新站点哈希验证 `complete:true`、完成收据、run ID/attempt 和全部文件，只有成功才记录 `cny-pages/verified`。后续发布只把 final verified 当作 predecessor，候选状态不能成为前驱。失败或未确认记录在 Actions 概要；同一提交不会创建新的候选重发。运营仍通过既有流程自行应用价格，发布完成不等于覆盖完整、实例已应用或可售验收。两阶段边界及用户接受的短暂可见窗口见 [ADR 0006](../adr/0006-two-phase-cny-pages-completion.md)。
 
 ```sh
 gh run view <run-id> --repo naoshengyun/llm-metadata \
   --json headSha,event,conclusion,jobs,url
-node scripts/cny-pages-release.mjs verify \
-  https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <site-manifest-sha256>
+node scripts/cny-pages-release.mjs verify-candidate \
+  https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <initial-site-manifest-sha256>
+node scripts/cny-pages-release.mjs verify-complete \
+  https://naoshengyun.github.io/llm-metadata/ <merged-source-sha> <final-site-manifest-sha256> <run-id> <attempt>
 ```
+
+恢复接受旧 predecessor、已知初始失败 pointer 和已知提升后失败 pointer；未知或更新 pointer 会拒绝覆写。恢复仍须验证恢复包和恢复后的公网文件，失败时明确报告，不能声称整个第二次部署和恢复过程绝对原子。普通 `verify`/`snapshot` 继续兼容旧 `complete:false` 或缺少 `complete` 的当前指针，候选验证则严格要求初始 `false`。
 
 暂时不可达或 CDN 切换期间只报告已知事实，保留最后验证的固定版本链接。以记录中的收据为准，确认实际公开版本前不要把 GitHub 部署 API 返回成功当作公网读回。
 
@@ -62,4 +68,4 @@ node scripts/build-reviewed-cny.mjs "$work"
 node scripts/check-unified-site.mjs "$work/site" "$playwright_module" "$work/browser"
 ```
 
-如需验证固定版本留存，在构建前用 `scripts/cny-pages-release.mjs snapshot <HTTPS 或本机 HTTP 站点> "$work/prior" <前一已发布源码 SHA> retain` 读取前一固定站点。构建后运行 `scripts/cny-pages-release.mjs seal "$work/site" "$work/prior"`，在本机 HTTP 提供该站点并用 `verify` 核对收据。独立本地演练只产生隔离产物，实际 PR 检查、规则拒绝、人工合并及公网结果分别以 GitHub 和 HTTP 的响应为证。
+如需验证固定版本留存，在构建前用 `scripts/cny-pages-release.mjs snapshot <HTTPS 或本机 HTTP 站点> "$work/prior" <前一已发布源码 SHA> retain` 读取前一固定站点。构建后运行 `scripts/cny-pages-release.mjs seal "$work/site" "$work/prior"`，在本机 HTTP 提供该站点并用 `verify-candidate` 核对初始收据。`promote` 只接受匹配的封版收据、候选公网证明及 run ID/attempt，随后用 `verify-complete` 核对提升结果。`tests/pages-release.test.mjs` 通过本机 HTTP 演练成功、提前完成、证明不符、过期/并发、两类失败恢复、未知指针、固定文件保护和旧指针兼容。独立本地演练只产生隔离产物，实际 PR 检查、规则拒绝、人工合并及公网结果分别以 GitHub 和 HTTP 的响应为证。

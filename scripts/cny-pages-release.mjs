@@ -112,7 +112,28 @@ async function siteSnapshot(readPath, expectedSource) {
   assert.equal(sha(await load('api/newapi/ratio_config.json')), pointer.modelSourceSha256);
   assert.equal(sha(await load(pointer.modelSource)), pointer.modelSourceSha256);
   if (pointer.schemaVersion === 3) assert.equal(fixedManifest.sourceSha, pointer.sourceSha);
-  return { manifest, manifestBytes, pointer, pointerBytes, load };
+  assert.ok(pointer.complete === undefined || typeof pointer.complete === 'boolean');
+  assert.equal(manifest.complete === true, pointer.complete === true);
+  let completionReceipt;
+  if (pointer.complete === true) {
+    const receiptBytes = await load('completion-receipt.json');
+    const receiptHash = sha(receiptBytes);
+    assert.equal(pointer.completionReceiptSha256, receiptHash);
+    assert.equal(manifest.completionReceiptSha256, receiptHash);
+    completionReceipt = decode(receiptBytes);
+    assert.equal(completionReceipt.schemaVersion, 1);
+    assert.equal(completionReceipt.sourceSha, pointer.sourceSha);
+    assert.equal(completionReceipt.releaseId, pointer.releaseId);
+    assert.match(completionReceipt.initialSiteManifestSha256, digest);
+    assert.match(completionReceipt.initialPublicationReceiptSha256, digest);
+    assert.match(completionReceipt.initialPointerSha256, digest);
+    assert.match(completionReceipt.runId, /^[1-9][0-9]*$/);
+    assert.match(completionReceipt.runAttempt, /^[1-9][0-9]*$/);
+  } else {
+    assert.equal(pointer.completionReceiptSha256, undefined);
+    assert.equal(manifest.completionReceiptSha256, undefined);
+  }
+  return { manifest, manifestBytes, pointer, pointerBytes, load, completionReceipt };
 }
 
 const publicSnapshot = (origin, source) => siteSnapshot((path) => remote(origin, path), source);
@@ -159,6 +180,8 @@ async function snapshot(origin, destination, source, mode, expectedHash) {
 function seal(site, previous) {
   const manifest = decode(read(site, 'site-manifest.json'));
   const pointer = decode(read(site, 'current.json'));
+  assert.equal(pointer.complete, false, 'Initial publication pointer must be incomplete');
+  assert.equal(manifest.complete, false, 'Initial site inventory must be incomplete');
   const oldPointerBytes = read(previous, 'current.json');
   const old = decode(oldPointerBytes);
   const walk = (path) =>
@@ -195,7 +218,7 @@ function seal(site, previous) {
 
 async function verify(readPath, source, expectedHash) {
   assert.match(expectedHash, digest);
-  const { manifest, manifestBytes, pointer, pointerBytes, load } = await siteSnapshot(
+  const { manifest, manifestBytes, pointer, pointerBytes, load, completionReceipt } = await siteSnapshot(
     readPath,
     source,
   );
@@ -205,16 +228,118 @@ async function verify(readPath, source, expectedHash) {
     (await load('current.json')).equals(pointerBytes),
     'Site pointer changed during verification',
   );
-  return { sourceSha: source, releaseId: pointer.releaseId, siteManifestSha256: expectedHash };
+  return {
+    sourceSha: source,
+    releaseId: pointer.releaseId,
+    siteManifestSha256: expectedHash,
+    pointerSha256: sha(pointerBytes),
+    complete: pointer.complete,
+    ...(completionReceipt && { completionReceipt }),
+  };
 }
 
-async function guardRestore(origin, source, siteHash, previousPointerHash, failedPointerHash) {
+async function verifyCandidate(readPath, source, expectedHash) {
+  const result = await verify(readPath, source, expectedHash);
+  assert.equal(result.complete, false, 'Candidate verification requires complete=false');
+  return result;
+}
+
+async function verifyComplete(readPath, source, expectedHash, runId, runAttempt) {
+  const result = await verify(readPath, source, expectedHash);
+  assert.equal(result.complete, true, 'Final verification requires complete=true');
+  assert.equal(result.completionReceipt.runId, runId, 'Completion run ID');
+  assert.equal(result.completionReceipt.runAttempt, runAttempt, 'Completion run attempt');
+  return result;
+}
+
+async function promote(site, sealedReceiptPath, publicProofPath, runId, runAttempt) {
+  assert.match(runId, /^[1-9][0-9]*$/, 'Completion run ID');
+  assert.match(runAttempt, /^[1-9][0-9]*$/, 'Completion run attempt');
+  const sealedBytes = readFileSync(sealedReceiptPath);
+  const sealed = decode(sealedBytes);
+  const publicProof = decode(readFileSync(publicProofPath));
+  const initial = await verifyCandidate(
+    (path) => read(site, path),
+    sealed.sourceSha,
+    sealed.siteManifestSha256,
+  );
+  for (const field of ['sourceSha', 'releaseId', 'siteManifestSha256', 'pointerSha256']) {
+    assert.equal(publicProof[field], initial[field], 'Initial public proof ' + field);
+    assert.equal(sealed[field], initial[field], 'Sealed publication receipt ' + field);
+  }
+  const receiptBytes = Buffer.from(
+    json({
+      schemaVersion: 1,
+      sourceSha: initial.sourceSha,
+      releaseId: initial.releaseId,
+      initialSiteManifestSha256: initial.siteManifestSha256,
+      initialPublicationReceiptSha256: sha(sealedBytes),
+      initialPointerSha256: initial.pointerSha256,
+      runId,
+      runAttempt,
+    }),
+  );
+  const receiptHash = sha(receiptBytes);
+  const manifest = decode(read(site, 'site-manifest.json'));
+  const pointer = decode(read(site, 'current.json'));
+  pointer.complete = true;
+  pointer.completionReceiptSha256 = receiptHash;
+  manifest.complete = true;
+  manifest.completionReceiptSha256 = receiptHash;
+  const pointerBytes = Buffer.from(json(pointer));
+  manifest.files['current.json'] = { sha256: sha(pointerBytes), bytes: pointerBytes.length };
+  manifest.files['completion-receipt.json'] = {
+    sha256: receiptHash,
+    bytes: receiptBytes.length,
+  };
+  const manifestBytes = Buffer.from(json(manifest));
+  write(site, 'current.json', pointerBytes, 'w');
+  write(site, 'completion-receipt.json', receiptBytes);
+  write(site, 'site-manifest.json', manifestBytes, 'w');
+  console.log(
+    JSON.stringify({
+      sourceSha: initial.sourceSha,
+      releaseId: initial.releaseId,
+      siteManifestSha256: sha(manifestBytes),
+      pointerSha256: sha(pointerBytes),
+      completionReceiptSha256: receiptHash,
+    }),
+  );
+}
+
+async function guardCandidate(origin, source, expectedPointerHash) {
+  assert.match(source, /^[0-9a-f]{40}$/);
+  assert.match(expectedPointerHash, digest);
+  const bytes = await remote(origin, 'current.json');
+  assert.equal(sha(bytes), expectedPointerHash, 'Candidate pointer changed before promotion');
+  const pointer = decode(bytes);
+  validatePointer(pointer);
+  assert.equal(pointer.sourceSha, source, 'Candidate source changed before promotion');
+  assert.equal(pointer.complete, false, 'Promotion requires the initial incomplete pointer');
+  assert.equal(
+    sha(await remote(origin, 'current.json')),
+    expectedPointerHash,
+    'Candidate pointer changed during promotion guard',
+  );
+  return { sourceSha: source, releaseId: pointer.releaseId, pointerSha256: expectedPointerHash };
+}
+
+async function guardRestore(
+  origin,
+  source,
+  siteHash,
+  previousPointerHash,
+  initialFailedPointerHash,
+  promotedFailedPointerHash,
+) {
   assert.match(previousPointerHash, digest);
-  assert.match(failedPointerHash, digest);
+  assert.match(initialFailedPointerHash, digest);
+  if (promotedFailedPointerHash) assert.match(promotedFailedPointerHash, digest);
+  const knownFailedPointers = [initialFailedPointerHash, promotedFailedPointerHash].filter(Boolean);
   const readPath = (path) => remote(origin, path);
   const pointerHash = sha(await readPath('current.json'));
   assert.ok(
-    pointerHash === previousPointerHash || pointerHash === failedPointerHash,
+    pointerHash === previousPointerHash || knownFailedPointers.includes(pointerHash),
     'Refusing to restore over a newer or unknown publication',
   );
   if (pointerHash === previousPointerHash) {
@@ -236,15 +361,28 @@ async function guardRestore(origin, source, siteHash, previousPointerHash, faile
 const [command, ...args] = process.argv.slice(2);
 if (command === 'snapshot') await snapshot(...args);
 else if (command === 'seal') seal(...args);
+else if (command === 'promote') await promote(...args);
 else if (command === 'bootstrap') console.log(JSON.stringify(bootstrap));
 else if (command === 'guard') {
   const [origin, source, release] = args;
   verifyPredecessor(decode(await remote(origin, 'current.json')), source, release);
+} else if (command === 'guard-candidate') {
+  console.log(JSON.stringify(await guardCandidate(...args)));
 } else if (command === 'guard-restore') {
   console.log(await guardRestore(...args));
-} else if (command === 'verify' || command === 'verify-local') {
-  const [location, source, siteHash] = args;
-  const readPath =
-    command === 'verify' ? (path) => remote(location, path) : (path) => read(location, path);
-  console.log(JSON.stringify(await verify(readPath, source, siteHash)));
-} else throw Error('Use snapshot, seal, bootstrap, guard, guard-restore, verify, or verify-local');
+} else if (
+  ['verify', 'verify-local', 'verify-candidate', 'verify-complete'].includes(command)
+) {
+  const [location, source, siteHash, runId, runAttempt] = args;
+  const readPath = command === 'verify-local' ? (path) => read(location, path) : (path) => remote(location, path);
+  const result =
+    command === 'verify-candidate'
+      ? await verifyCandidate(readPath, source, siteHash)
+      : command === 'verify-complete'
+        ? await verifyComplete(readPath, source, siteHash, runId, runAttempt)
+        : await verify(readPath, source, siteHash);
+  console.log(JSON.stringify(result));
+} else
+  throw Error(
+    'Use snapshot, seal, promote, bootstrap, guard, guard-candidate, guard-restore, verify, verify-local, verify-candidate, or verify-complete',
+  );
