@@ -43,7 +43,11 @@ function assertBackgroundMatrix(official) {
     assert.equal(record.currency, 'USD');
     assert.equal(record.unit, 'per_million_tokens');
     assert.equal(record.status, 'incomplete');
-    assert.equal(record.displayWithoutRates, true);
+    assert.deepEqual(record.display, {
+      hidden: true,
+      reason: 'user-hidden-standard-background-reference',
+    });
+    assert.equal(record.displayWithoutRates, undefined);
     assert.equal(record.reason, 'background-completion-window-meter-specific-rates-unverified');
     assert.deepEqual(record.conditions, row.conditions);
     assert.deepEqual(record.source, expectedSource);
@@ -91,39 +95,35 @@ test('official background evidence covers all four models without guessing five 
   assert.throws(() => assertBackgroundMatrix(missingCacheCondition), /cacheReuse/);
 });
 
-test('all eight evidence-only references reach fixed display data without changing native pricing', (t) => {
+test('all eight evidence records stay out of public display without changing native pricing', (t) => {
   const read = buildCandidate(t);
   const catalog = read('api/all.json');
   const coverage = read('display-coverage.json');
   for (const row of openAiBackgroundRows()) {
     const quoteId = `reviewed-reference:${row.id}`;
-    const quote = catalog.openai.models[row.model].pricing_view.groups
-      .flatMap(({ quotes }) => quotes)
-      .find(({ quoteId: id }) => id === quoteId);
-    assert.ok(quote, quoteId);
-    assert.equal(quote.priceList, row.priceList);
-    assert.equal(quote.originalQuote.priceRole, 'background-reference');
-    assert.equal(quote.originalQuote.completionWindow, row.completionWindow);
-    assert.equal(quote.originalQuote.baseQuoteId, row.baseQuoteId);
-    assert.equal(quote.status, 'incomplete');
-    assert.equal(quote.selected, false);
-    assert.equal(quote.syncable, false);
-    assert.equal(quote.sourcePrice, null);
-    assert.equal(quote.cnyCost, undefined);
-    assert.deepEqual(quote.displayRows, []);
-    assert.deepEqual(quote.conditions, row.conditions);
-    assert.deepEqual(quote.source.supplemental, [backgroundEvidence.pricing, backgroundEvidence.flexGuide]);
-    const selected = catalog.openai.models[row.model].pricing_view.groups
-      .flatMap(({ quotes }) => quotes)
-      .find(({ quoteId: id }) => id === row.baseQuoteId);
+    const view = catalog.openai.models[row.model].pricing_view;
+    const quotes = view.groups.flatMap(({ quotes }) => quotes);
+    assert.equal(quotes.find(({ quoteId: id }) => id === quoteId), undefined, quoteId);
+    assert.equal(
+      quotes.some((quote) => quote.originalQuote?.priceRole === 'background-reference'),
+      false,
+    );
+    assert.equal(JSON.stringify(view.summary).includes('background'), false);
+    const selected = quotes.find(({ quoteId: id }) => id === row.baseQuoteId);
     assert.equal(selected.selected, true);
     assert.equal(selected.syncable, true);
-    assert.deepEqual(quote.originalQuote.baseCost, selected.sourcePrice);
+    for (const prefix of ['cost', 'cost:tier-0'])
+      for (const usage of usages)
+        assert.ok(
+          selected.displayRows.some((row) => row.rowId === `${prefix}:${usage}`),
+          `${row.model} must retain ${prefix}:${usage}`,
+        );
     const ledger = coverage.sourceRecords.find(
-      (record) => record.sourceRecordId === `reviewed-reference:${row.id}`,
+      (record) => record.sourceRecordId === quoteId,
     );
-    assert.equal(ledger.disposition, 'displayed');
-    assert.equal(ledger.locations.length, 1);
+    assert.equal(ledger.disposition, 'not-displayed');
+    assert.deepEqual(ledger.locations, []);
+    assert.equal(ledger.notDisplayedReason, 'user-hidden-standard-background-reference');
   }
   assert.equal(
     createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),

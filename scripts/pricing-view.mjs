@@ -48,6 +48,11 @@ const reviewedProvider = (record) =>
 const isSeedanceTable = (record) =>
   record.officialModel === 'doubao-seedance-2-5-260628' &&
   reviewedProvider(record) === 'volcengine';
+const USER_HIDDEN_UPSTREAM_REASON = 'user-hidden-unselected-upstream-reference';
+const userHiddenReason = (source) =>
+  source.display?.hidden === true
+    ? (source.display.reason ?? 'user-hidden-reference')
+    : null;
 const structuredConditions = (conditions) =>
   typeof conditions === 'string' ? { officialCondition: conditions } : (conditions ?? {});
 const isTokenUnit = (unit) =>
@@ -876,6 +881,7 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
     else if (['not-offered', 'deprecated'].includes(current.status))
       reason = current.status === 'not-offered' ? 'model-not-offered' : 'model-deprecated';
     else if (source.routedRawStandard) reason = 'routed-model-has-no-independent-price';
+    else if (userHiddenReason(source)) reason = userHiddenReason(source);
     else if (!hasNumericPrice(referenceSourcePrice(source, selected[modelId])) && !source.displayWithoutRates)
       reason = 'source-price-not-provided';
     if (reason) {
@@ -904,7 +910,7 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
               endpoint: quote.originalQuote.endpoint ?? null,
               sourceRecordId: officialSourceId(quote.originalQuote),
             })),
-          ...(record.upstreamPrice
+          ...(record.upstreamPrice?.selected
             ? [
                 {
                   ...record.upstreamPrice,
@@ -1031,7 +1037,9 @@ export function buildDisplayData({ records, quotes, selected, official, policy }
           ? record.status === 'not-offered'
             ? 'model-not-offered'
             : 'model-deprecated'
-          : 'source-record-not-in-display-catalog',
+          : record.upstreamPrice.selected
+            ? 'source-record-not-in-display-catalog'
+            : USER_HIDDEN_UPSTREAM_REASON,
       ),
     );
   }
@@ -1351,6 +1359,7 @@ function referenceExclusionReason(source, inCatalog, policy) {
   if (event?.state === 'withdrawn' && event.reason === 'model-deprecated')
     return 'model-deprecated';
   if (source.routedRawStandard) return 'routed-model-has-no-independent-price';
+  if (userHiddenReason(source)) return userHiddenReason(source);
   const sourcePrice =
     source.cost ??
     source.candidateCost ??
@@ -1655,6 +1664,9 @@ export function reconcileDisplayCoverage({
       reason: 'optional-tool-without-exact-model-identity',
     });
   for (const normalized of upstreamPrices.rows) {
+    const selectedQuote = selectedByModel.get(
+      identity(normalized.providerId, normalized.modelId),
+    );
     expectedSources.push({
       source: normalized,
       sourceType: 'upstream',
@@ -1662,12 +1674,15 @@ export function reconcileDisplayCoverage({
       providerId: normalized.providerId,
       modelId: normalized.modelId,
       normalized,
+      selectedQuote,
       reason:
         normalized.status === 'not-offered'
           ? 'model-not-offered'
           : normalized.status === 'deprecated'
             ? 'model-deprecated'
-            : null,
+            : selectedQuote?.quoteId === normalized.quoteId
+              ? null
+              : USER_HIDDEN_UPSTREAM_REASON,
     });
   }
 

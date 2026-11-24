@@ -126,3 +126,7 @@
 百炼 `qwen3.8-flash` 和 `qwen3.8-max` 使用各自的官方型号页，分别保留北京人民币和新加坡国际站原始美元费率及两种缓存模式。北京区域的在线隐式缓存报价进入统一候选。其他报价保留区域和缓存模式身份。完整来源和逐费率见 [官方报价目录](../../data/cny/official-catalog.json)。[北京 Flash](https://help.aliyun.com/zh/model-studio/qwen3-8-flash) · [北京 Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max) · [新加坡 Flash](https://www.alibabacloud.com/help/en/model-studio/qwen3-8-flash#pricing) · [新加坡 Max](https://www.alibabacloud.com/help/en/model-studio/qwen3-8-max#pricing) · [缓存条件](https://help.aliyun.com/zh/model-studio/context-cache)
 
 OpenAI 已将 `gpt-image-1-mini` 标为废弃，并列出 2026-12-01 停用日期。目录采用统一的已废弃状态，该模型继续排除在同步 JSON 外。[OpenAI 下线公告](https://developers.openai.com/api/docs/deprecations)
+
+### 2026-11-24 参考价目展示范围
+
+用户明确确认“去掉吧”，要求公开价格页不再展示未选中的上游目录参考价，以及 OpenAI Standard 后台 2h/8h 完成窗口卡片和导航。此次只缩小公开展示范围：原始上游资料、官方证据及覆盖账本继续保留内部追溯；上游来源本身是当前合法选价时仍显示准确主报价。常规 Standard/Batch/Flex/Fast/Ultrafast、既有阶梯、TTL 和收费条件不变，当前选价、原生计费配置与表达式不变。

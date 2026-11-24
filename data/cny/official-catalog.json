@@ -15185,7 +15185,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15267,7 +15270,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15349,7 +15355,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15431,7 +15440,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15507,7 +15519,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15583,7 +15598,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15659,7 +15677,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",
@@ -15735,7 +15756,10 @@
       },
       "unit": "per_million_tokens",
       "status": "incomplete",
-      "displayWithoutRates": true,
+      "display": {
+        "hidden": true,
+        "reason": "user-hidden-standard-background-reference"
+      },
       "conditions": {
         "processing": "standard",
         "api": "responses",

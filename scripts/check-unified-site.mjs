@@ -330,10 +330,10 @@ try {
     }
 
     await page.getByRole('button', { name: 'View details for Moonshot AI', exact: true }).click();
-    if (display.cnyPrice.exported)
-      await expectVisible(
-        page.getByText('explicit-official-price-selected', { exact: false }).first(),
-      );
+    assert.doesNotMatch(
+      await page.locator('body').innerText(),
+      /explicit-official-price-selected/,
+    );
     assert.equal(new URL(page.url()).hash, select('moonshotai', 'kimi-k3.1-pro').split('/')[1]);
 
     if (mobile) await page.getByText('Search providers / all models', { exact: true }).click();

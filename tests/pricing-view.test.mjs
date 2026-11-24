@@ -87,10 +87,7 @@ test('cache retention comes from exact tariff evidence across the full catalog',
         .displayFeeTerms.find((term) => term.usageKey === 'cache_write').retentionMinutes,
       30,
     );
-    assert.equal(
-      all.find((quote) => quote.quoteId.startsWith('upstream:')).displayFeeTerms,
-      undefined,
-    );
+    assert.equal(all.find((quote) => quote.quoteId.startsWith('upstream:')), undefined);
   }
   assert.equal(
     createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
@@ -106,6 +103,69 @@ const localizedCatalogs = (read) => ({
 
 const modelQuotes = (catalog, provider, model) =>
   catalog[provider].models[model].pricing_view.groups.flatMap(({ quotes }) => quotes);
+
+test('user display scope hides unselected upstream references but preserves selected upstream primary prices', (t) => {
+  const read = buildCandidate(t);
+  const catalogs = localizedCatalogs(read);
+  const displayCoverage = read('display-coverage.json');
+  for (const catalog of Object.values(catalogs)) {
+    let selectedUpstream = 0;
+    for (const provider of Object.values(catalog)) {
+      for (const model of Object.values(provider.models)) {
+        const view = model.pricing_view;
+        assert.ok(view.groups.every((group) => group.quotes.length > 0));
+        for (const quote of modelQuotes({ [provider.id]: provider }, provider.id, model.id)) {
+          assert.notEqual(quote.originalQuote?.priceRole, 'background-reference');
+          if (!quote.quoteId.startsWith('upstream:')) continue;
+          assert.equal(quote.selected, true, quote.quoteId);
+          assert.equal(quote.syncable, true, quote.quoteId);
+          selectedUpstream += 1;
+        }
+      }
+    }
+    assert.equal(selectedUpstream, 67);
+  }
+  const selectedSourceIds = new Set(
+    modelQuotes(catalogs.en, 'openai', 'gpt-5.4').map((quote) => quote.sourceRecordId),
+  );
+  for (const provider of Object.values(catalogs.en))
+    for (const model of Object.values(provider.models))
+      for (const quote of model.pricing_view.groups.flatMap((group) => group.quotes))
+        if (quote.selected && quote.quoteId.startsWith('upstream:'))
+          selectedSourceIds.add(quote.sourceRecordId);
+  let hidden = 0;
+  let userHidden = 0;
+  let selected = 0;
+  for (const ledger of displayCoverage.sourceRecords.filter(
+    (record) => record.sourceType === 'upstream',
+  )) {
+    if (selectedSourceIds.has(ledger.sourceRecordId)) {
+      assert.equal(ledger.disposition, 'displayed', ledger.sourceRecordId);
+      assert.equal(ledger.locations.length, 1, ledger.sourceRecordId);
+      assert.equal(ledger.notDisplayedReason, null, ledger.sourceRecordId);
+      selected += 1;
+    } else {
+      assert.equal(ledger.disposition, 'not-displayed', ledger.sourceRecordId);
+      assert.deepEqual(ledger.locations, [], ledger.sourceRecordId);
+      if (ledger.notDisplayedReason === 'user-hidden-unselected-upstream-reference') {
+        userHidden += 1;
+      } else {
+        assert.ok(
+          ['model-deprecated', 'model-not-offered'].includes(ledger.notDisplayedReason),
+          ledger.sourceRecordId,
+        );
+      }
+      hidden += 1;
+    }
+  }
+  assert.equal(selected, 67);
+  assert.equal(userHidden, 335);
+  assert.equal(hidden, 426);
+  assert.equal(
+    createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
+    '4ce3d8a4415534e3e44423b99d1d09cca0347793b188623dcd40c7ec821a6152',
+  );
+});
 
 test('reviewed Flex references retain exact source content and an exact display location', (t) => {
   const read = buildCandidate(t);
@@ -647,48 +707,39 @@ test('fixed reviewed references retain scheduled rates, explicit applicability a
     );
 });
 
-test('mixed-meter references preserve each unit and upstream domestic estimates have no CNY basis', (t) => {
+test('unselected upstream meters stay internal while selected upstream rows remain reconcilable', (t) => {
   const read = buildCandidate(t);
   const getView = (catalog, provider, model) => catalog[provider].models[model].pricing_view;
-  const catalogs = {
-    en: read('api/all.json'),
-    zh: read('api/i18n/zh/all.json'),
-    ja: read('api/i18n/ja/all.json'),
-  };
+  const catalogs = localizedCatalogs(read);
   const getUpstream = (view) =>
     view.groups
       .flatMap(({ quotes }) => quotes)
       .find(({ sourceRecordId }) => sourceRecordId.startsWith('upstream:'));
-  const voxtral = getUpstream(getView(catalogs.en, 'mistral', 'voxtral-small-2507'));
-  assert.deepEqual(
-    voxtral.displayRows.map(({ usageKey, amount, unit }) => [usageKey, amount, unit]),
-    [
-      ['input', 0.1, 'per_million_tokens'],
-      ['output', 0.4, 'per_million_tokens'],
-      ['audioInput', 0.004, 'per_minute'],
-      ['cachedAudioInput', 0.0004, 'per_minute'],
-    ],
-  );
-  const live = getUpstream(getView(catalogs.en, 'google', 'gemini-3.1-flash-live-preview'));
-  const video = live.displayRows.find(({ usageKey }) => usageKey === 'videoInput');
-  assert.equal(video.unit, 'per_million_tokens');
-  assert.equal(video.amount, 1);
-  assert.equal(video.cnyAmount, 7);
-  const qvq = getUpstream(getView(catalogs.en, 'alibaba-cn', 'qvq-max'));
-  assert.equal(qvq.reason, 'missing-original-CNY');
-  assert.deepEqual(
-    qvq.displayRows.map(({ currency, cnyAmount }) => [currency, cnyAmount]),
-    [
-      ['USD', null],
-      ['USD', null],
-    ],
-  );
+  for (const [provider, model] of [
+    ['mistral', 'voxtral-small-2507'],
+    ['google', 'gemini-3.1-flash-live-preview'],
+    ['alibaba-cn', 'qvq-max'],
+  ]) {
+    assert.equal(getUpstream(getView(catalogs.en, provider, model)), undefined);
+    const ledger = read('display-coverage.json').sourceRecords.find(
+      (record) => record.providerId === provider && record.modelId === model && record.sourceType === 'upstream',
+    );
+    assert.equal(ledger.disposition, 'not-displayed');
+    assert.equal(ledger.notDisplayedReason, 'user-hidden-unselected-upstream-reference');
+  }
+  const selected = getUpstream(getView(catalogs.en, 'openai', 'gpt-5.4'));
+  assert.equal(selected.selected, true);
+  assert.equal(selected.syncable, true);
+  assert.equal(selected.displayRows.length, 9);
+  assert.ok(selected.displayRows.every((row) => row.unit === 'per_million_tokens'));
+  assert.ok(selected.displayRows.every((row) => row.currency === 'USD' && row.cnyAmount !== null));
+
   const coverage = read('coverage.json');
   const displayCoverage = read('display-coverage.json');
   for (const catalog of Object.values(catalogs)) {
-    const qvq = getUpstream(getView(catalog, 'alibaba-cn', 'qvq-max'));
-    qvq.displayRows[0].cnyAmount = 8.029;
-    qvq.displayRows[0].cnyCurrency = 'CNY';
+    const upstream = getUpstream(getView(catalog, 'openai', 'gpt-5.4'));
+    upstream.displayRows[0].cnyAmount = 8.029;
+    upstream.displayRows[0].cnyCurrency = 'CNY';
     const model = getView(catalog, 'minimax', 'image-01');
     model.status = 'ready';
     model.providerId = 'other-provider';
@@ -706,7 +757,7 @@ test('mixed-meter references preserve each unit and upstream domestic estimates 
     catalogs,
   });
   for (const [modelId, field] of [
-    ['qvq-max', 'displayRows'],
+    ['gpt-5.4', 'displayRows'],
     ['image-01', 'status'],
     ['image-01', 'providerId'],
     ['gpt-6.1-sol', 'groupKind'],
@@ -1240,11 +1291,11 @@ test('independent audit rejects a false currency basis or price explanation', (t
   const inputs = { ...rawReconciliationInputs(), coverage: read('coverage.json') };
   const cases = [
     [
-      'alibaba-cn',
-      'qvq-max',
+      'openai',
+      'gpt-5.4',
       'originalCurrencyEligible',
       (quote) => {
-        quote.originalCurrencyEligible = true;
+        quote.originalCurrencyEligible = false;
       },
     ],
     [
@@ -1259,9 +1310,7 @@ test('independent audit rejects a false currency basis or price explanation', (t
   for (const [provider, model, field, mutate] of cases) {
     const catalogs = localizedCatalogs(read);
     for (const catalog of Object.values(catalogs)) {
-      const quote = modelQuotes(catalog, provider, model).find(
-        (quote) => quote.selected || quote.quoteId === 'upstream:alibaba-cn:qvq-max:USD',
-      );
+      const quote = modelQuotes(catalog, provider, model).find((quote) => quote.selected);
       mutate(quote);
     }
     const result = reconcileDisplayCoverage({
