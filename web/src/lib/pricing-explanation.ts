@@ -214,6 +214,22 @@ const reasons: Array<[RegExp, Explanation]> = [
     ],
   ],
   [
+    /^background-completion-window-meter-specific-rates-unverified$/,
+    [
+      'The official completion-window discount is documented, but its per-meter applicability is not. No derived prices are shown; the original Standard base remains separate.',
+      '官方已注明完成窗口折扣，但未逐项说明适用费率，因此不显示推导价；原 Standard 基础价目保持独立。',
+      '公式の完了期間割引は確認できますが、課金項目ごとの適用は未公表です。算出料金は表示せず、元の Standard 基準料金を区別します。',
+    ],
+  ],
+  [
+    /^Promotional rate reference only;/,
+    [
+      'This promotion is reference only, not the official base price or a selected synchronization price.',
+      '此促销价仅供参考，不是官方基础价，也不是选中的同步价格。',
+      'このプロモーション料金は参考情報であり、公式基準価格または選択中の同期料金ではありません。',
+    ],
+  ],
+  [
     /^ModelCost has no cached-audio/,
     [
       'Separate audio-cache and time-based storage charges cannot currently be fully synchronized.',

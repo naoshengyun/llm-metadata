@@ -14673,6 +14673,1090 @@
       "reason": "Separate explicitly selected asynchronous Batch list; not selected by this Standard candidate. Official caching multipliers stack with Batch discount."
     },
     {
+      "id": "openai-gpt-6.2-astra-batch-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Batch / global",
+      "priceRole": "service-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.2,
+        "cache_write": 5,
+        "cache_write_12h": 10,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.4,
+            "cache_write": 10,
+            "cache_write_12h": 20
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-sol-batch-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Batch / global",
+      "priceRole": "service-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.05,
+        "cache_write": 1.25,
+        "cache_write_12h": 2.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 2,
+            "output": 7.5,
+            "cache_read": 0.1,
+            "cache_write": 2.5,
+            "cache_write_12h": 5
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-astra-fast-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Fast / global",
+      "priceRole": "service-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 16,
+        "output": 80,
+        "cache_read": 0.8,
+        "cache_write": 20,
+        "cache_write_12h": 40,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 32,
+            "output": 120,
+            "cache_read": 1.6,
+            "cache_write": 40,
+            "cache_write_12h": 80
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-sol-fast-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Fast / global",
+      "priceRole": "service-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.2,
+        "cache_write": 5,
+        "cache_write_12h": 10,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.4,
+            "cache_write": 10,
+            "cache_write_12h": 20
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-astra-ultrafast-promotion-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Ultrafast / global / promotion",
+      "priceRole": "promotion-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 24,
+        "output": 120,
+        "cache_read": 1.2,
+        "cache_write": 30,
+        "cache_write_12h": 60,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 48,
+            "output": 180,
+            "cache_read": 2.4,
+            "cache_write": 60,
+            "cache_write_12h": 120
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "conditions": {
+        "promotionThrough": "2027-02-28T23:59:59-08:00"
+      },
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Promotional rate reference only; not the official base price or selected synchronization price. Valid through 2027-02-28 Pacific; 30m/12h writes are documented."
+    },
+    {
+      "id": "openai-gpt-6.2-sol-ultrafast-promotion-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Ultrafast / global / promotion",
+      "priceRole": "promotion-reference",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 6,
+        "output": 30,
+        "cache_read": 0.3,
+        "cache_write": 7.5,
+        "cache_write_12h": 15,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 12,
+            "output": 45,
+            "cache_read": 0.6,
+            "cache_write": 15,
+            "cache_write_12h": 30
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "conditions": {
+        "promotionThrough": "2027-02-28T23:59:59-08:00"
+      },
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Promotional rate reference only; not the official base price or selected synchronization price. Valid through 2027-02-28 Pacific; 30m/12h writes are documented."
+    },
+    {
+      "id": "openai-gpt-6.2-astra-ultrafast-list-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Ultrafast / global / list",
+      "priceRole": "official-list",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 48,
+        "output": 240,
+        "cache_read": 2.4,
+        "cache_write": 60,
+        "cache_write_12h": 120,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 96,
+            "output": 360,
+            "cache_read": 4.8,
+            "cache_write": 120,
+            "cache_write_12h": 240
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "conditions": {
+        "listChargingStarts": "2027-03-01T00:00:00-08:00"
+      },
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-sol-ultrafast-list-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Ultrafast / global / list",
+      "priceRole": "official-list",
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/guides/prompt-caching.md",
+            "sha256": "41fd5ad72dc74045ffb0fbe33e8213a879cc018a473b1e022b7be8fa04057625",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "cost": {
+        "input": 12,
+        "output": 60,
+        "cache_read": 0.6,
+        "cache_write": 15,
+        "cache_write_12h": 30,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 24,
+            "output": 90,
+            "cache_read": 1.2,
+            "cache_write": 30,
+            "cache_write_12h": 60
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "reference-only",
+      "conditions": {
+        "listChargingStarts": "2027-03-01T00:00:00-08:00"
+      },
+      "feeDeclarations": [
+        {
+          "field": "cache_write",
+          "retention": "30m"
+        },
+        {
+          "field": "cache_write_12h",
+          "condition": "Responses API"
+        }
+      ],
+      "reason": "Different service tier, must be selected explicitly; official list prices preserve both context bands and 30m/12h writes. Not selected for synchronization."
+    },
+    {
+      "id": "openai-gpt-6.2-astra-standard-background-2h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Standard / global / background 2h",
+      "priceRole": "background-reference",
+      "completionWindow": "2h",
+      "baseQuoteId": "us-openai-gpt-6.2-astra-global-standard",
+      "baseCost": {
+        "input": 8,
+        "output": 40,
+        "cache_read": 0.4,
+        "cache_write": 10,
+        "cache_write_12h": 20,
+        "context_over_200k": {
+          "input": 16,
+          "output": 60,
+          "cache_read": 0.8,
+          "cache_write": 20
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 16,
+            "output": 60,
+            "cache_read": 0.8,
+            "cache_write": 20,
+            "cache_write_12h": 40
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "2h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.7,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.2-astra-global-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6.2-astra-standard-background-8h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-astra",
+      "priceList": "OpenAI API / Standard / global / background 8h",
+      "priceRole": "background-reference",
+      "completionWindow": "8h",
+      "baseQuoteId": "us-openai-gpt-6.2-astra-global-standard",
+      "baseCost": {
+        "input": 8,
+        "output": 40,
+        "cache_read": 0.4,
+        "cache_write": 10,
+        "cache_write_12h": 20,
+        "context_over_200k": {
+          "input": 16,
+          "output": 60,
+          "cache_read": 0.8,
+          "cache_write": 20
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 16,
+            "output": 60,
+            "cache_read": 0.8,
+            "cache_write": 20,
+            "cache_write_12h": 40
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "8h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.6,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.2-astra-global-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6.2-sol-standard-background-2h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Standard / global / background 2h",
+      "priceRole": "background-reference",
+      "completionWindow": "2h",
+      "baseQuoteId": "us-openai-gpt-6.2-sol-global-standard",
+      "baseCost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 0.1,
+        "cache_write": 2.5,
+        "cache_write_12h": 5,
+        "context_over_200k": {
+          "input": 4,
+          "output": 15,
+          "cache_read": 0.2,
+          "cache_write": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 15,
+            "cache_read": 0.2,
+            "cache_write": 5,
+            "cache_write_12h": 10
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "2h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.7,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.2-sol-global-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6.2-sol-standard-background-8h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.2-sol",
+      "priceList": "OpenAI API / Standard / global / background 8h",
+      "priceRole": "background-reference",
+      "completionWindow": "8h",
+      "baseQuoteId": "us-openai-gpt-6.2-sol-global-standard",
+      "baseCost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 0.1,
+        "cache_write": 2.5,
+        "cache_write_12h": 5,
+        "context_over_200k": {
+          "input": 4,
+          "output": 15,
+          "cache_read": 0.2,
+          "cache_write": 5
+        },
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "context"
+            },
+            "input": 4,
+            "output": 15,
+            "cache_read": 0.2,
+            "cache_write": 5,
+            "cache_write_12h": 10
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "8h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.6,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.2-sol-global-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6.1-terra-standard-background-2h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.1-terra",
+      "priceList": "OpenAI API / Standard / global / background 2h",
+      "priceRole": "background-reference",
+      "completionWindow": "2h",
+      "baseQuoteId": "us-openai-gpt-6.1-terra-standard",
+      "baseCost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.05,
+        "cache_write": 1.25,
+        "cache_write_12h": 2.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 2,
+            "output": 7.5,
+            "cache_read": 0.1,
+            "cache_write": 2.5,
+            "cache_write_12h": 5
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "2h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.7,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.1-terra-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6.1-terra-standard-background-8h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6.1-terra",
+      "priceList": "OpenAI API / Standard / global / background 8h",
+      "priceRole": "background-reference",
+      "completionWindow": "8h",
+      "baseQuoteId": "us-openai-gpt-6.1-terra-standard",
+      "baseCost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.05,
+        "cache_write": 1.25,
+        "cache_write_12h": 2.5,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 2,
+            "output": 7.5,
+            "cache_read": 0.1,
+            "cache_write": 2.5,
+            "cache_write_12h": 5
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "8h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.6,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6.1-terra-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6-luna-standard-background-2h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6-luna",
+      "priceList": "OpenAI API / Standard / global / background 2h",
+      "priceRole": "background-reference",
+      "completionWindow": "2h",
+      "baseQuoteId": "us-openai-gpt-6-luna-standard",
+      "baseCost": {
+        "input": 0.1,
+        "output": 0.5,
+        "cache_read": 0.01,
+        "cache_write": 0.125,
+        "cache_write_12h": 0.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 0.2,
+            "output": 0.75,
+            "cache_read": 0.02,
+            "cache_write": 0.25,
+            "cache_write_12h": 0.5
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "2h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.7,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6-luna-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
+      "id": "openai-gpt-6-luna-standard-background-8h-global-reference",
+      "provider": "openai",
+      "officialModel": "gpt-6-luna",
+      "priceList": "OpenAI API / Standard / global / background 8h",
+      "priceRole": "background-reference",
+      "completionWindow": "8h",
+      "baseQuoteId": "us-openai-gpt-6-luna-standard",
+      "baseCost": {
+        "input": 0.1,
+        "output": 0.5,
+        "cache_read": 0.01,
+        "cache_write": 0.125,
+        "cache_write_12h": 0.25,
+        "tiers": [
+          {
+            "tier": {
+              "size": 272000,
+              "type": "input"
+            },
+            "input": 0.2,
+            "output": 0.75,
+            "cache_read": 0.02,
+            "cache_write": 0.25,
+            "cache_write_12h": 0.5
+          }
+        ]
+      },
+      "baseSource": {
+        "url": "https://developers.openai.com/api/docs/pricing.md",
+        "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+        "checkedAt": "2026-11-24"
+      },
+      "endpoint": "https://api.openai.com/v1",
+      "officialRegion": "global",
+      "currency": "USD",
+      "source": {
+        "url": "https://developers.openai.com/api/docs/guides/background.md",
+        "sha256": "e505f6409f2f56a4b6183f646d19adaa8d07fca929accb9ffa44f5d2c94a72f8",
+        "checkedAt": "2026-11-24",
+        "supplemental": [
+          {
+            "url": "https://developers.openai.com/api/docs/pricing.md",
+            "sha256": "88f7825ffddb006fefea4d3838831bd3deaed6f72df6914ad79aefa021d51355",
+            "checkedAt": "2026-11-24"
+          },
+          {
+            "url": "https://developers.openai.com/api/docs/guides/flex-processing.md",
+            "sha256": "886b8b1a7093fc7aee0fe81aca7a7115bec784f76a36e13d1fc493952a58b3de",
+            "checkedAt": "2026-11-24"
+          }
+        ]
+      },
+      "unit": "per_million_tokens",
+      "status": "incomplete",
+      "displayWithoutRates": true,
+      "conditions": {
+        "processing": "standard",
+        "api": "responses",
+        "completionWindow": "8h",
+        "completionTarget": "accepted-initial-response",
+        "officialMultiplier": 0.6,
+        "background": true,
+        "serviceTier": "default",
+        "autoServiceTier": "only-standard-eligible",
+        "stream": false,
+        "rateLimit": "batch-background-shared",
+        "inputTokenAccounting": "at-submission",
+        "followUpDiscount": "eligible-requests-including-follow-ups",
+        "followUpIdentity": "same-project-model-tier-window-continuation",
+        "cacheReuse": "outside-window-disabled",
+        "rateDerivation": "meter-specific-application-unverified",
+        "baseQuoteId": "us-openai-gpt-6-luna-standard"
+      },
+      "reason": "background-completion-window-meter-specific-rates-unverified"
+    },
+    {
       "provider": "openai",
       "officialModel": "gpt-6.1-terra",
       "priceList": "Batch",

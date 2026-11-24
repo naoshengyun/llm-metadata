@@ -42,14 +42,16 @@ const get = async (path) => {
   return response.text();
 };
 const snapshot = async (page, width, name) => {
-  await page.evaluate(() =>
-    Promise.allSettled(
+  await page.evaluate(async () => {
+    const settling = Promise.allSettled(
       document
         .getAnimations()
         .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
         .map((animation) => animation.finished),
-    ),
-  );
+    );
+    // A paused transition must not block evidence capture; screenshots disable animations below.
+    await Promise.race([settling, new Promise((resolve) => setTimeout(resolve, 1000))]);
+  });
   await page.screenshot({ path: `${evidenceDir}/${width}-${name}.png`, animations: 'disabled' });
 };
 const results = { browser: browser.version(), viewports: [] };
