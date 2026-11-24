@@ -329,6 +329,18 @@ function conditionValue(value: unknown, locale: Locale, key: string): ReactNode 
       locale,
     );
   }
+  if (
+    key === 'scheduleApplicability' &&
+    value === 'weekdays-ignore-chinese-legal-holidays-and-adjusted-workdays'
+  )
+    return localizePrice(
+      [
+        'Weekdays only; Chinese statutory holidays and adjusted workdays are ignored',
+        '仅按周一至周五周历；忽略中国法定节假日和调休',
+        '平日のみの週暦。中国の法定休日・振替勤務は考慮しない',
+      ],
+      locale,
+    );
   if (key === 'cacheReuse' && value === 'outside-window-disabled')
     return localizePrice(
       [

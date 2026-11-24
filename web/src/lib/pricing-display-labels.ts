@@ -265,6 +265,7 @@ const condition: LabelMap = {
   background: ['Background request', '后台请求', 'バックグラウンドリクエスト'],
   stream: ['Streaming', '流式输出', 'ストリーミング'],
   cacheReuse: ['Cache reuse', '缓存复用', 'キャッシュ再利用'],
+  scheduleApplicability: ['Schedule exception', '周历适用例外', '週暦の適用例外'],
   rateDerivation: ['Derived rates', '推导价格', '算出料金'],
   baseQuoteId: ['Standard base quote', 'Standard 基础价目', 'Standard 基準料金'],
   api: ['API', 'API', 'API'],

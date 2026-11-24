@@ -25,6 +25,8 @@ scope: unified-official-cny / issues-34-39
 
 `unified-policy.json` 的 `asOf` 是人工审核的固定时间，并带时区。晚于该时间的正式价目保留为待生效，选中会使构建失败。到期时通过新的审核变更更新选择与审查时间。撤价和恢复以原生键维护附带证据的有序事件。撤价屏蔽全部同名自动候选，恢复需要显式选择与新的匹配证据。日期推进与选价变化均由审查处理。
 
+2026-11-24，用户批准 DeepSeek 四个具名型号按上游周历同步，忽略法定节假日和调休。`weeklyScheduleExceptions` 必须与原 `nativeCapabilityExclusions` 的精确身份、原始 CNY 和官网周历共同验证；上游 UTC 时段须与官网 Asia/Shanghai 时段等价。该业务例外不修改官方证据，不适用于其他不支持项，也不绕过生命周期、延期或选择约束。独立覆盖对账从原始输入重新推导同一规则，日常核价继续报告真实官方变化。
+
 历史仅上游发布由 [ADR 0004](0004-separate-upstream-catalog-and-cny-eligibility.md) 记录。#40 接通页面交互与原生实例全量读回，#44 接通固定候选的发布门禁。
 
 ## 网站与原生验证

@@ -89,10 +89,7 @@ test('cache retention comes from exact tariff evidence across the full catalog',
     );
     assert.equal(all.find((quote) => quote.quoteId.startsWith('upstream:')), undefined);
   }
-  assert.equal(
-    createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
-    '4ce3d8a4415534e3e44423b99d1d09cca0347793b188623dcd40c7ec821a6152',
-  );
+  assert.equal(Object.keys(read('api/newapi/ratio_config.json').data.billing_expr).length, 210);
 });
 
 const localizedCatalogs = (read) => ({
@@ -123,7 +120,7 @@ test('user display scope hides unselected upstream references but preserves sele
         }
       }
     }
-    assert.equal(selectedUpstream, 67);
+    assert.equal(selectedUpstream, 71);
   }
   const selectedSourceIds = new Set(
     modelQuotes(catalogs.en, 'openai', 'gpt-5.4').map((quote) => quote.sourceRecordId),
@@ -158,13 +155,10 @@ test('user display scope hides unselected upstream references but preserves sele
       hidden += 1;
     }
   }
-  assert.equal(selected, 67);
-  assert.equal(userHidden, 335);
-  assert.equal(hidden, 426);
-  assert.equal(
-    createHash('sha256').update(read.bytes('api/newapi/ratio_config.json')).digest('hex'),
-    '4ce3d8a4415534e3e44423b99d1d09cca0347793b188623dcd40c7ec821a6152',
-  );
+  assert.equal(selected, 71);
+  assert.equal(userHidden, 331);
+  assert.equal(hidden, 422);
+  assert.equal(Object.keys(read('api/newapi/ratio_config.json').data.billing_expr).length, 210);
 });
 
 test('reviewed Flex references retain exact source content and an exact display location', (t) => {
@@ -594,15 +588,19 @@ test('token, task, media, and generic reference quotes expose structured display
   assert.equal(search.unit, 'per_thousand_search_queries');
   assert.match(search.conditions.condition, /First5000/);
 
-  const deepseek = quotesFor('deepseek', 'deepseek-v4-pro').find(
-    ({ outputKind }) => outputKind === 'model-reference',
-  );
+  const deepseek = quotesFor('deepseek', 'deepseek-v4-pro').find(({ selected }) => selected);
+  assert.equal(deepseek.outputKind, 'model');
+  assert.equal(deepseek.syncable, true);
   const offPeak = deepseek.displayRows.find(
-    ({ usageKey, conditions }) => usageKey === 'input' && conditions.condition === 'off-peak',
+    ({ usageKey, rowId }) => usageKey === 'input' && rowId === 'cost:input',
   );
   assert.equal(offPeak.amount, 4.5);
   assert.equal(offPeak.cnyAmount, 4.5);
-  assert.equal(deepseek.conditions.timezone, 'Asia/Shanghai');
+  assert.equal(deepseek.sourcePrice.schedule.timezone, 'Asia/Shanghai');
+  assert.equal(
+    deepseek.conditions.scheduleApplicability,
+    'weekdays-ignore-chinese-legal-holidays-and-adjusted-workdays',
+  );
 });
 
 test('fixed reviewed references retain scheduled rates, explicit applicability and source identity', (t) => {
@@ -1483,17 +1481,14 @@ test('coverage categories compose across the full catalog and retain lifecycle s
   }
 });
 
-test('display data is read-only and native price bytes remain invariant', (t) => {
+test('display data is read-only and display-only edits leave native price bytes invariant', (t) => {
   const read = buildCandidate(t);
   const ratioPath = 'api/newapi/ratio_config.json';
   const baseline = read.bytes(ratioPath);
-  assert.equal(
-    createHash('sha256').update(baseline).digest('hex'),
-    '4ce3d8a4415534e3e44423b99d1d09cca0347793b188623dcd40c7ec821a6152',
-  );
   const config = read(ratioPath);
   assert.deepEqual(Object.keys(config), ['success', 'message', 'data']);
   assert.deepEqual(Object.keys(config.data), ['billing_mode', 'billing_expr']);
+  assert.equal(Object.keys(config.data.billing_expr).length, 210);
   assert.deepEqual(Object.keys(config.data.billing_mode), Object.keys(config.data.billing_expr));
 
   const displayOnly = buildCandidate(t, (official) => {

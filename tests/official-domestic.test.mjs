@@ -254,12 +254,14 @@ test('Bailian Beijing tiers use compatible-mode original CNY and distinguish cac
   );
 });
 
-test('Chinese holidays and hourly ASR enter coverage with complete evidence and no sync candidate', async () => {
+test('DeepSeek weekly exception preserves official holiday evidence without inventing an official change', async () => {
   const deepseek = await check('deepseek');
   const flash = resultFor(deepseek, 'upstream:deepseek:deepseek-v4-flash-vision-exp:CNY');
-  assert.equal(flash.status, 'unsupported');
+  assert.equal(flash.status, 'unchanged');
+  assert.equal(flash.reason, 'user-approved-weekday-schedule-ignores-chinese-legal-holidays-and-adjusted-workdays');
   assert.equal(flash.observed.conditions.billedAsModel, 'deepseek-flash');
   assert.equal(flash.observed.conditions.chineseLegalHolidays, 'off_peak');
+  assert.equal(flash.observed.conditions.scheduleApplicability, undefined);
   assert.equal(flash.observed.sourcePrice.schedule.windows[0].input, 2);
   assert.equal(
     deepseek.changes.some(({ id }) => id === flash.id),
@@ -273,6 +275,30 @@ test('Chinese holidays and hourly ASR enter coverage with complete evidence and 
   assert.equal(asr.observed.conditions.beforeEffectiveRate.amount, 0.15);
   assert.equal(asr.observed.effectiveAt, '2026-11-23T12:00:00+08:00');
   assert.equal(step.changes.find(({ id }) => id === asr.id)?.candidate, undefined);
+});
+
+test('a real DeepSeek rate change is reported independently of the approved holiday deviation', async () => {
+  const report = await check('deepseek', (body) =>
+    Buffer.from(
+      body.toString().replace(
+        '<td>高峰时段</td><td>2元</td><td>9.0元</td>',
+        '<td>高峰时段</td><td>2.5元</td><td>9.0元</td>',
+      ),
+    ),
+  );
+  for (const modelId of ['deepseek-flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp']) {
+    const result = resultFor(report, `upstream:deepseek:${modelId}:CNY`);
+    assert.equal(result.status, 'changed');
+    assert.equal(result.observed.sourcePrice.schedule.windows[0].input, 2.5);
+    assert.equal(result.observed.conditions.chineseLegalHolidays, 'off_peak');
+    assert.equal(result.observed.conditions.scheduleApplicability, undefined);
+    assert.equal(result.difference.chargingConditions, undefined);
+    assert.equal(
+      report.changes.find((change) => change.id === result.id)?.candidate.record.cost.schedule.windows[0].input,
+      2.5,
+    );
+  }
+  assert.equal(resultFor(report, 'upstream:deepseek:deepseek-v4-pro:CNY').status, 'unchanged');
 });
 
 test('a missing StepFun model row leaves other verified tariffs and ASR available', async () => {
@@ -439,7 +465,7 @@ test('a malformed Xiaomi field rejects the tariff, while an exact change builds 
   );
 });
 
-test('a native capability exclusion keeps DeepSeek official evidence and prevents fallback pricing', async () => {
+test('the exact DeepSeek exception enters sync while preserving official CNY and holiday evidence', async () => {
   const read = (name) => JSON.parse(readFileSync(join(baseline, name)));
   const { data } = read('api/newapi/ratio_config.json');
   const { models } = read('coverage.json');
@@ -451,10 +477,16 @@ test('a native capability exclusion keeps DeepSeek official evidence and prevent
   ];
   for (const modelId of keys) {
     const model = models.find((row) => row.providerId === 'deepseek' && row.modelId === modelId);
-    assert.equal(data.billing_expr[modelId], undefined, modelId);
-    assert.equal(model.status, 'unsupported');
+    assert.ok(data.billing_expr[modelId], modelId);
+    assert.equal(model.status, 'selected');
+    assert.equal(model.upstreamPrice.selected, true);
+    assert.equal(model.upstreamPrice.syncable, true);
     assert.equal(model.upstreamPrice.sourceCurrency, 'CNY');
     assert.equal(model.upstreamPrice.conditions.chineseLegalHolidays, 'off_peak');
+    assert.equal(
+      model.upstreamPrice.conditions.scheduleApplicability,
+      'weekdays-ignore-chinese-legal-holidays-and-adjusted-workdays',
+    );
     assert.equal(
       model.upstreamPrice.source.url,
       'https://api-docs.deepseek.com/zh-cn/quick_start/pricing/',
