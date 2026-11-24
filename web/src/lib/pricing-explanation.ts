@@ -214,6 +214,14 @@ const reasons: Array<[RegExp, Explanation]> = [
     ],
   ],
   [
+    /^Promotional rate reference only;/,
+    [
+      'This promotion is reference only, not the official base price or a selected synchronization price.',
+      '此促销价仅供参考，不是官方基础价，也不是选中的同步价格。',
+      'このプロモーション料金は参考情報であり、公式基準価格または選択中の同期料金ではありません。',
+    ],
+  ],
+  [
     /^ModelCost has no cached-audio/,
     [
       'Separate audio-cache and time-based storage charges cannot currently be fully synchronized.',

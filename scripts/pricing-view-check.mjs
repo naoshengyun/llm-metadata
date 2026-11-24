@@ -670,7 +670,7 @@ export function hasExpectedReferenceRates(records) {
   return records.some((record) => hasRate(expectedDisplayRows(reviewedDisplayQuote(record))));
 }
 
-export function expectedPricingCategories(records, selected, status) {
+export function expectedPricingCategories(records, selected, status, asOf) {
   const categories = new Set();
   if (['not-offered', 'deprecated', 'withdrawn', 'deferred'].includes(status))
     categories.add(status);
@@ -726,11 +726,15 @@ export function expectedPricingCategories(records, selected, status) {
       categories.add('task-conditions');
       categories.add('multimedia-usage');
     }
+    const pending =
+      source.effectiveAt !== undefined && Date.parse(source.effectiveAt) > Date.parse(asOf);
     const quoteStatus =
       normalized?.status ??
       (modelId === 'doubao-seedance-2-5-260628' && providerId === 'volcengine'
         ? 'validation-held'
-        : (source.status ?? 'reference-only'));
+        : pending
+          ? 'pending-effective'
+          : (source.status ?? 'reference-only'));
     if (['pending-effective', 'withdrawn', 'deferred'].includes(quoteStatus))
       categories.add(quoteStatus);
     for (const { usageKey, unit } of displayRows) {

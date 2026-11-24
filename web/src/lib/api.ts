@@ -107,6 +107,7 @@ export interface DisplayPriceQuote extends PriceQuote {
   originalQuote?: NonNullable<PriceQuote['originalQuote']> & {
     officialServiceTier?: string;
     officialRegion?: string;
+    priceRole?: 'service-reference' | 'official-list' | 'promotion-reference';
     effectiveAt?: string;
     region?: string;
     toolCondition?: string;

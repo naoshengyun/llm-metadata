@@ -136,6 +136,7 @@ const serviceTiers = [
 ];
 const quoteOrder = serviceTiers.map(({ key }) => key);
 const serviceNames = Object.fromEntries(serviceTiers.map(({ key, name }) => [key, name]));
+const isUpstreamQuote = (quote: DisplayPriceQuote) => quote.quoteId.startsWith('upstream:');
 const priceListParts = (quote: DisplayPriceQuote) =>
   quote.priceList.split('/').map((part) => part.trim());
 const serviceTierKey = (value: string) => {
@@ -193,8 +194,25 @@ type QuoteEntry = {
 type QuoteScope = {
   qualifier: string;
   endpoint: string;
+  referenceKind: 'official' | 'upstream';
   entries: QuoteEntry[];
 };
+
+function entryDisplayName(entry: QuoteEntry, locale: Locale) {
+  const upstream = isUpstreamQuote(entry.quote);
+  const base =
+    upstream && entry.serviceName === entry.quote.priceList
+      ? msg(locale, 'upstreamRecord')
+      : entry.serviceName;
+  const role = entry.quote.originalQuote?.priceRole;
+  const roleLabel =
+    role === 'official-list'
+      ? msg(locale, 'listPrice')
+      : role === 'promotion-reference'
+        ? msg(locale, 'promotionReference')
+        : '';
+  return [base, roleLabel].filter(Boolean).join(' · ');
+}
 
 function quoteEntries(groupId: string, quote: DisplayPriceQuote): QuoteEntry[] {
   const base = {
@@ -459,8 +477,9 @@ function RateTable({
     ? quote.originalQuote?.toolCondition
     : undefined;
   const resolutionNote = unit === 'per_image' ? quote.originalQuote?.resolutionNote : undefined;
-  const rowModels = rows.map((row) => ({
+  const rowModels = rows.map((row, position) => ({
     row,
+    position,
     tier: tierCondition(row, rows, locale),
     conditions: rowDisplayConditions(row, common),
   }));
@@ -477,12 +496,32 @@ function RateTable({
     if (band) band.rows.push(model);
     else bandMap.set(key, { rows: [model], threshold });
   }
+  const rateOrder = ({ row }: (typeof rowModels)[number]): [number, number] => {
+    if (row.usageKey === 'input') return [0, 0];
+    if (row.usageKey === 'output') return [1, 0];
+    if (row.usageKey === 'cache_read') return [2, 0];
+    if (row.usageKey === 'cache_write_12h') return [4, 720];
+    if (row.usageKey === 'cache_write' || /^cache_write_\d+[hm]$/.test(row.usageKey)) {
+      const suffix = /^cache_write_(\d+)([hm])$/.exec(row.usageKey);
+      const documented = quote.displayFeeTerms?.find(
+        ({ usageKey }) => usageKey === row.usageKey,
+      )?.retentionMinutes;
+      const minutes = suffix
+        ? Number(suffix[1]) * (suffix[2] === 'h' ? 60 : 1)
+        : (documented ?? Number.POSITIVE_INFINITY);
+      return [3, minutes];
+    }
+    return [5, 0];
+  };
+  for (const band of bandMap.values())
+    band.rows.sort((a, b) => {
+      const [aGroup, aMinutes] = rateOrder(a);
+      const [bGroup, bMinutes] = rateOrder(b);
+      return aGroup - bGroup || aMinutes - bMinutes || a.position - b.position;
+    });
   const bands = [...bandMap.entries()]
     .map(([key, band]) => ({ key, ...band }))
-    .sort(
-      (a, b) =>
-        (a.threshold ?? -1) - (b.threshold ?? -1) || a.key.localeCompare(b.key, 'en'),
-    );
+    .sort((a, b) => (a.threshold ?? -1) - (b.threshold ?? -1) || a.key.localeCompare(b.key, 'en'));
   return (
     <div className="min-w-0 space-y-3">
       <Conditions values={{ toolCondition, resolutionNote }} locale={locale} />
@@ -540,11 +579,13 @@ function RateTable({
                   const term = quote.displayFeeTerms?.find(
                     ({ usageKey }) => usageKey === row.usageKey,
                   );
-                  const ttlLabel =
-                    term?.retentionMinutes === undefined ||
-                    /^cache_write_\d+[hm]$/.test(row.usageKey)
-                      ? ''
-                      : ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`;
+                  const ttlLabel = /^cache_write_\d+[hm]$/.test(row.usageKey)
+                    ? ''
+                    : term?.retentionMinutes !== undefined
+                      ? ` · ${term.retentionMinutes} ${localizePrice(['min', '分钟', '分'], locale)}`
+                      : isUpstreamQuote(quote) && row.usageKey === 'cache_write'
+                        ? ` · ${msg(locale, 'cacheTtlUndocumented')}`
+                        : '';
                   const amountPrefix = row.approximate ? '≈' : '';
                   const source =
                     row.amount === null
@@ -648,6 +689,7 @@ function QuoteArticle({
 }) {
   const { quote, groupId, rows: entryRows, serviceName } = entry;
   const { locale } = useI18n();
+  const displayName = entryDisplayName(entry, locale);
   const sections = new Map<string, DisplayPriceRow[]>();
   for (const row of entryRows) {
     // Keep legacy fields in the raw audit record, not alongside their authoritative tiers.
@@ -701,10 +743,7 @@ function QuoteArticle({
   for (const key of commonRowConditionKeys) {
     if (key in originalConditions || rowOnlyConditionKeys.has(key)) continue;
     const value = entryRows[0]?.conditions[key];
-    if (
-      typeof value === 'string' &&
-      entryRows.every((row) => row.conditions[key] === value)
-    )
+    if (typeof value === 'string' && entryRows.every((row) => row.conditions[key] === value))
       quoteConditions[key] = value;
   }
   const tariffConditions = quoteConditions;
@@ -734,12 +773,13 @@ function QuoteArticle({
       data-service-entry={entry.entryId}
       data-service-name={serviceName}
       data-service-tier={entry.entryKey}
+      data-price-role={quote.originalQuote?.priceRole ?? ''}
       data-syncable={String(quote.syncable)}
       data-quote-status={quote.status}
     >
       <details open>
         <summary className="cursor-pointer leading-relaxed break-words">
-          <h3 className="inline text-base font-semibold">{serviceName}</h3>
+          <h3 className="inline text-base font-semibold">{displayName}</h3>
           <Badge className="ml-2 align-middle" variant={quote.syncable ? 'default' : 'secondary'}>
             {badgeLabel}
           </Badge>
@@ -791,7 +831,7 @@ function QuoteArticle({
             />
           ))}
           <div className="text-muted-foreground space-y-0.5">
-            <p data-price-list>{quote.priceList}</p>
+            {!isUpstreamQuote(quote) && <p data-price-list>{quote.priceList}</p>}
             <p className="font-mono break-all">{quote.quoteId}</p>
             {quote.nativeKey && (
               <p>
@@ -861,6 +901,11 @@ function QuoteArticle({
             <summary className="cursor-pointer underline-offset-2 hover:underline">
               {msg(locale, 'audit')}
             </summary>
+            {isUpstreamQuote(quote) && (
+              <p className="mt-1 break-all" data-audit-price-list>
+                {quote.priceList}
+              </p>
+            )}
             {quote.originalQuote?.description && (
               <p className="mt-1" data-audit-description>
                 {quote.originalQuote.description}
@@ -901,7 +946,11 @@ export function PricingViewQuotes({
   );
   if (!entries.length) return null;
   const navigationName = (entry: QuoteEntry) =>
-    serviceTierKey(entry.serviceName) ? entry.serviceName : msg(locale, 'otherTariff');
+    isUpstreamQuote(entry.quote)
+      ? entryDisplayName(entry, locale)
+      : serviceTierKey(entry.serviceName)
+        ? entryDisplayName(entry, locale)
+        : msg(locale, 'otherTariff');
 
   const defaultQualifiers = new Map<string, string>();
   for (const entry of entries.filter(({ quote }) => quote.selected))
@@ -918,10 +967,17 @@ export function PricingViewQuotes({
       endpointScopes = new Map<string, QuoteScope>();
       scopeMap.set(qualifier, endpointScopes);
     }
-    let scope = endpointScopes.get(entry.endpoint);
+    const referenceKind = isUpstreamQuote(entry.quote) ? 'upstream' : 'official';
+    const scopeKey = `${referenceKind}\0${entry.endpoint}`;
+    let scope = endpointScopes.get(scopeKey);
     if (!scope) {
-      scope = { qualifier, endpoint: entry.endpoint, entries: [] };
-      endpointScopes.set(entry.endpoint, scope);
+      scope = {
+        qualifier,
+        endpoint: entry.endpoint,
+        referenceKind,
+        entries: [],
+      };
+      endpointScopes.set(scopeKey, scope);
     }
     scope.entries.push(entry);
   }
@@ -929,6 +985,7 @@ export function PricingViewQuotes({
     .flatMap((endpointScopes) => [...endpointScopes.values()])
     .sort(
       (a, b) =>
+        Number(a.referenceKind === 'upstream') - Number(b.referenceKind === 'upstream') ||
         a.qualifier.localeCompare(b.qualifier, 'en') ||
         a.endpoint.localeCompare(b.endpoint, 'en') ||
         a.entries[0].quote.quoteId.localeCompare(b.entries[0].quote.quoteId, 'en'),
@@ -949,7 +1006,10 @@ export function PricingViewQuotes({
         const provider =
           scopeEntries.map(({ quote }) => priceListIdentity(quote).provider).find(Boolean) ||
           view.providerId;
-        const scopeTitle = [provider, scope.qualifier].filter(Boolean).join(' · ');
+        const scopeTitle =
+          scope.referenceKind === 'upstream'
+            ? msg(locale, 'upstreamReference')
+            : [provider, scope.qualifier].filter(Boolean).join(' · ');
         const serviceCounts = new Map<string, number>();
         for (const entry of scopeEntries) {
           const name = navigationName(entry);
@@ -960,6 +1020,7 @@ export function PricingViewQuotes({
             key={scopeId}
             className="min-w-0 space-y-3"
             data-pricing-scope={scopeId}
+            data-reference-kind={scope.referenceKind}
             aria-label={scopeTitle}
           >
             <div className="min-w-0">

@@ -1,5 +1,6 @@
 /** Browser assertions for the reviewed display contract. The caller serves a fixed candidate locally. */
 import assert from 'node:assert/strict';
+import { openAiOfficialRows } from './openai-official-matrix.mjs';
 
 const messages = {
   en: {
@@ -628,6 +629,115 @@ export async function checkPricingReviewFindings({
     const longLabel = await row(selected, 'cost:cache_write_12h').locator('th').innerText();
     assert.equal((longLabel.match(/12/g) ?? []).length, 1);
     assert.doesNotMatch(longLabel, /720/);
+  });
+
+  await verify('Independent OpenAI evidence reaches every applicable tariff and cache row', async () => {
+    const roleLabels = {
+      en: { 'official-list': 'Official list price', 'promotion-reference': 'Promotion reference' },
+      zh: { 'official-list': '官网列表原价', 'promotion-reference': '促销参考' },
+      ja: { 'official-list': '公式リスト基準価格', 'promotion-reference': 'プロモーション参考' },
+    }[locale];
+    for (const expected of openAiOfficialRows()) {
+      await visit('openai', expected.model);
+      const card = quoteAt(page, `reviewed-reference:${expected.id}`);
+      assert.equal(await card.count(), 1, expected.id);
+      assert.equal(await card.getAttribute('data-service-name'), expected.service);
+      assert.equal(await card.getAttribute('data-price-role'), expected.priceRole);
+      assert.equal(await card.getAttribute('data-quote-status'), 'reference-only');
+      assert.equal(await card.getAttribute('data-syncable'), 'false');
+      assert.ok(await card.locator('details').first().evaluate((details) => details.open));
+      const summary = await card.locator('summary').first().innerText();
+      assert.match(summary, new RegExp(expected.service));
+      if (roleLabels[expected.priceRole]) assert.match(summary, new RegExp(roleLabels[expected.priceRole]));
+      assert.doesNotMatch(await card.innerText(), /pending-effective|Awaiting effective date|等待官方价目生效|公式料金の発効待ち/);
+      for (const [band, prefix] of [
+        [expected.short, 'cost'],
+        [expected.long, 'cost:tier-0'],
+      ])
+        for (const [usage, amount] of Object.entries(band))
+          assert.equal(
+            await row(card, `${prefix}:${usage}`).getAttribute('data-source-amount'),
+            String(amount),
+            `${expected.id} ${prefix}:${usage}`,
+          );
+      for (const id of ['cost:cache_write', 'cost:tier-0:cache_write'])
+        assert.match(
+          await row(card, id).locator('th').innerText(),
+          { en: /30 min/, zh: /30 分钟/, ja: /30 分/ }[locale],
+        );
+      assert.equal(await card.locator('[data-pricing-row]').count(), 10);
+      for (const prefix of ['cost', 'cost:tier-0']) {
+        const band = row(card, `${prefix}:input`).locator('xpath=ancestor::*[@data-rate-band][1]');
+        assert.deepEqual(
+          await band.locator('[data-pricing-row]').evaluateAll((rows) =>
+            rows.map((entry) => entry.dataset.pricingRow),
+          ),
+          ['input', 'output', 'cache_read', 'cache_write', 'cache_write_12h'].map(
+            (usage) => `${prefix}:${usage}`,
+          ),
+        );
+      }
+      if (expected.priceRole === 'official-list')
+        assert.equal(await card.locator('[data-condition="listChargingStarts"]').count(), 1);
+      if (expected.priceRole === 'promotion-reference')
+        assert.equal(await card.locator('[data-condition="promotionThrough"]').count(), 1);
+      assert.equal(await card.locator('[data-condition="effectiveAt"]').count(), 0);
+      assert.equal(await page.locator('[data-service-name="Flex"]').count(), 0);
+      await assertNoPageOverflow(page);
+    }
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('[data-quote-id]').first().waitFor();
+    assert.ok(
+      await page
+        .locator('[data-quote-id] > details')
+        .evaluateAll((details) => details.every((entry) => entry.open)),
+    );
+  });
+
+  await verify('Upstream catalog references stay separate with stable rows and explicit TTL gaps', async () => {
+    await visit('openai', 'gpt-6.1-sol');
+    const upstreamView = models('openai', 'gpt-6.1-sol').pricing_view.groups
+      .flatMap(({ quotes }) => quotes)
+      .find(({ quoteId }) => quoteId.startsWith('upstream:'));
+    const upstream = quoteAt(page, upstreamView.quoteId);
+    const upstreamScope = upstream.locator('xpath=ancestor::section[@data-pricing-scope][1]');
+    assert.equal(await upstreamScope.getAttribute('data-reference-kind'), 'upstream');
+    assert.match(
+      await upstreamScope.locator('[data-scope-title]').innerText(),
+      { en: /Upstream catalog reference/, zh: /上游目录参考价/, ja: /上流カタログ参考料金/ }[locale],
+    );
+    const summary = await upstream.locator('summary').first().innerText();
+    assert.doesNotMatch(summary, /fixed upstream primary or original CNY sheet/);
+    assert.equal(await upstream.locator('[data-price-list]').count(), 0);
+    await upstream.locator('[data-price-audit] > summary').click();
+    assert.match(
+      await upstream.locator('[data-price-audit]').innerText(),
+      /fixed upstream primary or original CNY sheet/,
+    );
+    assert.match(
+      summary,
+      { en: /Upstream catalog record/, zh: /上游目录记录/, ja: /上流カタログ記録/ }[locale],
+    );
+    const selectedScope = await page.locator('[data-syncable="true"]').getAttribute('data-pricing-scope');
+    assert.notEqual(await upstream.getAttribute('data-pricing-scope'), selectedScope);
+    const positions = await page.locator('section[data-reference-kind]').evaluateAll((scopes) =>
+      scopes.map((scope) => scope.dataset.referenceKind),
+    );
+    assert.deepEqual(positions, ['official', 'upstream']);
+    for (const band of await upstream.locator('[data-rate-band]').all()) {
+      const order = await band.locator('[data-pricing-row]').evaluateAll((rows) =>
+        rows.map((row) => row.dataset.pricingRow.split(':').at(-1)),
+      );
+      const ranks = { input: 1, output: 2, cache_read: 3, cache_write: 4, cache_write_12h: 5 };
+      const core = order.filter((id) => ranks[id]);
+      assert.deepEqual(core, [...core].sort((a, b) => ranks[a] - ranks[b]), core.join(', '));
+    }
+    for (const label of await upstream.locator('[data-pricing-row$=":cache_write"] th').allTextContents())
+      assert.match(
+        label,
+        { en: /TTL undocumented in source/, zh: /源记录未注明缓存有效期/, ja: /元資料にキャッシュ TTL の記載なし/ }[locale],
+      );
+    await assertNoPageOverflow(page);
   });
 
   await verify('Documented cache TTLs stay scoped to each tariff', async () => {

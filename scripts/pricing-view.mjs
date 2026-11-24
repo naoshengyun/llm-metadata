@@ -18,6 +18,8 @@ import {
 } from './pricing-view-check.mjs';
 
 const identity = (providerId, modelId) => JSON.stringify([providerId, modelId]);
+const isPendingEffective = (record, asOf) =>
+  record.effectiveAt !== undefined && Date.parse(record.effectiveAt) > Date.parse(asOf);
 const officialSourceId = (record) => 'official-record:' + record.id;
 const referenceSourceId = (record) => 'reviewed-reference:' + (record.id ?? hash(record));
 export const SEEDANCE_REFERENCE_QUOTE_ID =
@@ -778,6 +780,7 @@ function referenceQuote(record, policy, selectedQuote) {
   const modelId = record.officialModel ?? record.model;
   const sourcePrice = referenceSourcePrice(record, selectedQuote);
   const cost = record.cost ?? record.candidateCost;
+  const pending = isPendingEffective(record, policy.asOf);
   return {
     quoteId: referenceQuoteId(record),
     sourceRecordId: referenceSourceId(record),
@@ -798,10 +801,16 @@ function referenceQuote(record, policy, selectedQuote) {
     sourceUnit: record.unit ?? record.rawFees?.unit ?? null,
     source: { ...record.source, recordSha256: hash(record) },
     originalQuote: structuredClone(record),
-    status: isSeedanceTable(record) ? 'validation-held' : (record.status ?? 'reference-only'),
+    status: isSeedanceTable(record)
+      ? 'validation-held'
+      : pending
+        ? 'pending-effective'
+        : (record.status ?? 'reference-only'),
     reason: isSeedanceTable(record)
       ? 'seedance-4k-two-target-billing-cases-unverified'
-      : (record.reason ?? 'reviewed-reference-only'),
+      : pending
+        ? 'official-price-not-yet-effective'
+        : (record.reason ?? 'reviewed-reference-only'),
     ...(isSeedanceTable(record)
       ? {
           verification: {
@@ -1219,8 +1228,7 @@ function officialExpectations(official, policy, selection, upstream) {
     const event = policy.lifecycle[source.model]?.at(-1);
     const notOffered = policy.notOfferedModels?.includes(source.model);
     const withdrawn = event?.state === 'withdrawn';
-    const pending =
-      source.effectiveAt !== undefined && Date.parse(source.effectiveAt) > Date.parse(policy.asOf);
+    const pending = isPendingEffective(source, policy.asOf);
     const task = source.kind === 'task';
     const tool = source.kind === 'tool';
     const selected = selection[source.model] === source.id;
@@ -1724,6 +1732,7 @@ export function reconcileDisplayCoverage({
       reviewed,
       selectedQuote,
       disposition.status,
+      policy.asOf,
     );
     if (canonical(displayModels.get(key)?.categories ?? []) !== canonical(expectedCategories))
       fail('model-category-mismatch', 'Categories differ from reviewed inputs for ' + key, detail);
@@ -1837,6 +1846,7 @@ export function reconcileDisplayCoverage({
         null;
       const seedance =
         source.officialModel === 'doubao-seedance-2-5-260628' && providerId === 'volcengine';
+      const pendingReference = isPendingEffective(source, policy.asOf);
       const expectedPrice = normalized
         ? normalized.sourcePrice
         : seedance && selectedQuote
@@ -1848,12 +1858,19 @@ export function reconcileDisplayCoverage({
         source.conditions ??
         null;
       const expectedStatus =
-        normalized?.status ?? (seedance ? 'validation-held' : (source.status ?? 'reference-only'));
+        normalized?.status ??
+        (seedance
+          ? 'validation-held'
+          : pendingReference
+            ? 'pending-effective'
+            : (source.status ?? 'reference-only'));
       const expectedReason = normalized
         ? normalized.reason
         : seedance
           ? 'seedance-4k-two-target-billing-cases-unverified'
-          : (source.reason ?? 'reviewed-reference-only');
+          : pendingReference
+            ? 'official-price-not-yet-effective'
+            : (source.reason ?? 'reviewed-reference-only');
       const priceList =
         normalized?.priceList ??
         source.priceList ??
