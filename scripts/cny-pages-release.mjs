@@ -19,6 +19,11 @@ const validPath = (path) =>
   /^(?:[a-zA-Z0-9_.-]+\/)*[a-zA-Z0-9_.-]+$/.test(path) &&
   !path.split('/').some((part) => part === '.' || part === '..');
 const decode = (bytes) => JSON.parse(bytes);
+const requestTimeoutMs = Number(process.env.CNY_PAGES_REQUEST_TIMEOUT_MS ?? 30_000);
+assert.ok(
+  Number.isSafeInteger(requestTimeoutMs) && requestTimeoutMs >= 1 && requestTimeoutMs <= 30_000,
+  'Invalid Pages request timeout',
+);
 
 async function remote(origin, path) {
   assert.ok(validPath(path), 'Invalid site path: ' + path);
@@ -26,31 +31,82 @@ async function remote(origin, path) {
   assert.ok(url.protocol === 'https:' || url.hostname === '127.0.0.1', 'Use HTTPS for Pages');
   for (let attempt = 1; ; attempt++) {
     url.searchParams.set('cny-release-check', randomUUID());
-    const response = await fetch(url, {
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (response.status === 503 && attempt < 3) {
+    let response;
+    try {
+      response = await fetch(url, {
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(requestTimeoutMs),
+      });
+    } catch (error) {
+      console.error(
+        JSON.stringify({ kind: 'cny-pages-verify-error', path, attempt, error: error.message }),
+      );
+      throw error;
+    }
+    if ([429, 503].includes(response.status) && attempt < 3) {
       await response.body?.cancel();
-      await delay(attempt * 500);
+      const retryAfter = response.headers.get('retry-after');
+      const retryAfterSeconds = retryAfter === null ? NaN : Number(retryAfter);
+      const waitMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0
+        ? Math.min(retryAfterSeconds * 1000, 2000)
+        : attempt * 500;
+      console.error(
+        JSON.stringify({
+          kind: 'cny-pages-verify-error',
+          path,
+          attempt,
+          error: `HTTP ${response.status}; retrying in ${waitMs}ms`,
+        }),
+      );
+      await delay(waitMs);
       continue;
     }
+    if (!response.ok)
+      console.error(
+        JSON.stringify({
+          kind: 'cny-pages-verify-error',
+          path,
+          attempt,
+          error: `HTTP ${response.status}`,
+        }),
+      );
     assert.ok(response.ok, `HTTP ${response.status} for ${path}`);
-    return Buffer.from(await response.arrayBuffer());
+    try {
+      return Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      console.error(
+        JSON.stringify({ kind: 'cny-pages-verify-error', path, attempt, error: error.message }),
+      );
+      throw error;
+    }
   }
 }
 
 function checked(bytes, entry, path) {
-  assert.equal(bytes.length, entry?.bytes, path + ' byte length');
-  assert.equal(sha(bytes), entry?.sha256, path + ' hash');
-  return bytes;
+  try {
+    assert.equal(bytes.length, entry?.bytes, path + ' byte length');
+    assert.equal(sha(bytes), entry?.sha256, path + ' hash');
+    return bytes;
+  } catch (error) {
+    console.error(JSON.stringify({ kind: 'cny-pages-verify-error', path, error: error.message }));
+    throw error;
+  }
 }
 
 async function collect(paths, readPath) {
   const entries = Object.entries(paths);
   for (let i = 0; i < entries.length; i += 16) {
-    await Promise.all(entries.slice(i, i + 16).map(([path, entry]) => readPath(path, entry)));
+    const batch = entries.slice(i, i + 16);
+    await Promise.all(batch.map(([path, entry]) => readPath(path, entry)));
+    console.error(
+      JSON.stringify({
+        kind: 'cny-pages-verify-progress',
+        completed: Math.min(i + 16, entries.length),
+        total: entries.length,
+        lastPath: batch.at(-1)[0],
+      }),
+    );
   }
 }
 
