@@ -807,6 +807,59 @@ test('attempt timeouts escalate after a bounded grace period and retain every re
   }
 });
 
+test('retry backoff exits promptly on SIGTERM and SIGINT without another attempt', async (t) => {
+  for (const signal of ['SIGTERM', 'SIGINT']) {
+    const dir = mkdtempSync(join(tmpdir(), 'pages-backoff-' + signal.toLowerCase() + '-'));
+    const server = createServer((request, response) => response.writeHead(404).end('missing'));
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const wrapper = spawn(
+      process.execPath,
+      [
+        'scripts/cny-pages-verify-with-retry.mjs', 'verify',
+        'http://127.0.0.1:' + server.address().port + '/', 'b'.repeat(40), 'a'.repeat(64),
+        '--attempts=2', '--attempt-timeout-ms=2000', '--sleep-ms=2000', '--log=' + dir,
+      ],
+      { stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    t.after(() => {
+      if (wrapper.exitCode === null && wrapper.signalCode === null) wrapper.kill('SIGKILL');
+      server.closeAllConnections();
+      server.close();
+      rmSync(dir, { recursive: true, force: true });
+    });
+    let stderr = '';
+    let announceFinished;
+    const firstFinished = new Promise((resolve) => { announceFinished = resolve; });
+    wrapper.stderr.on('data', (bytes) => {
+      stderr += bytes;
+      if (stderr.includes('"status":"finished"')) announceFinished();
+    });
+    const closed = new Promise((resolve) => {
+      wrapper.on('close', (exitCode, exitSignal) =>
+        resolve({ exitCode, exitSignal, closedAt: Date.now() }),
+      );
+    });
+    await firstFinished;
+    await delay(50);
+    const signalledAt = Date.now();
+    wrapper.kill(signal);
+    await delay(500);
+    const aliveAfter500ms = wrapper.exitCode === null && wrapper.signalCode === null;
+    const result = await closed;
+    const exitAfterSignalMs = result.closedAt - signalledAt;
+    const attempts = readFileSync(join(dir, 'attempts.ndjson'), 'utf8').trim().split('\n').map(JSON.parse);
+    assert.equal(result.exitCode, null);
+    assert.equal(result.exitSignal, signal);
+    assert.equal(aliveAfter500ms, false);
+    assert.ok(exitAfterSignalMs < 1000, `wrapper waited ${exitAfterSignalMs}ms after ${signal}`);
+    assert.equal(attempts.length, 1);
+    assert.equal(attempts[0].exitCode, 1);
+    assert.ok(existsSync(join(dir, 'attempt-1.json')));
+    assert.ok(existsSync(join(dir, 'attempt-1.stdout.log')));
+    assert.ok(existsSync(join(dir, 'attempt-1.stderr.log')));
+  }
+});
+
 test('workflow retry budgets fit job deadlines and upload per-attempt diagnostics', () => {
   const workflow = readFileSync('.github/workflows/naoshengyun-pages.yml', 'utf8');
   const retry = readFileSync('scripts/cny-pages-verify-with-retry.mjs', 'utf8');

@@ -203,7 +203,7 @@ for (let number = 1; number <= attempts && !interruptedBy; number += 1) {
   }
   if (number < attempts && !interruptedBy) {
     try {
-      await delay(sleep, { signal: sleepController.signal });
+      await delay(sleep, undefined, { signal: sleepController.signal });
     } catch (error) {
       if (!interruptedBy) throw error;
     }
