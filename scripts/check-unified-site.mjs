@@ -352,6 +352,68 @@ try {
         !(await page.getByRole('textbox', { name: 'Filter providers or models…' }).isVisible()),
       );
 
+    await goto(select('deepseek'));
+    await page.getByRole('button', { name: 'Card view' }).click();
+    const flashCard = page.locator('article').filter({
+      has: page.getByRole('button', {
+        name: 'View details for DeepSeek V4.1 Flash 1017',
+        exact: true,
+      }),
+    });
+    await expectVisible(flashCard.getByText('deepseek-v4.1-flash', { exact: true }));
+    assert.equal(await flashCard.getByText('deepseek-flash', { exact: true }).count(), 0);
+    assert.equal(
+      await readCopy(flashCard.getByRole('button', { name: 'Copy to clipboard', exact: true })),
+      'deepseek-v4.1-flash',
+    );
+    await page
+      .getByRole('button', { name: 'View details for DeepSeek V4.1 Flash 1017', exact: true })
+      .click();
+    await expectVisible(
+      page.locator('[data-pricing-provider="deepseek"][data-pricing-model="deepseek-v4.1-flash"]'),
+    );
+    assert.equal(
+      new URL(page.url()).hash,
+      select('deepseek', 'deepseek-v4.1-flash').split('/')[1],
+    );
+    assert.equal(
+      await readCopy(page.getByRole('button', { name: 'Copy to clipboard', exact: true }).first()),
+      'deepseek-v4.1-flash',
+    );
+    await snapshot(page, viewport.width, 'deepseek-v4.1-flash');
+    if (mobile) await page.getByText('Search providers / all models', { exact: true }).click();
+    await page
+      .getByRole('textbox', { name: 'Filter providers or models…' })
+      .fill('deepseek-v4.1-flash');
+    await page
+      .getByRole('button', {
+        name: 'DeepSeek V4.1 Flash 1017 DeepSeek · deepseek-v4.1-flash',
+        exact: true,
+      })
+      .click();
+    assert.equal(
+      new URL(page.url()).hash,
+      select('deepseek', 'deepseek-v4.1-flash').split('/')[1],
+    );
+    await goto(select('deepseek', 'deepseek-flash'));
+    await expectVisible(
+      page.locator('[data-pricing-provider="deepseek"][data-pricing-model="deepseek-v4.1-flash"]'),
+    );
+    assert.equal(
+      new URL(page.url()).hash,
+      select('deepseek', 'deepseek-v4.1-flash').split('/')[1],
+    );
+    await goto(select('deepseek'));
+    await page.getByRole('button', { name: 'Table view' }).click();
+    const flashRow = page.getByRole('row').filter({
+      has: page.getByRole('button', {
+        name: 'View details for DeepSeek V4.1 Flash 1017',
+        exact: true,
+      }),
+    });
+    await expectVisible(flashRow.getByText('deepseek-v4.1-flash', { exact: true }));
+    assert.equal(await flashRow.getByText('deepseek-flash', { exact: true }).count(), 0);
+
     const glm = english.zhipuai.models['glm-4.5-air'];
     const glmConditions = glm.cnyPrice.quotes.find(({ originalQuote }) => originalQuote?.conditions)
       ?.originalQuote.conditions;

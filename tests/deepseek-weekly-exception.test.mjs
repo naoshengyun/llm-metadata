@@ -133,12 +133,16 @@ test('exactly four keys join synchronization with complete conditions and a comp
   }
   const diff = after('price-diff.json');
   assert.equal(diff.changes.length, 4);
-  assert.deepEqual(diff.changes.map((row) => row.nativeKey).sort(), [...models].sort());
+  assert.deepEqual(
+    diff.changes.map((row) => row.nativeKey).sort(),
+    models.map((model) => model === 'deepseek-flash' ? 'deepseek-v4.1-flash' : model).sort(),
+  );
   assert.ok(diff.changes.every((row) => row.type === 'added'));
   const coverage = after('coverage.json');
   const english = after('api/all.json');
   for (const modelId of models) {
-    const model = coverage.models.find((row) => row.providerId === 'deepseek' && row.modelId === modelId);
+    const viewModelId = modelId === 'deepseek-flash' ? 'deepseek-v4.1-flash' : modelId;
+    const model = coverage.models.find((row) => row.providerId === 'deepseek' && row.modelId === viewModelId);
     assert.equal(model.status, 'selected');
     const quote = model.upstreamPrice;
     assert.equal(quote.selected, true);
@@ -152,9 +156,10 @@ test('exactly four keys join synchronization with complete conditions and a comp
     assert.equal(quote.reason, WEEKLY_SCHEDULE_EXCEPTION_REASON);
     assert.match(quote.billing_expr, /weekday\("UTC"\)/);
     assert.match(quote.billing_expr, /hour\("UTC"\)/);
-    const viewQuote = english.deepseek.models[modelId].pricing_view.groups
+    const viewQuote = english.deepseek.models[viewModelId].pricing_view.groups
       .flatMap((group) => group.quotes)
       .find((row) => row.quoteId === quote.quoteId);
+    assert.equal(quote.nativeKey, viewModelId);
     assert.equal(viewQuote.selected, true);
     assert.equal(viewQuote.syncable, true);
     assert.deepEqual(viewQuote.sourcePrice, quote.sourcePrice);
@@ -183,6 +188,7 @@ test('weekly exception cannot bypass other exclusions, lifecycle, deferral or se
     const read = build(t, edit);
     const config = read('api/newapi/ratio_config.json').data;
     assert.ok(!Object.hasOwn(config.billing_expr, 'deepseek-flash'), name);
+    assert.ok(!Object.hasOwn(config.billing_expr, 'deepseek-v4.1-flash'), name);
     for (const modelId of models.slice(1)) assert.ok(config.billing_expr[modelId], name + ' ' + modelId);
   }
   assert.throws(

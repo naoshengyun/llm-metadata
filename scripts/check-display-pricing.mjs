@@ -1477,10 +1477,11 @@ export async function checkPricingReviewFindings({
       peakOutput: pro ? 27 : 8,
       peakCache: pro ? 0.3 : 0.04,
     });
-    for (const model of ['deepseek-flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp', 'deepseek-v4-pro']) {
+    for (const officialModel of ['deepseek-flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp', 'deepseek-v4-pro']) {
+      const model = officialModel === 'deepseek-flash' ? 'deepseek-v4.1-flash' : officialModel;
       await visit('deepseek', model);
-      const expected = rates(model === 'deepseek-v4-pro');
-      const card = quoteAt(page, `upstream:deepseek:${model}:CNY`);
+      const expected = rates(officialModel === 'deepseek-v4-pro');
+      const card = quoteAt(page, `upstream:deepseek:${officialModel}:CNY`);
       assert.equal(await card.count(), 1, model);
       assert.equal(await card.getAttribute('data-syncable'), 'true');
       assert.match(

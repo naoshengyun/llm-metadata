@@ -83,7 +83,7 @@ export function PricingViewSummary({
     <div
       data-pricing-summary={summary.kind}
       data-pricing-provider={view.providerId}
-      data-pricing-model={view.modelId}
+      data-pricing-model={view.nativeKey ?? view.modelId}
       className="min-w-0 text-xs leading-relaxed break-words whitespace-normal"
     >
       {price && <span className="font-medium tabular-nums">{price}</span>}
@@ -1186,7 +1186,11 @@ export function PricingViewQuotes({
               {check?.results && (
                 <QuoteOfficialCheck
                   result={check.results.get(
-                    officialCheckKey(view.providerId, view.modelId, entry.quote.quoteId),
+                    officialCheckKey(
+                      view.providerId,
+                      view.officialModelId ?? view.modelId,
+                      entry.quote.quoteId,
+                    ),
                   )}
                 />
               )}
@@ -1247,9 +1251,7 @@ export function PricingViewQuotes({
                 <summary className="cursor-pointer text-xs font-medium">
                   {msg(locale, 'cacheModeAudit')}
                 </summary>
-                <div className="mt-3 grid min-w-0 gap-3">
-                  {cacheAuditEntries.map(renderEntry)}
-                </div>
+                <div className="mt-3 grid min-w-0 gap-3">{cacheAuditEntries.map(renderEntry)}</div>
               </details>
             )}
           </section>

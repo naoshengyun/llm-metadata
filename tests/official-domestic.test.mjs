@@ -475,7 +475,8 @@ test('the exact DeepSeek exception enters sync while preserving official CNY and
     'deepseek-v4-flash-vision-exp',
     'deepseek-v4-pro',
   ];
-  for (const modelId of keys) {
+  for (const officialModelId of keys) {
+    const modelId = officialModelId === 'deepseek-flash' ? 'deepseek-v4.1-flash' : officialModelId;
     const model = models.find((row) => row.providerId === 'deepseek' && row.modelId === modelId);
     assert.ok(data.billing_expr[modelId], modelId);
     assert.equal(model.status, 'selected');

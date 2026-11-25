@@ -276,7 +276,9 @@ export function OfficialQuotes({
             <Quote key={quote.quoteId} quote={quote}>
               {check?.results && (
                 <QuoteOfficialCheck
-                  result={check.results.get(officialCheckKey(providerId, model.id, quote.quoteId))}
+                  result={check.results.get(
+                    officialCheckKey(providerId, quote.modelId ?? model.id, quote.quoteId),
+                  )}
                 />
               )}
             </Quote>

@@ -14,6 +14,15 @@
     "dashscope": "alibaba-cn",
     "dashscope-anthropic": "alibaba-cn"
   },
+  "nativeBillingIdentityRenames": [
+    {
+      "providerId": "deepseek",
+      "endpoint": "https://api.deepseek.com",
+      "officialModelId": "deepseek-flash",
+      "nativeKey": "deepseek-v4.1-flash",
+      "reason": "user-approved-naoshengyun-public-model-rename"
+    }
+  ],
   "modelReleaseDates": [
     {
       "providers": ["alibaba", "alibaba-cn"],

@@ -152,3 +152,9 @@ OpenAI 已将 `gpt-image-1-mini` 标为废弃，并列出 2026-12-01 停用日�
 用户明确选择“展示和计费都统一为显式缓存”，解除上一节九键 pending，批准北京 `qwen-doc-turbo`、`qwen-flash`、`qwen-plus`、`qwen3-coder-flash`、`qwen3-vl-plus`、`qwen3.7-flash`、`qwen3.7-max`、`qwen3.7-plus`、`qwen3.8-max` 选用各自完整 explicit 价目。210 个原生键只改变这九条表达式，其余 201 条表达式和全部模式逐项不变；Flash 及原四个 explicit 选择保持正确。
 
 本次采用统一 explicit 对客基准，不增加 cache mode 分路或跨仓核心改动，不声称逐请求匹配两套上游成本。主表展示 input/output/cache read/cache write，显式模式、TTL、地区/端点、阶梯、Standard/Batch 服务档及收费限制按证据保留；implicit 原始价目仅放入折叠审计，不再并列默认。缺完整证据的三键和国际站维持原选择。逐档原价、真实六 handler 离线用量验证及三语展示边界见 [Qwen 缓存选价与实际计量边界](QWEN-CACHE-MODE.md) 和更新后的 [ADR 0007](../adr/0007-qwen-explicit-cache-baseline.md)。
+
+### 2026-11-25 DeepSeek V4.1 Flash 对外命名
+
+用户明确要求截图中 DeepSeek V4.1 Flash 1017 的对外模型名由 `deepseek-flash` 改为 `deepseek-v4.1-flash`，作为脑生云命名以区别于官方同名标识。页面模型 ID、复制值、搜索、详情链接和 New API 导出统一使用新键；旧键被替换而不是形成第二个计费身份。标题、原表达式、计费模式、金额和周历不变，旧详情链接仅重定向到新 ID，不展示旧计费键。
+
+固定上游、官方原始证据、历史发布和官方核价继续使用 `deepseek-flash`；provider 仍为 `deepseek`，endpoint 仍为 `https://api.deepseek.com`。`weeklyScheduleExceptions` 与原生能力不足证据保持原四个官方身份，不把新名作为第五个例外，也不放宽其他 provider、endpoint、holiday-only、生命周期或 unsupported 限制。统一构建先按官方身份完成选择与全部保护检查，再仅对最终公开 `modelId`/`nativeKey` 应用精确映射；previous candidate 连续性按同一映射反解，避免日常检查撤价或回写旧名。实际 New API 实例若仍只接受旧模型名，需要另行明确渠道模型映射；本次不修改实例或跨仓 core。
