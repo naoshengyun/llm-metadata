@@ -128,7 +128,7 @@ export interface DisplayPriceQuote extends PriceQuote {
 export interface PricingView {
   schemaVersion: 1;
   providerId: string;
-  /** 官方来源身份；nativeKey 是脑生云对外计费身份。 */
+  /** 公开模型身份；officialModelId 保留官方来源身份，nativeKey 是对外计费键。 */
   modelId: string;
   officialModelId?: string;
   nativeKey?: string;

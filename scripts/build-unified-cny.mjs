@@ -951,12 +951,21 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
     if (before === after?.billing_expr && !changedIdentity && !changedTerms) continue;
     const policyKey = officialModelKey(policy, key);
     const renamed = nativeBillingRename(policy, key);
+    const renameMigration = Boolean(
+      renamed &&
+      Object.hasOwn(previous, renamed.officialModelId) &&
+      !Object.hasOwn(previous, renamed.nativeKey) &&
+      !Object.hasOwn(selected, renamed.officialModelId) &&
+      Object.hasOwn(selected, renamed.nativeKey) &&
+      ((key === renamed.officialModelId && before && !after) ||
+        (key === renamed.nativeKey && !before && after)),
+    );
     const correction = policy.ineligibleUpstream[policyKey];
     const event = lifecycle.state.get(policyKey);
     const capability = policy.nativeCapabilityExclusions?.[policyKey];
     const priorRow = underlying.find((row) => row.providerId === former?.providerId);
     const notOffered = policy.notOfferedModels?.includes(policyKey);
-    const reason = renamed
+    const reason = renameMigration
       ? NATIVE_RENAME_REASON
       : notOffered
       ? 'naoshengyun-service-scope'
@@ -964,7 +973,7 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
         ? (event.reason ?? 'formal-withdrawal')
         : correction && former?.providerId === correction.providerId
           ? 'source-currency-correction'
-          : capability && former?.providerId === capability.providerId
+          : !after && capability && former?.providerId === capability.providerId
             ? 'native-capability-exclusion'
             : after
               ? 'candidate-selection'
@@ -973,14 +982,16 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
       nativeKey: key,
       type: before && after ? 'changed' : before ? 'removed' : 'added',
       reason,
-      evidence: renamed
+      evidence: renameMigration
         ? { detail: 'User-approved public billing identity rename', rename: renamed }
         : notOffered
         ? { url: policy.sources.notOffered }
         : correction
           ? { url: correction.source, detail: correction.reason }
           : (event?.evidence ??
-            (capability && { ...capability.source, detail: capability.reason }) ??
+            (!after && capability
+              ? { ...capability.source, detail: capability.reason }
+              : undefined) ??
             (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
       before: before
         ? {
