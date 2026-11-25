@@ -9,6 +9,7 @@ import {
 import { adaptPrice, domesticProviders } from './upstream-cny.mjs';
 import { weeklyScheduleException } from './weekly-schedule-exceptions.mjs';
 import { cacheTermsByRecord } from './pricing-display-evidence.mjs';
+import { nativeBillingKey, officialModelKey } from './native-billing-identity.mjs';
 import {
   expectedDisplayRows,
   expectedDisplayFeeTerms,
@@ -1397,6 +1398,13 @@ export function reconcileDisplayCoverage({
 }) {
   const failures = [];
   const fail = (code, message, detail = {}) => failures.push({ code, message, ...detail });
+  const sourceIdentity = (providerId, modelId) =>
+    identity(providerId, officialModelKey(policy, modelId));
+  const publicIdentity = (providerId, modelId) =>
+    identity(
+      providerId,
+      nativeBillingKey(policy, providerId, upstream[providerId]?.api ?? null, modelId),
+    );
   const officialPrices = officialExpectations(official, policy, selection, upstream);
   const upstreamPrices = upstreamExpectations(
     upstream,
@@ -1456,22 +1464,24 @@ export function reconcileDisplayCoverage({
   const domesticModels = new Set(
     [...sourceModels.values()].filter((model) => model.domestic).map((model) => model.modelId),
   );
-  for (const key of sourceModels.keys())
-    if (!models.has(key)) {
-      const [providerId, modelId] = JSON.parse(key);
+  for (const key of sourceModels.keys()) {
+    const [providerId, modelId] = JSON.parse(key);
+    if (!models.has(publicIdentity(providerId, modelId))) {
       fail('missing-candidate-model', 'Raw catalog model missing from candidate: ' + key, {
         providerId,
         modelId,
       });
     }
-  for (const key of models.keys())
-    if (!sourceModels.has(key)) {
-      const [providerId, modelId] = JSON.parse(key);
+  }
+  for (const key of models.keys()) {
+    const [providerId, modelId] = JSON.parse(key);
+    if (!sourceModels.has(sourceIdentity(providerId, modelId))) {
       fail('unexpected-candidate-model', 'Candidate model absent from raw catalog: ' + key, {
         providerId,
         modelId,
       });
     }
+  }
   const coverageQuotes = new Map(coverage.quotes.map((quote) => [quote.quoteId, quote]));
   const displayModels = new Map();
   for (const row of displayCoverage.models ?? []) {
@@ -1705,15 +1715,17 @@ export function reconcileDisplayCoverage({
   }
   for (const [key, view] of englishViews) {
     const model = models.get(key);
-    const selectedQuote = selectedByModel.get(key);
+    const reviewedKey = sourceIdentity(model.providerId, model.modelId);
+    const officialModelId = officialModelKey(policy, model.modelId);
+    const selectedQuote = selectedByModel.get(reviewedKey);
     const selectedQuoteId = selectedQuote?.quoteId ?? null;
     const detail = { providerId: model.providerId, modelId: model.modelId };
-    const sourceModel = sourceModels.get(key);
+    const sourceModel = sourceModels.get(reviewedKey);
     if (!sourceModel) continue;
     const disposition = expectedModelDisposition(sourceModel, policy, {
       selected: selectedQuote,
-      officialChoice: officialPrices.get(selection[model.modelId]),
-      hasDomestic: domesticModels.has(model.modelId),
+      officialChoice: officialPrices.get(selection[officialModelId]),
+      hasDomestic: domesticModels.has(officialModelId),
       seedanceHeld,
     });
     for (const field of ['status', 'reason']) {
@@ -1746,7 +1758,7 @@ export function reconcileDisplayCoverage({
           });
       }
     }
-    const reviewed = reviewedByModel.get(key) ?? [];
+    const reviewed = reviewedByModel.get(reviewedKey) ?? [];
     const expectedAbsence = reviewed.length ? null : (disposition.reason ?? 'no-displayable-price');
     if ((displayModels.get(key)?.notDisplayedReason ?? null) !== expectedAbsence)
       fail('model-coverage-mismatch', 'No-display reason differs from reviewed inputs for ' + key, {
@@ -1936,7 +1948,16 @@ export function reconcileDisplayCoverage({
           normalized?.originalCurrencyEligible ?? null,
           actual.originalCurrencyEligible ?? null,
         ],
-        ['nativeKey', normalized ? normalized.nativeKey : modelId, actual.nativeKey],
+        [
+          'nativeKey',
+          nativeBillingKey(
+            policy,
+            providerId,
+            normalized?.endpoint ?? source.endpoint ?? upstream[providerId]?.api ?? null,
+            normalized ? normalized.nativeKey : modelId,
+          ),
+          actual.nativeKey,
+        ],
         [
           'quoteIdentity',
           { providerId, modelId, priceList, endpoint },
@@ -2033,7 +2054,17 @@ export function reconcileDisplayCoverage({
         normalized?.quoteId ?? (seedance ? SEEDANCE_REFERENCE_QUOTE_ID : referenceSourceId(source));
       fields.push([
         'location',
-        { providerId, modelId, quoteId: expectedQuoteId, groupId: 'quote:' + expectedQuoteId },
+        {
+          providerId,
+          modelId: nativeBillingKey(
+            policy,
+            providerId,
+            normalized?.endpoint ?? source.endpoint ?? upstream[providerId]?.api ?? null,
+            modelId,
+          ),
+          quoteId: expectedQuoteId,
+          groupId: 'quote:' + expectedQuoteId,
+        },
         actualLocations[0],
       ]);
       for (const [field, expectedValue, actualValue] of fields) {

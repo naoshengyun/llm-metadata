@@ -65,7 +65,7 @@ let weeklyVectorCount = 0;
 if (values.candidate) {
   const config = JSON.parse(readFileSync(join(resolve(values.candidate), 'api/newapi/ratio_config.json'), 'utf8'));
   const models = {
-    'deepseek-flash': { off: 5.02, peak: 10.04 },
+    'deepseek-v4.1-flash': { off: 5.02, peak: 10.04 },
     'deepseek-v4-flash': { off: 5.02, peak: 10.04 },
     'deepseek-v4-flash-vision-exp': { off: 5.02, peak: 10.04 },
     'deepseek-v4-pro': { off: 18.15, peak: 36.3 },

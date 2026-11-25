@@ -7,6 +7,16 @@ import { fileURLToPath } from 'node:url';
 import { canonical, generateCny, hash, CNY_POLICY } from '../.cache/cny-build/cny/generate.js';
 import { adaptPrice, domesticProviders, sha } from './upstream-cny.mjs';
 import { weeklyScheduleException } from './weekly-schedule-exceptions.mjs';
+import {
+  NATIVE_RENAME_REASON,
+  nativeBillingRename,
+  officialModelKey,
+  previousSelectedQuote,
+  publicModelRows,
+  publicSelectedPrices,
+  renameNativeBillingOutputs,
+  validateNativeBillingRenames,
+} from './native-billing-identity.mjs';
 import { makeSnapshot } from './upstream-snapshot.mjs';
 import { verifyArtifact } from '../.cache/cny-build/cny/artifact.js';
 import {
@@ -128,7 +138,7 @@ function lifecycleState(policy, selection, legacySelection, previous) {
     if (!Array.isArray(events) || !events.length) throw Error('Missing lifecycle events: ' + key);
     const existingEvents = previous?.policy.lifecycle[key];
     let activeQuoteId =
-      existingEvents?.[0].quoteId ?? previous?.selected[key] ?? legacySelection[key];
+      existingEvents?.[0].quoteId ?? previousSelectedQuote(previous, key) ?? legacySelection[key];
     let lastEvent;
     for (const event of events) {
       const at = effectiveTime(event.at, key);
@@ -163,7 +173,7 @@ function lifecycleState(policy, selection, legacySelection, previous) {
     if (
       lastEvent.state === 'restored' &&
       existingEvents?.length === events.length &&
-      previous.selected[key] === lastEvent.quoteId
+      previousSelectedQuote(previous, key) === lastEvent.quoteId
     ) {
       approvedRestorations.add(key);
     }
@@ -736,7 +746,9 @@ function selectPrices(records, quotes, selection, policy, lifecycle) {
 function checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle) {
   if (!previous) return;
   const formerModels = new Map(
-    previous.coverage.models.filter(({ syncable }) => syncable).map((row) => [row.nativeKey, row]),
+    previous.coverage.models
+      .filter(({ syncable }) => syncable)
+      .map((row) => [officialModelKey(previous.policy, row.nativeKey), row]),
   );
   const formerQuotes = new Map(previous.coverage.quotes.map((row) => [row.quoteId, row]));
   const identityFields = [
@@ -748,7 +760,8 @@ function checkSelectionContinuity(previous, selected, records, selection, policy
     'sourceCurrency',
     'outputKind',
   ];
-  for (const [key, quoteId] of entries(previous.selected)) {
+  for (const [publicKey, quoteId] of entries(previous.selected)) {
+    const key = officialModelKey(previous.policy, publicKey);
     const formerUpstream = formerModels.get(key)?.upstreamPrice;
     const former = formerUpstream?.syncable ? formerUpstream : formerQuotes.get(quoteId);
     if (former?.quoteId !== quoteId) throw Error('Missing previous selected identity: ' + key);
@@ -936,18 +949,31 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
     const changedTerms =
       beforeTerms && afterTerms && canonical(beforeTerms) !== canonical(afterTerms);
     if (before === after?.billing_expr && !changedIdentity && !changedTerms) continue;
-    const correction = policy.ineligibleUpstream[key];
-    const event = lifecycle.state.get(key);
-    const capability = policy.nativeCapabilityExclusions?.[key];
+    const policyKey = officialModelKey(policy, key);
+    const renamed = nativeBillingRename(policy, key);
+    const renameMigration = Boolean(
+      renamed &&
+      Object.hasOwn(previous, renamed.officialModelId) &&
+      !Object.hasOwn(previous, renamed.nativeKey) &&
+      !Object.hasOwn(selected, renamed.officialModelId) &&
+      Object.hasOwn(selected, renamed.nativeKey) &&
+      ((key === renamed.officialModelId && before && !after) ||
+        (key === renamed.nativeKey && !before && after)),
+    );
+    const correction = policy.ineligibleUpstream[policyKey];
+    const event = lifecycle.state.get(policyKey);
+    const capability = policy.nativeCapabilityExclusions?.[policyKey];
     const priorRow = underlying.find((row) => row.providerId === former?.providerId);
-    const notOffered = policy.notOfferedModels?.includes(key);
-    const reason = notOffered
+    const notOffered = policy.notOfferedModels?.includes(policyKey);
+    const reason = renameMigration
+      ? NATIVE_RENAME_REASON
+      : notOffered
       ? 'naoshengyun-service-scope'
       : event?.state === 'withdrawn'
         ? (event.reason ?? 'formal-withdrawal')
         : correction && former?.providerId === correction.providerId
           ? 'source-currency-correction'
-          : capability && former?.providerId === capability.providerId
+          : !after && capability && former?.providerId === capability.providerId
             ? 'native-capability-exclusion'
             : after
               ? 'candidate-selection'
@@ -956,12 +982,16 @@ function priceDiff(prior, selected, models, policy, lifecycle, previousCandidate
       nativeKey: key,
       type: before && after ? 'changed' : before ? 'removed' : 'added',
       reason,
-      evidence: notOffered
+      evidence: renameMigration
+        ? { detail: 'User-approved public billing identity rename', rename: renamed }
+        : notOffered
         ? { url: policy.sources.notOffered }
         : correction
           ? { url: correction.source, detail: correction.reason }
           : (event?.evidence ??
-            (capability && { ...capability.source, detail: capability.reason }) ??
+            (!after && capability
+              ? { ...capability.source, detail: capability.reason }
+              : undefined) ??
             (priorRow?.status === 'deferred' ? { url: policy.sources.deferred } : undefined)),
       before: before
         ? {
@@ -1016,6 +1046,7 @@ function buildCandidate({
       ),
     ]),
   );
+  validateNativeBillingRenames(policy, snapshots, previous);
   const officialRecords = official.records.filter(
     ({ provider }) =>
       !excludedProviderIds.has(provider) &&
@@ -1030,11 +1061,12 @@ function buildCandidate({
   ]);
   addSeedanceReference(official, policy, selection, records, quotes);
   const selected = selectPrices(records, quotes, selection, policy, lifecycle);
+  const publicSelected = publicSelectedPrices(selected, policy);
   checkSelectionContinuity(previous, selected, records, selection, policy, lifecycle);
   const display = buildDisplayData({ records, quotes, selected, official, policy });
-  const billing_mode = Object.fromEntries(entries(selected).map(([key]) => [key, 'tiered_expr']));
+  const billing_mode = Object.fromEntries(entries(publicSelected).map(([key]) => [key, 'tiered_expr']));
   const billing_expr = Object.fromEntries(
-    entries(selected).map(([key, row]) => [key, row.billing_expr]),
+    entries(publicSelected).map(([key, row]) => [key, row.billing_expr]),
   );
   const models = [...records.values()].map((row) => ({
     endpoint: snapshots.en[row.providerId]?.api ?? null,
@@ -1049,6 +1081,7 @@ function buildCandidate({
     selected: Boolean(row.syncable),
     syncable: Boolean(row.syncable),
   }));
+  const publicModels = publicModelRows(models, policy);
   const coverage = {
     models,
     quotes: [...quotes.values()],
@@ -1067,11 +1100,11 @@ function buildCandidate({
       official: coverage.quotes.filter((quote) => quote.outputKind === 'tool-reference'),
       optional: coverage.toolReferences,
     }),
-    'price-diff.json': json(priceDiff(prior, selected, models, policy, lifecycle, previous)),
+    'price-diff.json': json(priceDiff(prior, publicSelected, publicModels, policy, lifecycle, previous)),
     'policy.json': json(policy),
     'official-selection.json': json(selection),
     'selection.json': json(
-      Object.fromEntries(entries(selected).map(([key, row]) => [key, row.quoteId])),
+      Object.fromEntries(entries(publicSelected).map(([key, row]) => [key, row.quoteId])),
     ),
   };
   const releaseDates = new Map(
@@ -1082,14 +1115,15 @@ function buildCandidate({
     ),
   );
   catalogFiles(files, snapshots, records, quotes, selected, releaseDates, display.views);
+  renameNativeBillingOutputs(files, policy);
   const reconciledDisplay = reconcileDisplayCoverage({
     official,
     policy,
     selection,
     upstream: snapshots.en,
     source,
-    coverage,
-    displayCoverage: display.coverage,
+    coverage: JSON.parse(files['coverage.json']),
+    displayCoverage: JSON.parse(files['display-coverage.json']),
     catalogs: Object.fromEntries(
       locales.map((locale) => {
         const prefix = 'api/' + (locale === 'en' ? '' : 'i18n/' + locale + '/');

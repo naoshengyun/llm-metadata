@@ -141,7 +141,12 @@ function previousResults(previous, baseline, attemptedAt) {
 
 function coverageEntries(coverage, selection) {
   const modelKey = ({ providerId, modelId }) => JSON.stringify([providerId, modelId]);
-  const models = new Map(coverage.models.map((row) => [modelKey(row), row]));
+  const models = new Map();
+  for (const row of coverage.models) {
+    models.set(modelKey(row), row);
+    if (row.officialModelId)
+      models.set(modelKey({ ...row, modelId: row.officialModelId }), row);
+  }
   const prices = coverage.models.flatMap((model) =>
     model.upstreamPrice ? [model.upstreamPrice] : [],
   );
@@ -539,7 +544,7 @@ export async function checkOfficialPrices({
   for (const entry of entries) {
     const { id, quote, status, reason, selected } = entry;
     const registration = registered.get(id);
-    const previousEvent = policy.lifecycle[quote.nativeKey]?.at(-1);
+    const previousEvent = policy.lifecycle[quote.modelId ?? quote.nativeKey]?.at(-1);
     const withdrawn =
       status === 'withdrawn' &&
       registration?.target.checkWithdrawn &&

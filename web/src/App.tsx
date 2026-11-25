@@ -348,15 +348,26 @@ function Workspace({
   );
 
   const selectedMeta = providers?.find((p) => p.id === selectedId) ?? null;
-  const selectedModel = (selectedModelId && loadedProvider?.models[selectedModelId]) || null;
+  const selectedModel =
+    (selectedModelId && loadedProvider?.models[selectedModelId]) ||
+    (selectedModelId && loadedProvider
+      ? Object.values(loadedProvider.models).find((model) =>
+          model.legacyIds?.includes(selectedModelId),
+        )
+      : null) ||
+    null;
 
-  // hash 指向不存在的模型时回退到列表并纠正 URL
+  // 旧模型 ID 仅用于兼容已有详情链接；规范化为当前公开 ID，不展示旧计费键。
   useEffect(() => {
-    if (loadedProvider && selectedModelId && !loadedProvider.models[selectedModelId]) {
+    if (!loadedProvider || !selectedModelId) return;
+    if (selectedModel && selectedModel.id !== selectedModelId) {
+      setSelectedModelId(selectedModel.id);
+      history.replaceState(null, '', buildHash(loadedProvider.id, selectedModel.id));
+    } else if (!selectedModel) {
       setSelectedModelId(null);
       history.replaceState(null, '', buildHash(loadedProvider.id));
     }
-  }, [loadedProvider, selectedModelId]);
+  }, [loadedProvider, selectedModel, selectedModelId]);
 
   const detailOpen = Boolean(selectedModel && selectedMeta);
   const officialCheck = useOfficialCheck(

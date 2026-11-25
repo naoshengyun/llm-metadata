@@ -30,6 +30,8 @@ export interface PriceQuote {
   priceList: string;
   endpoint?: string | null;
   nativeKey: string | null;
+  /** 官方模型来源身份；可能与对客 nativeKey 不同。 */
+  modelId?: string;
   sourceCurrency?: string | null;
   sourceUnit?: string | null;
   sourcePrice?: unknown;
@@ -126,7 +128,10 @@ export interface DisplayPriceQuote extends PriceQuote {
 export interface PricingView {
   schemaVersion: 1;
   providerId: string;
+  /** 公开模型身份；officialModelId 保留官方来源身份，nativeKey 是对外计费键。 */
   modelId: string;
+  officialModelId?: string;
+  nativeKey?: string;
   status: string;
   reason: string | null;
   selectedQuoteId: string | null;
@@ -155,6 +160,9 @@ export interface Model {
     feeDeclarations: unknown[];
   };
   id: string;
+  /** 仅用于把旧详情链接重定向到当前对外 ID，不参与搜索或计费。 */
+  legacyIds?: string[];
+  officialModelId?: string;
   name?: string;
   description?: string;
   /** 模型系列（如 "qwen"） */
