@@ -12260,6 +12260,111 @@
         "basis": "output-images"
       },
       "unit": "per-charge"
+    },
+    {
+      "id": "us-morph-morph-glm52-744b-standard",
+      "provider": "morph",
+      "endpoint": "https://api.morphllm.com/v1",
+      "model": "morph-glm52-744b",
+      "priceList": "Morph API / direct base list",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output"
+      ],
+      "cost": {
+        "input": 1.68,
+        "cache_read": 0.312,
+        "output": 5.28
+      },
+      "conditions": {
+        "cacheWriteSurchargeUsdPerMillionTokens": 0
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://www.morphllm.com/api/models/json?prices=list",
+        "sha256": "3b03deb4c5ba8e49d44073136f39c355acb42e5977daab375fc727a167477f8c",
+        "checkedAt": "2026-11-28",
+        "supplemental": [
+          {
+            "url": "https://docs.morphllm.com/llms.txt",
+            "sha256": "5b0fead40c588fe44722d985fde63394d704ada479540fe60118545dc489f4e2",
+            "checkedAt": "2026-11-28"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-morph-morph-glm53-744b-standard",
+      "provider": "morph",
+      "endpoint": "https://api.morphllm.com/v1",
+      "model": "morph-glm53-744b",
+      "priceList": "Morph API / direct base list",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output"
+      ],
+      "cost": {
+        "input": 1.68,
+        "cache_read": 0.312,
+        "output": 5.28
+      },
+      "conditions": {
+        "cacheWriteSurchargeUsdPerMillionTokens": 0
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://www.morphllm.com/api/models/json?prices=list",
+        "sha256": "3b03deb4c5ba8e49d44073136f39c355acb42e5977daab375fc727a167477f8c",
+        "checkedAt": "2026-11-28",
+        "supplemental": [
+          {
+            "url": "https://docs.morphllm.com/llms.txt",
+            "sha256": "5b0fead40c588fe44722d985fde63394d704ada479540fe60118545dc489f4e2",
+            "checkedAt": "2026-11-28"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us-morph-morph-glm53flash-standard",
+      "provider": "morph",
+      "endpoint": "https://api.morphllm.com/v1",
+      "model": "morph-glm53flash",
+      "priceList": "Morph API / direct base list",
+      "origin": "foreign",
+      "currency": "USD",
+      "required": [
+        "input",
+        "cache_read",
+        "output"
+      ],
+      "cost": {
+        "input": 0.18,
+        "cache_read": 0.036,
+        "output": 0.6
+      },
+      "conditions": {
+        "cacheWriteSurchargeUsdPerMillionTokens": 0
+      },
+      "unit": "per_million_tokens",
+      "source": {
+        "url": "https://www.morphllm.com/api/models/json?prices=list",
+        "sha256": "3b03deb4c5ba8e49d44073136f39c355acb42e5977daab375fc727a167477f8c",
+        "checkedAt": "2026-11-28",
+        "supplemental": [
+          {
+            "url": "https://docs.morphllm.com/llms.txt",
+            "sha256": "5b0fead40c588fe44722d985fde63394d704ada479540fe60118545dc489f4e2",
+            "checkedAt": "2026-11-28"
+          }
+        ]
+      }
     }
   ],
   "coverage": [
