@@ -141,7 +141,10 @@
     "wan2.7-t2v-2026-04-25": "dashscope--wan2.7-t2v-2026-04-25--cn-beijing-task-online-original",
     "wan2.7-t2v-2026-06-12": "dashscope--wan2.7-t2v-2026-06-12--cn-beijing-task-online-original",
     "wan3.0-video": "dashscope--wan3.0-video--cn-beijing-task-online-original",
-    "wan3.0-video-prime": "dashscope--wan3.0-video-prime--cn-beijing-task-online-original"
+    "wan3.0-video-prime": "dashscope--wan3.0-video-prime--cn-beijing-task-online-original",
+    "morph-glm52-744b": "us-morph-morph-glm52-744b-standard",
+    "morph-glm53-744b": "us-morph-morph-glm53-744b-standard",
+    "morph-glm53flash": "us-morph-morph-glm53flash-standard"
   },
   "notProposed": [
     {
